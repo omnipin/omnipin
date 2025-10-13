@@ -2,9 +2,7 @@
 
 Blumen can be integrated with CI/CD pipelines to deploy dApps automatically.
 
-## Providers
-
-### GitHub Actions
+## GitHub Actions
 
 Blumen uses this GitHub Action to deploy it's own website.
 
@@ -34,7 +32,7 @@ jobs:
           BLUMEN_PK: ${{ secrets.BLUMEN_PK }}
 ```
 
-### GitLab CI
+## GitLab CI
 
 Before executing the pipeline, you need to set up the following environment variables:
 
