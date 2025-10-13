@@ -125,7 +125,7 @@ A transaction is signed by a private key provided via `BLUMEN_PK` and is immedia
 
 #### Setup
 
-1. Head over to the [Safe app](https://app.safe.global) and create a new wallet, if you don't one yet.
+1. Head over to the [Safe app](https://app.safe.global) and create a new wallet, if you don't have one yet.
 
 2. Install Safe Zodiac Roles Module through the [Zodiac app](https://app.safe.global/share/safe-app?appUrl=https%3A%2F%2Fzodiac.gnosisguild.org%2F)
 
@@ -149,3 +149,13 @@ This will create a `zodiac.json` in a current directory. If `BLUMEN_PK` is not s
 4. Head over to the Safe [transaction builder](https://app.safe.global/apps/open?appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder) page.
 
 5. Drag and drop the JSON file and confirm transaction execution.
+
+6. This will deploy a new Zodiac Roles module address which should be passed during deployment.
+
+#### Usage
+
+Updating ENS is now possible to do within a single command, while maintaining security properties of a Safe.
+
+```sh
+blumen deploy --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 blumen.stauro.eth --roles-mod-address 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1
+```

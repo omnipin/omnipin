@@ -178,10 +178,47 @@ Updating ENS Content-Hash record requires paying a network fee. The fee varies d
 
 Using a private key of the ENS name manager account imposes significant security risks. In case of environment compromise, an attacker is able to update the ENS name to a malicious version.
 
-One of the unique features that Blumen offers is [Safe](https://safe.global) integration. Instead of EOA managing the ENS name, a multi-signature wallet is put in the front. Such approach allows for advancing security for ENS update pipelines, such as multi-factor authorisation with the [Proposer Flow](/docs/how-it-works#proposer) or role-based permissions with [Zodiac Roles]().
+One of the unique features that Blumen offers is [Safe](https://safe.global) integration. Instead of EOA managing the ENS name, a multi-signature wallet is put in the front. Such approach allows for advancing security for ENS update pipelines, such as multi-factor authorisation with the [Proposer Flow](/docs/how-it-works#proposer) or role-based permissions with [Zodiac Roles](/docs/how-it-works#zodiac-roles).
 
+Proposer flow requires additional factor of authorisation on every deploy, which might be excessive for some websites, especially those with frequent updates. Because of that, the guide will instead cover setup with Zodiac Roles.
 
-Once it finishes getting processed, the ENS Content-Hash record should start pointing to your new deployment. Now the web app should be discoverable through [any ENS gateway](https://docs.ens.domains/dweb/intro/#browser-support--gateways), for example eth.limo.
+1. Head over to the [Safe app](https://app.safe.global) and create a new wallet, if you don't have one yet.
+
+2. Install Safe Zodiac Roles Module through the [Zodiac app](https://app.safe.global/share/safe-app?appUrl=https%3A%2F%2Fzodiac.gnosisguild.org%2F)
+
+3. Generate a JSON for a batch transaction setup via `blumen zodiac`:
+
+```sh
+blumen zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1
+
+# blumen zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --verbose
+# ⚠️ `BLUMEN_PK` environment variable not set.
+# 🟢 Generating a Secp256k1 keypair
+#    0xeb12099469558be35d53d606e1d5e69d0854c57ef6658e909325c5a0e6493415
+# 🟢 Save the private key and do not share it to anyone
+# 🟢 Created zodiac.json in current directory
+# Open in a browser: https://app.safe.global/apps/open?safe=:0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262&appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder
+# Upload zodiac.json in the UI
+```
+
+This will create a `zodiac.json` in a current directory. If `BLUMEN_PK` is not specified, an Ethereum Account will be generated on the spot.
+
+4. Head over to the Safe [transaction builder](https://app.safe.global/apps/open?appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder) page.
+
+5. Drag and drop the JSON file and confirm transaction execution.
+
+6. This will deploy a new Zodiac Roles module address which should be passed during deployment.
+
+Updating ENS is now possible to do within a single command, while maintaining security properties of a Safe.
+
+```sh
+blumen deploy \
+    --safe 0xyoursafeAddress \
+    blumen.stauro.eth \
+    --roles-mod-address 0xyourRolesModAddress
+```
+
+Once a transaction finishes getting indexed, the ENS Content-Hash record should start pointing to a new deployment. Now the web app should be discoverable through [any ENS gateway](https://docs.ens.domains/dweb/intro/#browser-support--gateways), for example eth.limo.
 
 ## Automation with CI/CD
 
@@ -205,7 +242,7 @@ jobs:
       - name: Build website
         run: bun i && bun run build
       - name: Deploy the site
-        run: blumen deploy .vitepress/dist --strict --ens ${{ vars.BLUMEN_ENS }} --safe ${{ vars.BLUMEN_SAFE }}
+        run: blumen deploy .vitepress/dist --strict --ens ${{ vars.BLUMEN_ENS }} --safe ${{ vars.BLUMEN_SAFE }} --roles-mod-address ${{ vars.BLUMEN_ROLES_MOD }}
         env:
           BLUMEN_PINATA_TOKEN: ${{ secrets.BLUMEN_PINATA_TOKEN }}
           BLUMEN_STORACHA_PROOF: ${{ secrets.BLUMEN_STORACHA_PROOF }}
