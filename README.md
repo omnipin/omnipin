@@ -1,7 +1,7 @@
 <div align="center">
 
 <img src="logo.svg" height="75" width="75" />
-<h1>Blumen</h1>
+<h1>Omnipin (formerly Blumen)</h1>
 
 [![GitHub Workflow
 Status][gh-actions-img]][github-actions] ![npm](https://img.shields.io/npm/dt/blumen?style=for-the-badge&logo=npm&color=%232B4AD4&label)
@@ -9,6 +9,7 @@ Status][gh-actions-img]][github-actions] ![npm](https://img.shields.io/npm/dt/bl
 <sub>Self-custodial decentralized deployments</sub>
 </div>
 
+> The project is in the process of a rebrand and will soon have many new features. Stay tuned
 
 **Blumen** is the ultimate command-line deployment tool with automatic replication of content to independent IPFS providers and multi-factor authorization of ENS updates. No sign up required. 
 
