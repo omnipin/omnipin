@@ -5,7 +5,7 @@ export const parseTokensFromEnv = (): Map<string, string> => {
   const tokens = new Map<string, string>()
 
   for (const [key, value] of Object.entries(process.env)) {
-    if (key.startsWith('OMNIPIN_') && value) tokens.set(key.slice(7), value)
+    if (key.startsWith('OMNIPIN_') && value) tokens.set(key.slice(8), value)
   }
   return tokens
 }
