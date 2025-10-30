@@ -9,7 +9,7 @@ features:
   - title: Multiple storage protocols
     details: Complete IPFS and Swarm integration.
   - title: Use your existing ENS or DNS name
-    details: Website updates via ENS and DNSLink.
+    details: Automatic updates of ENS names and DNS names through DNSLink.
   - title: Protected with Safe
     details: Multiple integrations for every security need.
   - title: Tiny size

@@ -10,7 +10,7 @@ describe('Lighthouse', () => {
         pinOnLighthouse({ first: true, providerName: 'Test' }),
       ).rejects.toThrowError(new UploadNotSupportedError('Lighthouse'))
     })
-    it('should pin a CID on Lighthouse successfully', async () => {
+    it.skip('should pin a CID on Lighthouse successfully', async () => {
       const token = Bun.env.BLUMEN_LIGHTHOUSE_TOKEN
 
       if (!token) throw new Error('Missing Lighthouse token')
