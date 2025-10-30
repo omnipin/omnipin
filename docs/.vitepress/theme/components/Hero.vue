@@ -8,12 +8,14 @@
                 width="400"
                 height="400"
             />
-            <h1 class="title">Self-custodial decentralized web deployments</h1>
+            <h1 class="title">
+                The ultimate decentralized website deployment toolkit
+            </h1>
             <img src="/demo.png" alt="Omnipin logo" />
             <p class="subtitle">
-                Omnipin is the ultimate command-line website deployment tool
-                with automatic replication of content and secure ENS updates,
-                powered by Safe. No sign up required.
+                Omnipin is a trustless command-line website deployment tool with
+                automatic content replication and secure ENS updates, powered by
+                Safe. No sign up required.
             </p>
             <div class="links">
                 <a href="/docs/">Get Started</a>
