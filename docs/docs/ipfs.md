@@ -1,6 +1,6 @@
 # IPFS
 
-Blumen supports a wide range of different IPFS providers. If you would like to integrate your provider, feel free to submit a pull request.
+Omnipin supports a wide range of different IPFS providers. If you would like to integrate your provider, feel free to submit a pull request.
 
 ## Spec-compliant Pinning Service
 
@@ -84,7 +84,7 @@ Storacha uses spaces (similar to buckets). You would need to create one, if you 
 
 ```bash [Terminal]
 storacha space create
-# ? What would you like to call this space? blumen-docs
+# ? What would you like to call this space? omnipin-docs
 # 🔑 You need to save the following secret recovery key somewhere safe! For example write it down on
 # a piece of paper and put it inside your favorite book.
 
@@ -170,7 +170,7 @@ Go to the dashboard and open the ["API Keys" page](https://dashboard.quicknode.c
 - API env variables: `BLUMEN_LIGHTHOUSE_TOKEN`
 - Supported methods: Pin
 
-Go to "API Key", enter "Blumen" in the input box and click "Generate".
+Go to "API Key", enter "Omnipin" in the input box and click "Generate".
 
 ## Blockfrost
 

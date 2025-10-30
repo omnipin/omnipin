@@ -85,7 +85,7 @@ export class MissingDnsLinkError extends Error {
   name = 'MissingDnsLinkError'
   constructor() {
     super(
-      `No DNSLink gateway was found. Create one first.\nhttps://blumen.stauro.dev/docs/dnslink.html`,
+      `No DNSLink gateway was found. Create one first.\nhttps://omnipin.eth.link/docs/dnslink.html`,
     )
   }
 }

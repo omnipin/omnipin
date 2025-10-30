@@ -50,7 +50,7 @@ export const updateDnsLink = async ({
       },
       body: JSON.stringify({
         dnslink: `/ipfs/${cid}`,
-        description: `Powered by Blumen`,
+        description: `Powered by Omnipin`,
       }),
     },
   )

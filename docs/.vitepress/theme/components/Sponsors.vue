@@ -27,6 +27,9 @@
                         :class="$style.image"
                         :src="sponsor?.img"
                         :alt="sponsor?.name"
+                        :style="{
+                            '--invert': sponsor.invert === true ? '1' : '0',
+                        }"
                     />
                 </a>
             </div>
@@ -47,6 +50,7 @@ const sponsorSections = [
                 img: "/lido.svg",
                 columns: 1,
                 height: "120px",
+                invert: true,
             },
         ],
     },
@@ -62,16 +66,24 @@ const sponsorSections = [
             },
             {
                 name: "StorageBeat",
-                href: "https://storagebeat.eth.link",
+                href: "https://storagebeat.eth.limo",
                 img: "/StorageBeat.svg",
                 columns: 2,
                 height: "80px",
+                invert: true,
             },
             {
                 name: "v1rtl.site",
-                href: "https://v1rtl.eth.link",
+                href: "https://v1rtl.eth.limo",
                 img: "/v1rtl-site.webp",
-                columns: 1,
+                columns: 2,
+                height: "120px",
+            },
+            {
+                name: "raffy.eth",
+                href: "https://raffy.eth.limo",
+                img: "/raffy.png",
+                columns: 2,
                 height: "120px",
             },
         ],
@@ -171,11 +183,20 @@ const chunkSponsorsByOwnColumns = (sponsors) => {
 .image {
     filter: grayscale(1);
     height: var(--height);
-    transition: filter 0.1s;
+    transition: filter 500ms;
     padding: 0.25rem;
 }
 :global(html.dark) .image {
-    filter: grayscale(1) invert(1);
+    content: var(--invert);
+    filter: grayscale(1) invert(var(--invert, 0));
+}
+
+.sponsor:hover .image {
+    filter: grayscale(0);
+}
+
+:global(html.dark) .sponsor:hover .image {
+    filter: grayscale(0) invert(var(--invert, 0));
 }
 
 /* Style for links to remove default styling */

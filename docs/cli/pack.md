@@ -1,9 +1,9 @@
-# `blumen pack`
+# `omnipin pack`
 
-Pack websites files into a CAR without uploading it anywhere. Useful for externally verifying CIDs or uploading the CAR to a provider that Blumen does not support yet.
+Pack websites files into a CAR without uploading it anywhere. Useful for externally verifying CIDs or uploading the CAR to a provider that Omnipin does not support yet.
 
 ```
-blumen pack site/.vitepress/dist --dist .
+omnipin pack site/.vitepress/dist --dist .
 📦 Packing site/.vitepress/dist (4.15MB)
 🟢 Root CID: bafybeialuzuiih2kg4g22crdt2oswzvj4ygirtk52v6kwb6v4muuuumnri
 ```

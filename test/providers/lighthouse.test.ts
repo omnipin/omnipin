@@ -20,7 +20,7 @@ describe('Lighthouse', () => {
       const result = await pinOnLighthouse({
         token,
         cid,
-        name: 'Blumen test',
+        name: 'Omnipin test',
       })
 
       expect(result.cid).toEqual(cid)

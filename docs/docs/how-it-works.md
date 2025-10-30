@@ -1,6 +1,6 @@
 # How it works
 
-Blumen combines multiple technologies to provide the most secure, flexible and resilient website deployment tool. Blumen's design is modular and allows plugging multiple protocols together, depending on specific needs.
+Omnipin combines multiple technologies to provide the most secure, flexible and resilient website deployment tool. Omnipin's design is modular and allows plugging multiple protocols together, depending on specific needs.
 
 ```mermaid
 flowchart TD
@@ -60,10 +60,10 @@ The primary feature is uploading and re-pinning to multiple decentralized storag
 
 Since content on IPFS and Swarm has deterministic immutable hashes, it is possible to seamlessly replicate content (in a form of files or a DAG) into as many copies as possible. The reason why you would want to replicate content is to provide a fallback in case the first provider fails or does not have certain chunks of the new website version, while it is able to serve pre-existing chunks.
 
-Blumen scans the environment for provided API keys and tokens for storage providers, but is also possible to specify providers manually.
+Omnipin scans the environment for provided API keys and tokens for storage providers, but is also possible to specify providers manually.
 
 ```sh
-blumen deploy --providers Storacha,Lighthouse
+omnipin deploy --providers Storacha,Lighthouse
 ```
 
 ```jsonc
@@ -89,15 +89,15 @@ blumen deploy --providers Storacha,Lighthouse
 
 ## ENS Updates
 
-In order to not have to type a full IPFS hash to open a website, as well as improve SEO, UX and have a transparent on-chain history of website uodates, Blumen integrates with ENS. It is an Ethereum-based alternative to DNS and it is possible to use ENS for serving websites. ENS has a special record type called [`contentHash`](https://docs.ens.domains/ensip/7). It contains an encoded hash which includes such information as protocol version, codec data and the content hash itself, usually a multiformats CID.
+In order to not have to type a full IPFS hash to open a website, as well as improve SEO, UX and have a transparent on-chain history of website uodates, Omnipin integrates with ENS. It is an Ethereum-based alternative to DNS and it is possible to use ENS for serving websites. ENS has a special record type called [`contentHash`](https://docs.ens.domains/ensip/7). It contains an encoded hash which includes such information as protocol version, codec data and the content hash itself, usually a multiformats CID.
 
-Blumen has multiple ways of updating ENS, varying in security and UX properties:
+Omnipin has multiple ways of updating ENS, varying in security and UX properties:
 
-|  Type | Name theft protection  | Access to other records | Multi Factor Authorization | Restricted access | Complexity
-|---|---|---|---|---|--|
-| EOA | No 🚨 | No 🚨 | No | No | Low
-| Proposer | Yes | Yes | Yes | No | High
-| Zodiac Roles | Yes | Yes | No | Yes | Medium
+|  Type | Name theft protection  | Multi Factor Authorization | Restricted access | Complexity
+|---|---|---|---|---|
+| EOA | No 🚨 | No | No | Low
+| Proposer | Yes | Yes | No | High
+| Zodiac Roles | Yes | No | Yes | Medium
 
 ### EOA
 
@@ -129,12 +129,12 @@ A transaction is signed by a private key provided via `BLUMEN_PK` and is immedia
 
 2. Install Safe Zodiac Roles Module through the [Zodiac app](https://app.safe.global/share/safe-app?appUrl=https%3A%2F%2Fzodiac.gnosisguild.org%2F)
 
-3. Generate a JSON for a batch transaction setup via `blumen zodiac`:
+3. Generate a JSON for a batch transaction setup via `omnipin zodiac`:
 
 ```sh
-blumen zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1
+omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1
 
-# blumen zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --verbose
+# omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --verbose
 # ⚠️ `BLUMEN_PK` environment variable not set.
 # 🟢 Generating a Secp256k1 keypair
 #    0xeb12099469558be35d53d606e1d5e69d0854c57ef6658e909325c5a0e6493415
@@ -150,12 +150,12 @@ This will create a `zodiac.json` in a current directory. If `BLUMEN_PK` is not s
 
 5. Drag and drop the JSON file and confirm transaction execution.
 
-6. This will deploy a new Zodiac Roles module address which should be passed during deployment.
+6. This will deploy a new Zodiac Roles module, whose address which should be passed during deployment.
 
 #### Usage
 
 Updating ENS is now possible to do within a single command, while maintaining security properties of a Safe.
 
 ```sh
-blumen deploy --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 blumen.stauro.eth --roles-mod-address 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1
+omnipin deploy --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 omnipin.eth --roles-mod-address 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1
 ```

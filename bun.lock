@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "blumen",
+      "name": "omnipin",
       "devDependencies": {
         "@biomejs/biome": "^2.2.5",
         "@ipld/car": "^5.4.2",

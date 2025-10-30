@@ -13,7 +13,7 @@ import { statusAction } from './actions/status.js'
 import { zodiacAction } from './actions/zodiac.js'
 import { isTTY } from './constants.js'
 
-const cli = new CLI({ name: 'blumen', plugins: isTTY ? [colorPlugin] : [] })
+const cli = new CLI({ name: 'omnipin', plugins: isTTY ? [colorPlugin] : [] })
 
 const onchainOptions = [
   {
