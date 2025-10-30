@@ -12,8 +12,8 @@ export const dnsLinkAction = async ({
   options?: { verbose?: boolean }
 }) => {
   const { verbose = false } = options
-  const apiKey = process.env.BLUMEN_CF_KEY
-  const zoneId = process.env.BLUMEN_CF_ZONE_ID
+  const apiKey = process.env.OMNIPIN_CF_KEY
+  const zoneId = process.env.OMNIPIN_CF_ZONE_ID
 
   if (!apiKey) throw new MissingKeyError(`CF_KEY`)
   if (!zoneId) throw new MissingKeyError(`CF_ZONE_ID`)

@@ -4,7 +4,7 @@ Omnipin supports uploading on the [Swarm](https://ethswarm.org) decentralized ne
 
 ## Swarmy
 
-- API token env variables: `BLUMEN_SWARMY_TOKEN`
+- API token env variables: `OMNIPIN_SWARMY_TOKEN`
 - Supported methods: Upload
 
 Omnipin supports uploading on the [Swarm](https://ethswarm.org) decentralized network via [Swarmy](https://swarmy.cloud), a storage provider. A website is not possible to upload both on Swarm and IPFS, so when opting in for Swarmy, other providers will be ignored.
@@ -24,7 +24,7 @@ After receiving your storage quota, generate an API key from the "API Keys" sect
 Once you have your API key, put it in the environment variables:
 
 ```
-BLUMEN_SWARMY_TOKEN=123...
+OMNIPIN_SWARMY_TOKEN=123...
 ```
 
 Then run the deployment command:
@@ -35,7 +35,7 @@ omnipin deploy --ens omnipin.eth --safe eth:0x...
 
 ## Bee node
 
-- API token env variables: `BLUMEN_BEE_TOKEN`, `BLUMEN_BEE_URL`
+- API token env variables: `OMNIPIN_BEE_TOKEN`, `OMNIPIN_BEE_URL`
 - Supported methods: Upload
 
 1. Fund your node wallet by [depositing BZZ](https://docs.ethswarm.org/docs/develop/access-the-swarm/buy-a-stamp-batch/#fund-your-nodes-wallet).
@@ -53,7 +53,7 @@ curl -sX POST http://localhost:1633/stamps/<amount>/<depth>
 Add the batch ID to the environment variables:
 
 ```sh
-BLUMEN_BEE_TOKEN=8fc...2c6b
+OMNIPIN_BEE_TOKEN=8fc...2c6b
 ```
 
 Then run the the deployment command:

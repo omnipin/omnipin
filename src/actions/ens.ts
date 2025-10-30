@@ -70,7 +70,7 @@ export const ensAction = async ({
 
   const provider = Provider.from(transport)
 
-  const pk = process.env.BLUMEN_PK as Hex
+  const pk = process.env.OMNIPIN_PK as Hex
 
   if (!pk) throw new MissingKeyError('PK')
 

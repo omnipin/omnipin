@@ -35,10 +35,10 @@ export const zodiacAction = async ({
 
   if (!safe) throw new MissingCLIArgsError(['safe'])
 
-  let pk: Hex = process.env.BLUMEN_PK as Hex
+  let pk: Hex = process.env.OMNIPIN_PK as Hex
 
   if (!pk) {
-    logger.warn('`BLUMEN_PK` environment variable not set.')
+    logger.warn('`OMNIPIN_PK` environment variable not set.')
     logger.info('Generating a Secp256k1 keypair')
     pk = randomPrivateKey()
     logger.text(`   ${styleText('bgBlue', pk)}`)
