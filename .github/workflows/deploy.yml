@@ -1,4 +1,4 @@
-name: Deploy with Blumen
+name: Deploy with Omnipin
 on:
   push:
     branches: [main]
@@ -7,26 +7,26 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     outputs:
-      cid: ${{ steps.pack_blumen.outputs.cid }}
+      cid: ${{ steps.pack_omnipin.outputs.cid }}
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.2.20
-      - name: Install Blumen
-        run: bun i -g blumen@1.2.1
+      - name: Install Omnipin
+        run: bun i -g omnipin@1.0.0
       - name: Install deps
         run: cd docs && bun i
       - name: Build website
         run: cd docs && bun docs:build
       - name: Deploy the site
-        run: cd docs/.vitepress && blumen deploy --strict --dnslink blumen.stauro.dev --ens ${{ vars.BLUMEN_ENS }} --safe ${{ vars.BLUMEN_SAFE }}
+        run: cd docs/.vitepress && omnipin deploy --strict --dnslink omnipin.eth.link --ens ${{ vars.OMNIPIN_ENS }} --safe ${{ vars.OMNIPIN_SAFE }}
         env:
-          BLUMEN_CF_KEY: ${{ secrets.BLUMEN_CF_KEY }}
-          BLUMEN_CF_ZONE_ID: ${{ secrets.BLUMEN_CF_ZONE_ID }}
-          BLUMEN_PINATA_TOKEN: ${{ secrets.BLUMEN_PINATA_TOKEN }}
-          BLUMEN_STORACHA_PROOF: ${{ secrets.BLUMEN_STORACHA_PROOF }}
-          BLUMEN_STORACHA_TOKEN: ${{ secrets.BLUMEN_STORACHA_TOKEN }}
-          BLUMEN_LIGHTHOUSE_TOKEN: ${{ secrets.BLUMEN_LIGHTHOUSE_TOKEN }}
-          BLUMEN_4EVERLAND_TOKEN: ${{ secrets.BLUMEN_4EVERLAND_TOKEN }}
-          BLUMEN_PK: ${{ secrets.BLUMEN_PK }}
+          OMNIPIN_CF_KEY: ${{ secrets.OMNIPIN_CF_KEY }}
+          OMNIPIN_CF_ZONE_ID: ${{ secrets.OMNIPIN_CF_ZONE_ID }}
+          OMNIPIN_PINATA_TOKEN: ${{ secrets.OMNIPIN_PINATA_TOKEN }}
+          OMNIPIN_STORACHA_PROOF: ${{ secrets.OMNIPIN_STORACHA_PROOF }}
+          OMNIPIN_STORACHA_TOKEN: ${{ secrets.OMNIPIN_STORACHA_TOKEN }}
+          OMNIPIN_LIGHTHOUSE_TOKEN: ${{ secrets.OMNIPIN_LIGHTHOUSE_TOKEN }}
+          OMNIPIN_4EVERLAND_TOKEN: ${{ secrets.OMNIPIN_4EVERLAND_TOKEN }}
+          OMNIPIN_PK: ${{ secrets.OMNIPIN_PK }}

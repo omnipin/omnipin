@@ -3,25 +3,26 @@
         <div class="container">
             <img
                 class="logo"
-                src="/logo-text.svg"
-                alt="Blumen logo"
-                width="200"
-                height="200"
+                src="/logo.svg"
+                alt="Omnipin logo"
+                width="400"
+                height="400"
             />
-            <h1 class="title">Self-custodial decentralized web deployments</h1>
-            <img src="/demo.png" alt="Blumen logo" />
+            <h1 class="title">
+                The ultimate decentralized website deployment toolkit
+            </h1>
+            <img src="/demo.png" alt="Omnipin logo" />
             <p class="subtitle">
-                Blumen is the ultimate command-line deployment tool with
-                automatic replication of content to independent IPFS providers
-                and multi-factor authorization of ENS updates. No sign up
-                required.
+                Omnipin is a trustless command-line website deployment tool with
+                automatic content replication and secure ENS updates, powered by
+                Safe. No sign up required.
             </p>
             <div class="links">
                 <a href="/docs/">Get Started</a>
                 <a
                     target="_blank"
                     rel="noreferer"
-                    href="https://github.com/StauroDEV/blumen"
+                    href="https://github.com/omnipin/omnipin"
                     >GitHub</a
                 >
             </div>
@@ -40,14 +41,15 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    gap: 2rem;
 }
 .title {
     line-height: 1.2;
     font-size: 1.25rem;
 }
 .subtitle {
-    font-size: 0.8rem;
+    font-size: 0.95rem;
+    max-width: 680px;
 }
 
 .links {

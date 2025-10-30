@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import type { Address } from 'ox/Address'
 import { CLI } from 'spektr'
 import { colorPlugin } from 'spektr/plugins/color.js'
 import { type DeployActionArgs, deployAction } from './actions/deploy.js'
@@ -9,11 +10,12 @@ import { packAction } from './actions/pack.js'
 import { pinAction } from './actions/pin.js'
 import { pingAction } from './actions/ping.js'
 import { statusAction } from './actions/status.js'
+import { zodiacAction } from './actions/zodiac.js'
 import { isTTY } from './constants.js'
 
-const cli = new CLI({ name: 'blumen', plugins: isTTY ? [colorPlugin] : [] })
+const cli = new CLI({ name: 'omnipin', plugins: isTTY ? [colorPlugin] : [] })
 
-const ensOptions = [
+const onchainOptions = [
   {
     name: 'chain',
     description: 'Chain to use for ENS',
@@ -40,10 +42,19 @@ const ensOptions = [
     type: 'boolean',
     short: 'v',
   },
+] as const
+
+const ensOptions = [
+  ...onchainOptions,
   {
     name: 'dry-run',
     description: 'Do not send a transaction',
     type: 'boolean',
+  },
+  {
+    name: 'roles-mod-address',
+    description: 'Zodiac Roles Module address',
+    type: 'string',
   },
 ] as const
 
@@ -236,6 +247,14 @@ cli.command<[string]>('pin', ([cid], options) => pinAction({ cid, options }), {
   ] as const,
   description: 'Pin an IPFS CID on multiple providers',
 })
+
+cli.command<[Address]>(
+  'zodiac',
+  ([rolesModAddress], options) => zodiacAction({ rolesModAddress, options }),
+  {
+    options: [...onchainOptions] as const,
+  },
+)
 
 cli.help()
 cli.handle(process.argv.slice(2))

@@ -1,9 +1,9 @@
-# `blumen ping`
+# `omnipin ping`
 
 Ping an endpoint until it resolves content.
 
 ```sh
-blumen ping <cid> <gateway url>
+omnipin ping <cid> <gateway url>
 ```
 
 ## Options

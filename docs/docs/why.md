@@ -1,4 +1,4 @@
-# Why Blumen?
+# Why Omnipin?
 
 ## Fragility of classic front-ends
 
@@ -27,26 +27,28 @@ It is a common misconception that uploading files on IPFS makes them distributed
 
 2. **IPFS doesn't provide any guarantees on content persistence**. Storage providers may unpin or delete content at any point of time, for example if you stop paying a service subscription. The content is available on the network as long as one or more node have it and are discoverable anyhow, for example DHT.
 
-One of the key features of Blumen is automatic re-pinning of content for IPFS on many independent IPFS storage providers. The full list is available [here](/docs/ipfs).
+One of the key features of Omnipin is automatic re-pinning of content for IPFS on many independent IPFS storage providers. The full list is available [here](/docs/ipfs).
 
-[Swarm](https://ethswarm.org), on the other hand, enforces at least 4 replicas of content by default. It can be used as an alternative to IPFS hosting and is also [supported](/docs/swarm) by Blumen.
+[Swarm](https://ethswarm.org), on the other hand, enforces at least 4 replicas of content by default. It can be used as an alternative to IPFS hosting and is also [supported](/docs/swarm) by Omnipin.
 
 ## Decentralized vendor lock-in
 
-Certain platforms advertise themselves as "decentralized web hosting". While the app hosted on such platform itself might be somewhat decentralized (for example by pinning to multiple IPFS providers and utilizing ENS), it does not mean that such a platform can't take the website down or just go in vain (for example because of business not going well). The reliability of the application is bound to the platform.
+Certain platforms advertise themselves as "decentralized web hosting". While the app hosted on such platform itself might be somewhat decentralized (for example using ENS instead of DNS), it does not mean that such a platform can't take the website down or just go in vain (for example because of business not going well). The reliability of the application is bound to the platform.
 
-A few platforms additionally opt in for simpler solutions by sacrificing decentralization. One such example is Fleek. It uses IPNS which is not feasible for replication, and doesn't get pinned the same way IPFS hashes are pinned, even though it is possible.
+Omnipin does not impose such risks because it is not a platform. It is instead a tool that talks to infrastructure providers and protocols directly without middlemen. There is no "Sign Up" button. The underlying infrastucture is chosen by the user.
 
-Blumen does not impose such risks because it is not a platform. It is instead a tool that talks to infrastructure providers and protocols directly without middlemen. There is no "Sign Up" button. The underlying infrastucture is chosen by the user.
+Omnipin never uses mutable references besides ENS and DNSLink, making sure that all of the content references are immutable and deterministic (IPFS CIDs and Swarm reference IDs). Such approach additionally provides a transparent and permanent history of website changes for an ENS name.
 
-Blumen never uses mutable references besides ENS, making sure all the content references are immutable and deterministic (IPFS CIDs and Swarm reference IDs). Such approach additionally provides a transparent and permanent history of website changes for an ENS name.
+## Security implications of automatic updates
 
-## Dangers of automatic updates
+Any website may be updated at any time by pushing a new version without much notice or any required approval steps, by default. This is mostly how websites and web apps are updated, as a whole.
 
-The web is unstable. Any website may be updated at any time by pushing a new version without much notice or any required approval steps, by default. This is mostly how websites and web apps are updated.
+While this is indeed very convenient, such approach is not good for security. In case of developer machine compromise, there are almost no barriers for publishing an exploited version of the web app without anyone being able to stop the attacker before the damage is done. This is exactly what happened during the [Safe front-end hack](https://www.ledger.com/blog-learning-from-the-bybit-safe-attack).
 
-While this is indeed very convenient, such approach is terrible for security. In case of developer machine compromise, there are almost no barriers for publishing an exploited version of the web app without anyone being able to stop the attacker before the damage is done. This is exactly what happened during the [Safe front-end hack](https://www.ledger.com/blog-learning-from-the-bybit-safe-attack).
-
-Such status quo should not apply to dApps, especially financially sensitive ones where security is of upmost importance. That is the primary reason why Blumen integrates with [Safe](https://safe.global) for ENS update management.
+Such status quo should not apply to dApps, especially financially sensitive ones where security is of upmost importance. That is the primary reason why Omnipin integrates with the [Safe Proposer Flow](https://help.safe.global/en/articles/235770-proposers) for ENS update management.
 
 With a multi-sig wallet sitting on top of an ENS name it is possible to add an multi-factor authorization layer for website updates. It is also not required to be one of the wallet owners to propose ENS updates, which significantly minimizes potential damage from an owner account getting compromised.
+
+However, such high security requirements do not apply to everybody. For that reason, Omnipin alternatively integrates with the [Zodiac Roles](https://docs.roles.gnosisguild.org) module. The module allows creating a restricted role that is only allowed to call a specific function on a specific smart contract.
+
+Omnipin uses Zodiac Roles to create a special role that is narrowed to only ENS website reference on an ENS name's resolver. Such integration provides moderate security benefits to users who do not wish to have a mult-factor authorization flow.

@@ -1,9 +1,9 @@
-# `blumen pin`
+# `omnipin pin`
 
 Pin an IPFS CID on multiple providers. Only providers that support pinning are used.
 
 ```
-blumen pin <cid>
+omnipin pin <cid>
 ```
 
 ## Options

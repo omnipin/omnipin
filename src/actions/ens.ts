@@ -33,14 +33,16 @@ import {
   simulateTransaction,
   waitForTransaction,
 } from '../utils/tx.js'
+import { execTransactonWithRole } from '../utils/zodiac-roles/exec.js'
 
 export type EnsActionArgs = Partial<{
   chain: ChainName
   safe: Address | EIP3770Address
   rpcUrl: string
-  resolverAddress: Address
+  'resolver-address': Address
   verbose: boolean
   'dry-run': boolean
+  'roles-mod-address': Address
 }>
 
 export const ensAction = async ({
@@ -56,7 +58,8 @@ export const ensAction = async ({
     chain: chainName = 'mainnet',
     safe: safeAddress,
     rpcUrl,
-    resolverAddress,
+    'resolver-address': resolverAddress,
+    'roles-mod-address': rolesModAddress,
   } = options
 
   assertCID(cid)
@@ -141,44 +144,60 @@ export const ensAction = async ({
       data,
       value: 0n,
     }
-    const { safeTxHash } = await prepareSafeTransactionData({
-      txData,
-      safeAddress,
-      chainId: chain.id,
-      provider,
-    })
 
-    logger.info(`Signing a Safe transaction with a hash ${safeTxHash}`)
+    if (rolesModAddress) {
+      logger.info(`Using Zodiac Roles module`)
 
-    const senderSignature = await generateSafeTransactionSignature({
-      safeAddress,
-      txData,
-      chainId: chain.id,
-      privateKey: pk,
-    })
+      await execTransactonWithRole({
+        provider,
+        data,
+        resolverAddress: to,
+        rolesModAddress,
+        from: address,
+        privateKey: pk,
+        chainId: chain.id,
+        explorerUrl: chain.blockExplorers.default.url,
+      })
+    } else {
+      const { safeTxHash } = await prepareSafeTransactionData({
+        txData,
+        safeAddress,
+        chainId: chain.id,
+        provider,
+      })
 
-    if (!options['dry-run']) {
-      logger.info('Proposing a Safe transaction')
+      logger.info(`Signing a Safe transaction with a hash ${safeTxHash}`)
 
-      try {
-        await proposeTransaction({
-          txData,
-          safeAddress,
-          safeTxHash,
-          senderSignature: toHex(senderSignature),
-          chainId: chain.id,
-          chainName: chainName,
-          address,
-        })
-        const safeLink = `https://app.safe.global/transactions/queue?safe=${safeAddress}`
-        logger.success(
-          `Transaction proposed to a Safe wallet.\nOpen in a browser: ${
-            isTTY ? styleText('underline', safeLink) : safeLink
-          }`,
-        )
-      } catch (e) {
-        logger.error('Failed to propose a transaction', e)
-        return
+      const senderSignature = await generateSafeTransactionSignature({
+        safeAddress,
+        txData,
+        chainId: chain.id,
+        privateKey: pk,
+      })
+
+      if (!options['dry-run']) {
+        logger.info('Proposing a Safe transaction')
+
+        try {
+          await proposeTransaction({
+            txData,
+            safeAddress,
+            safeTxHash,
+            senderSignature: toHex(senderSignature),
+            chainId: chain.id,
+            chainName: chainName,
+            address,
+          })
+          const safeLink = `https://app.safe.global/transactions/queue?safe=${safeAddress}`
+          logger.success(
+            `Transaction proposed to a Safe wallet.\nOpen in a browser: ${
+              isTTY ? styleText('underline', safeLink) : safeLink
+            }`,
+          )
+        } catch (e) {
+          logger.error('Failed to propose a transaction', e)
+          return
+        }
       }
     }
   } else {

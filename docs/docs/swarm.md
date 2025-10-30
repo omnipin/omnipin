@@ -1,13 +1,13 @@
 # Swarm
 
-Blumen supports uploading on the [Swarm](https://ethswarm.org) decentralized network via [Swarmy](https://swarmy.cloud) and a Bee node.
+Omnipin supports uploading on the [Swarm](https://ethswarm.org) decentralized network via [Swarmy](https://swarmy.cloud) and a Bee node.
 
 ## Swarmy
 
 - API token env variables: `BLUMEN_SWARMY_TOKEN`
 - Supported methods: Upload
 
-Blumen supports uploading on the [Swarm](https://ethswarm.org) decentralized network via [Swarmy](https://swarmy.cloud), a storage provider. A website is not possible to upload both on Swarm and IPFS, so when opting in for Swarmy, other providers will be ignored.
+Omnipin supports uploading on the [Swarm](https://ethswarm.org) decentralized network via [Swarmy](https://swarmy.cloud), a storage provider. A website is not possible to upload both on Swarm and IPFS, so when opting in for Swarmy, other providers will be ignored.
 
 ### Setup
 
@@ -30,7 +30,7 @@ BLUMEN_SWARMY_TOKEN=123...
 Then run the deployment command:
 
 ```sh
-blumen deploy --ens blumen.stauro.eth --safe eth:0x...
+omnipin deploy --ens omnipin.eth --safe eth:0x...
 ```
 
 ## Bee node
@@ -59,5 +59,5 @@ BLUMEN_BEE_TOKEN=8fc...2c6b
 Then run the the deployment command:
 
 ```sh
-blumen deploy --ens blumen.stauro.eth --safe eth:0x...
+omnipin deploy --ens omnipin.eth --safe eth:0x...
 ```

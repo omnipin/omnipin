@@ -1,6 +1,6 @@
 # DNSLink
 
-Blumen supports automatic DNS updates via [DNSLink](https://dnslink.dev).
+Omnipin supports automatic DNS updates via [DNSLink](https://dnslink.dev).
 
 ## Setup
 
@@ -23,7 +23,7 @@ BLUMEN_CF_ZONE_ID=...
 
 ## Running the deployment
 
-Once all the environment variables are ready, you simply have to pass a `--dnslink` flag and Blumen will automatically update DNSLink value:
+Once all the environment variables are ready, you simply have to pass a `--dnslink` flag and Omnipin will automatically update DNSLink value:
 
 ```
 📦 Packing .vitepress/dist (7.76MB)
@@ -37,5 +37,5 @@ IPFS:      https://bafybeic5ddic5i25eoee2bhw4br4cug45xeemhtsyklbj3kld6a6gcjv5u.i
 Providers: https://delegated-ipfs.dev/routing/v1/providers/bafybeic5ddic5i25eoee2bhw4br4cug45xeemhtsyklbj3kld6a6gcjv5u
 
 🟢 Updating DNSLink
-✔ testing.stauro.xyz now points to /ipfs/bafybeic5ddic5i25eoee2bhw4br4cug45xeemhtsyklbj3kld6a6gcjv5u
+✔ omnipin now points to /ipfs/bafybeic5ddic5i25eoee2bhw4br4cug45xeemhtsyklbj3kld6a6gcjv5u
 ```

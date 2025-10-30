@@ -2,24 +2,24 @@
 
 ## Installation
 
-Blumen supports one of the these JavaScript runtimes: [Node.js](https://nodejs.org) (20+), [Deno](https://deno.com) (2.2.11+) and [Bun](https://bun.sh).
+Omnipin supports one of the these JavaScript runtimes: [Node.js](https://nodejs.org) (20+), [Deno](https://deno.com) (2.2.11+) and [Bun](https://bun.sh).
 
 :::code-group
 
 ```bash [npm]
-npm i -g blumen
+npm i -g omnipin
 ```
 
 ```bash [pnpm]
-pnpm i -g blumen
+pnpm i -g omnipin
 ```
 
 ```bash [bun]
-bun i -g blumen
+bun i -g omnipin
 ```
 
 ```bash [deno]
-deno install --global --allow-read --allow-env --allow-write --allow-net npm:blumen
+deno install --global --allow-read --allow-env --allow-write --allow-net npm:omnipin
 ```
 
 :::
@@ -63,7 +63,7 @@ Storacha uses spaces (similar to buckets). You would need to create one, if you 
 
 ```bash [Terminal]
 storacha space create
-# ? What would you like to call this space? blumen-docs
+# ? What would you like to call this space? omnipin-docs
 # 🔑 You need to save the following secret recovery key somewhere safe! For example write it down on
 # a piece of paper and put it inside your favorite book.
 
@@ -109,7 +109,7 @@ BLUMEN_STORACHA_TOKEN=Mg123456789ogR1enjgn123bi1KqzYz123456v123iLJkeiLIO4=
 BLUMEN_STORACHA_PROOF=mAYIEAJM...uIXm2rXyL...Zxe4Bh6g2RQZwjDUcw3qrvMNXzu2pg/rdd...IGXkvTsk9jnMGkBKPo...A7rC1u/tWHthsGVm8F6...pYJQABcRIgFFoH6R...8ukdZvYKuk2pthEmuyCVkAmPlC/kT3MM
 ```
 
-Blumen is now ready to deploy your app on IPFS.
+Omnipin is now ready to deploy your app on IPFS.
 
 Read the environment variables from `.env` file:
 
@@ -117,10 +117,10 @@ Read the environment variables from `.env` file:
 source .env
 ```
 
-And run `blumen deploy` (will deploy `dist` dir by default):
+And run `omnipin deploy` (will deploy `dist` dir by default):
 
 ```bash [Terminal]
-blumen deploy
+omnipin deploy
 ```
 
 ```
@@ -145,13 +145,13 @@ For a full list of supported IPFS providers, refer to the ["IPFS" page](/docs/ip
 
 ## ENS Updates
 
-Blumen directly integrates with [ENS](https://ens.domains) (Ethereum Name Service).
+Omnipin directly integrates with [ENS](https://ens.domains) (Ethereum Name Service).
 
 Similarly to how DNS is used for websites to not expose raw IP addresses and be more human-friendly, ENS serves the same purpose for content hashes, for example IPFS CIDs.
 
 ```mermaid
 graph LR
-    ENS["ENS Name (stauro.eth)"]
+    ENS["ENS Name (omnipin.eth)"]
     CH["Content-Hash Record"]
     IPFS["IPFS CID (bafy...)"]
 
@@ -169,78 +169,65 @@ BLUMEN_PK=<0xensmanagerprivatekeygoeshere>
 ```
 
 ```bash [Terminal]
-blumen deploy --ens blumen.stauro.eth
+omnipin deploy --ens omnipin.eth
 ```
 
 Updating ENS Content-Hash record requires paying a network fee. The fee varies depending on network load.
 
-## MFA with Safe
+## Safe integration
 
 Using a private key of the ENS name manager account imposes significant security risks. In case of environment compromise, an attacker is able to update the ENS name to a malicious version.
 
-One of the unique features that Blumen offers is [Safe](https://safe.global) integration. Instead of EOA managing the ENS name, a multi-signature wallet is put in the front. Such approach adds an extra factor of authorisation before a website update is pushed onchain.
+One of the unique features that Omnipin offers is [Safe](https://safe.global) integration. Instead of EOA managing the ENS name, a multi-signature wallet is put in the front. Such approach allows for advancing security for ENS update pipelines, such as multi-factor authorisation with the [Proposer Flow](/docs/how-it-works#proposer) or role-based permissions with [Zodiac Roles](/docs/how-it-works#zodiac-roles).
 
-With Safe, ENS update process is split into two stages:
-1. An update transaction is created from a "proposer". Proposer is a special Ethereum account that does not have access to a Safe wallet but is allowed to propose transactions to a wallet without actually executing them.
-2. One (or whatever the threshold is) of the Safe owners approves the transaction sent by a proposer and updates an ENS name record.
+Proposer flow requires additional factor of authorisation on every deploy, which might be excessive for some websites, especially those with frequent updates. Because of that, the guide will instead cover setup with Zodiac Roles.
 
-Head over to the [Safe app](https://app.safe.global) and create a new wallet, if you don't have a Safe wallet yet.
+1. Head over to the [Safe app](https://app.safe.global) and create a new wallet, if you don't have one yet.
 
-Next, a proposer account is required to be added. A proposer is not allowed to approve transactions but can propose them to the wallet. To add a proposer, go to the Safe app > Settings > Setup. Scroll down to "Proposers" and click "Add Proposer". You can add multiple proposers to your Safe, but only one can be used at a time.
+2. Install Safe Zodiac Roles Module through the [Zodiac app](https://app.safe.global/share/safe-app?appUrl=https%3A%2F%2Fzodiac.gnosisguild.org%2F)
 
-![Proposer UI](/proposer.png)
-
-Once the account is added, put it's private key to environment variables:
-
-```sh [.env]
-BLUMEN_PK=0x...
-```
-
-With everything set up, a deployment can be triggered.
+3. Generate a JSON for a batch transaction setup via `omnipin zodiac`:
 
 ```sh
-blumen deploy --ens=blumen.stauro.eth --safe=eth:0x...
+omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1
+
+# omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --verbose
+# ⚠️ `BLUMEN_PK` environment variable not set.
+# 🟢 Generating a Secp256k1 keypair
+#    0xeb12099469558be35d53d606e1d5e69d0854c57ef6658e909325c5a0e6493415
+# 🟢 Save the private key and do not share it to anyone
+# 🟢 Created zodiac.json in current directory
+# Open in a browser: https://app.safe.global/apps/open?safe=:0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262&appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder
+# Upload zodiac.json in the UI
 ```
 
-```txt
-# 📦 Packing dist (4.43MB)
-# 🟢  Root CID: bafybei...lk4
-# 🟢  Deploying with providers: Storacha, Filebase
-# ✓ [>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>] Finished in 5s
-# ✔ Deployed across all providers
+This will create a `zodiac.json` in a current directory. If `BLUMEN_PK` is not specified, an Ethereum Account will be generated on the spot.
 
-# Open in a browser:
-# IPFS:      https://bafybei...lk4.ipfs.dweb.link
-# Providers: https://delegated-ipfs.dev/routing/v1/providers/bafybei...lk4
+4. Head over to the Safe [transaction builder](https://app.safe.global/apps/open?appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder) page.
 
-# Validating transaction for wallet <0x...>
-# Preparing a transaction for Safe <eth:0x...>
-# Signing a Safe transaction
-# Proposing a Safe transaction
-# Transaction proposed to a Safe wallet.
-# Open in a browser: https://app.safe.global/transactions/queue?safe=<0x...>
+5. Drag and drop the JSON file and confirm transaction execution.
+
+6. This will deploy a new Zodiac Roles module address which should be passed during deployment.
+
+Updating ENS is now possible to do within a single command, while maintaining security properties of a Safe.
+
+```sh
+omnipin deploy \
+    --safe 0xyoursafeAddress \
+    omnipin.eth \
+    --roles-mod-address 0xyourRolesModAddress
 ```
 
-The web app got deployed on IPFS. The last step is approving a transaction proposal to update the ENS name record that points to the version of the app.
-
-Click on the last link emitted by Blumen deployment logs to take you straight to the transaction queue:
-
-![Safe app](/safe.png)
-
-Verify the transaction data and click "Continue" and then "Execute".
-
-![Safe tx](/safe-tx-view.png)
-
-Once it finishes getting processed, the ENS Content-Hash record should start pointing to your new deployment. Now the web app should be discoverable through [any ENS gateway](https://docs.ens.domains/dweb/intro/#browser-support--gateways), for example eth.limo.
+Once a transaction finishes getting indexed, the ENS Content-Hash record should start pointing to a new deployment. Now the web app should be discoverable through [any ENS gateway](https://docs.ens.domains/dweb/intro/#browser-support--gateways), for example eth.limo.
 
 ## Automation with CI/CD
 
-Blumen seamlessly integrates with CI/CD pipelines.
+Omnipin seamlessly integrates with CI/CD pipelines.
 
 All the previous steps can be automated in one GitHub Actions workflow. The workflow deploys a new version on IPFS every time a commit is pushed to the `main` branch and automatically proposes a transaction to Safe.
 
 ```yaml
-name: Deploy with Blumen
+name: Deploy with Omnipin
 on:
   push:
     branches: main
@@ -250,12 +237,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - name: Install Blumen
-        run: bun i -g blumen@1.2.1
+      - name: Install Omnipin
+        run: bun i -g omnipin@1.2.1
       - name: Build website
         run: bun i && bun run build
       - name: Deploy the site
-        run: blumen deploy .vitepress/dist --strict --ens ${{ vars.BLUMEN_ENS }} --safe ${{ vars.BLUMEN_SAFE }}
+        run: omnipin deploy .vitepress/dist --strict --ens ${{ vars.BLUMEN_ENS }} --safe ${{ vars.BLUMEN_SAFE }} --roles-mod-address ${{ vars.BLUMEN_ROLES_MOD }}
         env:
           BLUMEN_PINATA_TOKEN: ${{ secrets.BLUMEN_PINATA_TOKEN }}
           BLUMEN_STORACHA_PROOF: ${{ secrets.BLUMEN_STORACHA_PROOF }}

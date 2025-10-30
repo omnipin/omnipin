@@ -1,15 +1,13 @@
 # CI/CD
 
-Blumen can be integrated with CI/CD pipelines to deploy dApps automatically.
+Omnipin can be integrated with CI/CD pipelines to deploy dApps automatically.
 
-## Providers
+## GitHub Actions
 
-### GitHub Actions
-
-Blumen uses this GitHub Action to deploy it's own website.
+Omnipin uses this GitHub Action to deploy it's own website.
 
 ```yaml
-name: Deploy with Blumen
+name: Deploy with Omnipin
 on:
   push:
     branches: main
@@ -19,12 +17,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - name: Install Blumen
-        run: bun i -g blumen@1.2.1
+      - name: Install Omnipin
+        run: bun i -g omnipin@1.2.1
       - name: Build website
         run: bun i && bun run build
       - name: Deploy the site
-        run: blumen deploy .vitepress/dist --strict --ens ${{ vars.BLUMEN_ENS }} --safe ${{ vars.BLUMEN_SAFE }}
+        run: omnipin deploy .vitepress/dist --strict --ens ${{ vars.BLUMEN_ENS }} --safe ${{ vars.BLUMEN_SAFE }}
         env:
           BLUMEN_PINATA_TOKEN: ${{ secrets.BLUMEN_PINATA_TOKEN }}
           BLUMEN_STORACHA_PROOF: ${{ secrets.BLUMEN_STORACHA_PROOF }}
@@ -34,7 +32,7 @@ jobs:
           BLUMEN_PK: ${{ secrets.BLUMEN_PK }}
 ```
 
-### GitLab CI
+## GitLab CI
 
 Before executing the pipeline, you need to set up the following environment variables:
 
@@ -51,9 +49,9 @@ deploy:
   stage: deploy
   image: node:22
   script:
-    - pnpm i -g blumen@1.2.1
+    - pnpm i -g omnipin@1.2.1
     - pnpm i && pnpm build
-    - blumen deploy --strict
+    - omnipin deploy --strict
   only:
     - main
 ```

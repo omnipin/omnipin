@@ -1,9 +1,9 @@
-# `blumen ens`
+# `omnipin ens`
 
 Updates ENS domain Content-Hash with an IFPS CID.
 
 ```sh
-blumen ens <cid> <domain.eth>
+omnipin ens <cid> <domain.eth>
 ```
 
 Requires a ENS owner's private key (`BLUMEN_PK`) to be defined.
@@ -28,7 +28,7 @@ EVM Chain to use for ENS deployment. Requires `--ens` option to be defined.
 Deploy using a [Safe](https://safe.global) multisig wallet. Requires private key of a Safe owner/delegate to sign a transaction. [EIP-3770](https://eips.ethereum.org/EIPS/eip-3770) addresses are supported.
 
 ```sh
-blumen ens bafybeibp54tslsez36quqptgzwyda3vo66za3rraujksmsb3d5q247uht4 v1rtl.eth --safe gor:0x1234567890000000000000000000000000000000 --chain sepolia
+omnipin ens bafybeibp54tslsez36quqptgzwyda3vo66za3rraujksmsb3d5q247uht4 v1rtl.eth --safe gor:0x1234567890000000000000000000000000000000 --chain sepolia
 ```
 
 ### `rpc-url`

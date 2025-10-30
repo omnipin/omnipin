@@ -193,7 +193,8 @@ const radicleIcon = `
 
 // https://vitepress.dev/reference/site-config
 export default withMermaid({
-  title: 'Blumen',
+  title: 'Omnipin',
+  head: [['link', { rel: 'icon', href: '/favicon.svg' }]],
   description: 'Supercharged dweb deployments',
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
@@ -215,7 +216,7 @@ export default withMermaid({
             link: '/docs/install',
           },
           {
-            text: 'Why Blumen?',
+            text: 'Why Omnipin?',
             link: '/docs/why',
           },
           {
@@ -285,7 +286,7 @@ export default withMermaid({
     ],
     externalLinkIcon: true,
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/StauroDEV/blumen' },
+      { icon: 'github', link: 'https://github.com/omnipin/omnipin' },
       {
         icon: { svg: radicleIcon },
         link: 'https://app.radicle.xyz/nodes/seed.radicle.garden/rad%3Az2SqXAoWoZpnrqLxbeigSqjd2b2g2',
