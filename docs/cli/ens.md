@@ -6,7 +6,7 @@ Updates ENS domain Content-Hash with an IFPS CID.
 omnipin ens <cid> <domain.eth>
 ```
 
-Requires a ENS owner's private key (`BLUMEN_PK`) to be defined.
+Requires a ENS owner's private key (`OMNIPIN_PK`) to be defined.
 
 ::: warning
 

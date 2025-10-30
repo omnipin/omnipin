@@ -11,7 +11,7 @@ describe('Lighthouse', () => {
       ).rejects.toThrowError(new UploadNotSupportedError('Lighthouse'))
     })
     it.skip('should pin a CID on Lighthouse successfully', async () => {
-      const token = Bun.env.BLUMEN_LIGHTHOUSE_TOKEN
+      const token = Bun.env.OMNIPIN_LIGHTHOUSE_TOKEN
 
       if (!token) throw new Error('Missing Lighthouse token')
 

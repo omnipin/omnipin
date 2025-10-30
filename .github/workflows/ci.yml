@@ -1,4 +1,3 @@
-
 name: CI
 
 on:
@@ -26,9 +25,9 @@ jobs:
       - name: test
         run: bun test:report
         env:
-          BLUMEN_LIGHTHOUSE_TOKEN: ${{ secrets.BLUMEN_LIGHTHOUSE_TOKEN }}
-          BLUMEN_STORACHA_PROOF: ${{ secrets.BLUMEN_STORACHA_PROOF }}
-          BLUMEN_STORACHA_TOKEN: ${{ secrets.BLUMEN_STORACHA_TOKEN }}
+          OMNIPIN_LIGHTHOUSE_TOKEN: ${{ secrets.BLUMEN_LIGHTHOUSE_TOKEN }}
+          OMNIPIN_STORACHA_PROOF: ${{ secrets.BLUMEN_STORACHA_PROOF }}
+          OMNIPIN_STORACHA_TOKEN: ${{ secrets.BLUMEN_STORACHA_TOKEN }}
       - name: Coveralls
         uses: coverallsapp/github-action@v2
         with:

@@ -6,7 +6,7 @@ Checks the deployment status of a IPFS CID across providers.
 omnipin status <cid>
 ```
 
-By default obtains providers from environment (via `BLUMEN_` env variables). Alternatively you can use a `providers` option.
+By default obtains providers from environment (via `OMNIPIN_` env variables). Alternatively you can use a `providers` option.
 
 ## Options
 

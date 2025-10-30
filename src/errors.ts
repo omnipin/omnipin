@@ -56,7 +56,7 @@ export class NoProvidersError extends Error {
 export class MissingKeyError extends Error {
   name = 'MissingKeyError'
   constructor(key: string) {
-    super(`BLUMEN_${key} is missing.`)
+    super(`OMNIPIN_${key} is missing.`)
   }
 }
 

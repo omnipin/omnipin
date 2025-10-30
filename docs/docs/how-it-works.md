@@ -101,27 +101,27 @@ Omnipin has multiple ways of updating ENS, varying in security and UX properties
 
 ### EOA
 
-A transaction is signed by a private key provided via `BLUMEN_PK` and is immediately pushed onchain. There are no barriers or restrctions on the account, so it is the least secure option. In case of a key compromise, it is possible to steal all the assets held by the account, steal the ENS name in case it is wrapped, and alter any other records on the name in case it is unwrapped. The only benefit of using an EOA is not requiring any custom setup.
+A transaction is signed by a private key provided via `OMNIPIN_PK` and is immediately pushed onchain. There are no barriers or restrctions on the account, so it is the least secure option. In case of a key compromise, it is possible to steal all the assets held by the account, steal the ENS name in case it is wrapped, and alter any other records on the name in case it is unwrapped. The only benefit of using an EOA is not requiring any custom setup.
 
 In order to minimize the risks from using an EOA, it is recommended to unwrap the ENS name the website is hosted on and set the EOA as the manager of the name, while having a different account as an owner (for example a Safe multi-sig wallet).
 
 ### Proposer
 
-An account derived from the private key provided via `BLUMEN_PK` is not used to update ENS directly. It is only able to submit transaction proposals to a Safe wallet through Safe Transaction Service. It is a centralized API run by Safe which allows enqueuing transactions while not being one of the owners. Proposers have zero access to the ENS name and therefore are not able to perform any theft or malicious actions. Each transaction proposed by Safe requires manual review and approval from owners.
+An account derived from the private key provided via `OMNIPIN_PK` is not used to update ENS directly. It is only able to submit transaction proposals to a Safe wallet through Safe Transaction Service. It is a centralized API run by Safe which allows enqueuing transactions while not being one of the owners. Proposers have zero access to the ENS name and therefore are not able to perform any theft or malicious actions. Each transaction proposed by Safe requires manual review and approval from owners.
 
 While the Proposer flow is the safest and is the most secure, it is also the most complex in configuration and requires multiple manual steps.
 
 #### Setup
 
 1. Head over to the [Safe app](https://app.safe.global) and create a new wallet, if you don't have one yet.
-2. Create a new Ethereum account that will be used for proposing transactions, save it's private key to `BLUMEN_PK`.
+2. Create a new Ethereum account that will be used for proposing transactions, save it's private key to `OMNIPIN_PK`.
 3. To add a proposer, go to the Safe app > Settings > Setup. Scroll down to "Proposers" and click "Add Proposer". You can add multiple proposers to your Safe, but only one can be used at a time.
 
 ![Proposer UI](/proposer.png)
 
 ### Zodiac Roles
 
-A transaction is signed by a private key provided via `BLUMEN_PK` and is immediately pushed onchain. Unlike pure EOA, the account is restricted to only be able to update ENS name's `contentHash` record and does not manage the name. The name instead is managed by a Safe wallet.
+A transaction is signed by a private key provided via `OMNIPIN_PK` and is immediately pushed onchain. Unlike pure EOA, the account is restricted to only be able to update ENS name's `contentHash` record and does not manage the name. The name instead is managed by a Safe wallet.
 
 #### Setup
 
@@ -135,7 +135,7 @@ A transaction is signed by a private key provided via `BLUMEN_PK` and is immedia
 omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1
 
 # omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --verbose
-# ⚠️ `BLUMEN_PK` environment variable not set.
+# ⚠️ `OMNIPIN_PK` environment variable not set.
 # 🟢 Generating a Secp256k1 keypair
 #    0xeb12099469558be35d53d606e1d5e69d0854c57ef6658e909325c5a0e6493415
 # 🟢 Save the private key and do not share it to anyone
@@ -144,7 +144,7 @@ omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29F
 # Upload zodiac.json in the UI
 ```
 
-This will create a `zodiac.json` in a current directory. If `BLUMEN_PK` is not specified, an Ethereum Account will be generated on the spot.
+This will create a `zodiac.json` in a current directory. If `OMNIPIN_PK` is not specified, an Ethereum Account will be generated on the spot.
 
 4. Head over to the Safe [transaction builder](https://app.safe.global/apps/open?appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder) page.
 

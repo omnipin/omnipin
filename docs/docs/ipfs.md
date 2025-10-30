@@ -5,14 +5,14 @@ Omnipin supports a wide range of different IPFS providers. If you would like to 
 ## Spec-compliant Pinning Service
 
 - API Docs: https://ipfs.github.io/pinning-services-api-spec
-- API env variables: `BLUMEN_SPEC_TOKEN`, `BLUMEN_SPEC_URL`
+- API env variables: `OMNIPIN_SPEC_TOKEN`, `OMNIPIN_SPEC_URL`
 - Supported methods: Pin
 
 Obtain an opaque access token from the service. Populate your environment as such:
 
 ```
-BLUMEN_SPEC_TOKEN=<access_token>
-BLUMEN_SPEC_URL=https://pinning-service.example.com
+OMNIPIN_SPEC_TOKEN=<access_token>
+OMNIPIN_SPEC_URL=https://pinning-service.example.com
 ```
 
 A few services provide a pinning service API:
@@ -24,12 +24,12 @@ A few services provide a pinning service API:
 
 - URL: https://filebase.com
 - API Docs: https://docs.filebase.com/api-documentation/ipfs-pinning-service-api
-- API env variables: `BLUMEN_FILEBASE_TOKEN` for pinning (if not the first provider), additionally `BLUMEN_FILEBASE_BUCKET_NAME` for upload + pin.
+- API env variables: `OMNIPIN_FILEBASE_TOKEN` for pinning (if not the first provider), additionally `OMNIPIN_FILEBASE_BUCKET_NAME` for upload + pin.
 - Supported methods: Upload, Pin, Status
 
 ### Upload
 
-`BLUMEN_FILEBASE_TOKEN` for upload + pin is obtained by encoding access key and access secret to base64. Access key and access secret could be found in the Filebase console.
+`OMNIPIN_FILEBASE_TOKEN` for upload + pin is obtained by encoding access key and access secret to base64. Access key and access secret could be found in the Filebase console.
 
 ![Filebase console](/filebase.png)
 
@@ -43,7 +43,7 @@ echo "$accessKey:$accessSecret" | base64
 
 Filebase provides an RPC API which can be used for pinning.
 
-Request a new token in the "IPFS RPC API Keys" section in "Access Keys" page of the Filebase console. Save the token to the `BLUMEN_FILEBASE_TOKEN` environment variable.
+Request a new token in the "IPFS RPC API Keys" section in "Access Keys" page of the Filebase console. Save the token to the `OMNIPIN_FILEBASE_TOKEN` environment variable.
 
 ## Storacha
 
@@ -113,7 +113,7 @@ When both the account and the space are set up, you need to generate a unique pr
 storacha key create
 ```
 
-Save this private key (which starts with `Mg..`) to an environment variable (`BLUMEN_STORACHA_TOKEN`) in `.env` file.
+Save this private key (which starts with `Mg..`) to an environment variable (`OMNIPIN_STORACHA_TOKEN`) in `.env` file.
 
 With the key generated, it is now possible to create a delegation proof:
 
@@ -121,42 +121,42 @@ With the key generated, it is now possible to create a delegation proof:
 storacha delegation create <did_command_above> --can 'store/add' --can 'upload/add' --can 'space/blob/add' --can 'space/index/add' --base64
 ```
 
-Save the command output in a `BLUMEN_STORACHA_PROOF` environment variable.
+Save the command output in a `OMNIPIN_STORACHA_PROOF` environment variable.
 
 In the end your `.env` file should look like this:
 
 ```sh [.env]
-BLUMEN_STORACHA_TOKEN=Mg123456789ogR1enjgn123bi1KqzYz123456v123iLJkeiLIO4=
-BLUMEN_STORACHA_PROOF=mAYIEAJM...uIXm2rXyL...Zxe4Bh6g2RQZwjDUcw3qrvMNXzu2pg/rdd...IGXkvTsk9jnMGkBKPo...A7rC1u/tWHthsGVm8F6...pYJQABcRIgFFoH6R...8ukdZvYKuk2pthEmuyCVkAmPlC/kT3MM
+OMNIPIN_STORACHA_TOKEN=Mg123456789ogR1enjgn123bi1KqzYz123456v123iLJkeiLIO4=
+OMNIPIN_STORACHA_PROOF=mAYIEAJM...uIXm2rXyL...Zxe4Bh6g2RQZwjDUcw3qrvMNXzu2pg/rdd...IGXkvTsk9jnMGkBKPo...A7rC1u/tWHthsGVm8F6...pYJQABcRIgFFoH6R...8ukdZvYKuk2pthEmuyCVkAmPlC/kT3MM
 ```
 
 ## Pinata
 
 - URL: https://pinata.cloud
 - API Docs: https://docs.pinata.cloud/files/uploading-files
-- API env variables: `BLUMEN_PINATA_TOKEN`
+- API env variables: `OMNIPIN_PINATA_TOKEN`
 - Supported methods: Upload, Pin, Status
 
 Go to the dashboard page, then "API Keys" under "Developer" section. Click "New Key". An API key creation dialog should apppear. Select the checkboxes related to pinning. Click "Generate API Key".
 
 ![Pinata dashboard](/pinata.png)
 
-Save the JWT token to the `BLUMEN_PINATA_TOKEN` environment variable.
+Save the JWT token to the `OMNIPIN_PINATA_TOKEN` environment variable.
 
 ## 4EVERLAND
 
 - URL: https://www.4everland.org/
 - API Docs: https://docs.4everland.org/
-- API env variables: `BLUMEN_4EVERLAND_TOKEN`
+- API env variables: `OMNIPIN_4EVERLAND_TOKEN`
 - Supported methods: Pin, Status
 
-Open 4EVERLAND dashboard. Navigate to Storage > 4Ever Pin. Click "Access token". Copy the token and save it to the `BLUMEN_4EVERLAND_TOKEN` environment variable.
+Open 4EVERLAND dashboard. Navigate to Storage > 4Ever Pin. Click "Access token". Copy the token and save it to the `OMNIPIN_4EVERLAND_TOKEN` environment variable.
 
 ## QuickNode
 
 - URL: https://quicknode.com
 - API Docs: https://www.quicknode.com/docs/ipfs/Pinning/create-pinnedObject-by-CID
-- API env variables: `BLUMEN_QUICKNODE_TOKEN`
+- API env variables: `OMNIPIN_QUICKNODE_TOKEN`
 - Supported methods: Pin
 
 Go to the dashboard and open the ["API Keys" page](https://dashboard.quicknode.com/api-keys). Click "Add API Key". In the "Applications" modal choose only "IPFS_REST".
@@ -167,7 +167,7 @@ Go to the dashboard and open the ["API Keys" page](https://dashboard.quicknode.c
 
 - URL: https://lighthouse.storage
 - API Docs: https://docs.lighthouse.storage/api-docs/lighthouse-api
-- API env variables: `BLUMEN_LIGHTHOUSE_TOKEN`
+- API env variables: `OMNIPIN_LIGHTHOUSE_TOKEN`
 - Supported methods: Pin
 
 Go to "API Key", enter "Omnipin" in the input box and click "Generate".
@@ -176,25 +176,25 @@ Go to "API Key", enter "Omnipin" in the input box and click "Generate".
 
 - URL: https://blockfrost.io
 - API Docs: https://blockfrost.dev
-- API env variables: `BLUMEN_BLOCKFROST_TOKEN`
+- API env variables: `OMNIPIN_BLOCKFROST_TOKEN`
 - Supported methods: Pin, Status
 
-Create a new project. It will automatically create a token. Save the token to the `BLUMEN_BLOCKFROST_TOKEN` environment variable.
+Create a new project. It will automatically create a token. Save the token to the `OMNIPIN_BLOCKFROST_TOKEN` environment variable.
 
 ## Aleph
 
 - URL: https://aleph.im
 - API Docs: https://docs.aleph.im
-- API env variables: `BLUMEN_ALEPH_TOKEN`, `BLUMEN_ALEPH_CHAIN`
+- API env variables: `OMNIPIN_ALEPH_TOKEN`, `OMNIPIN_ALEPH_CHAIN`
 - Supported methods: Pin
 
-`BLUMEN_ALEPH_TOKEN` is the private key of the account. Buy [$ALEPH](https://aleph.cloud/aleph-token) token for an account, around the same amount as the size of the website distribution. By default, mainnet will be used, but you can specify the chain with `BLUMEN_ALEPH_CHAIN`. Supported chain are Ethereum (`ETH`), Avalanche (`AVAX`) and Base (`BASE`).
+`OMNIPIN_ALEPH_TOKEN` is the private key of the account. Buy [$ALEPH](https://aleph.cloud/aleph-token) token for an account, around the same amount as the size of the website distribution. By default, mainnet will be used, but you can specify the chain with `OMNIPIN_ALEPH_CHAIN`. Supported chain are Ethereum (`ETH`), Avalanche (`AVAX`) and Base (`BASE`).
 
 ## SimplePage
 
 - URL: https://simplepage.eth.limo
 - API Docs: https://simplepage.eth.limo/architecture
-- API env variables: `BLUMEN_SIMPLEPAGE_TOKEN`
+- API env variables: `OMNIPIN_SIMPLEPAGE_TOKEN`
 - Supported methods: Upload
 
-`BLUMEN_SIMPLEPAGE_TOKEN` is an ENS name used for a page. SimplePage requires an onchain [subscription](https://simplepage.eth.limo/user-guide/#subscription-management) ($1/month).
+`OMNIPIN_SIMPLEPAGE_TOKEN` is an ENS name used for a page. SimplePage requires an onchain [subscription](https://simplepage.eth.limo/user-guide/#subscription-management) ($1/month).

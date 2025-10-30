@@ -20,8 +20,8 @@ describe('Storacha provider', () => {
         const car = await packCAR(files, 'test.car')
 
         const { cid } = await uploadOnStoracha({
-          proof: process.env.BLUMEN_STORACHA_PROOF!,
-          token: process.env.BLUMEN_STORACHA_TOKEN!,
+          proof: process.env.OMNIPIN_STORACHA_PROOF!,
+          token: process.env.OMNIPIN_STORACHA_TOKEN!,
           name: 'test',
           first: true,
           car: car.blob,

@@ -92,7 +92,7 @@ When both the account and the space are set up, you need to generate a unique pr
 storacha key create
 ```
 
-Save this private key (which starts with `Mg..`) to an environment variable (`BLUMEN_STORACHA_TOKEN`) in `.env` file.
+Save this private key (which starts with `Mg..`) to an environment variable (`OMNIPIN_STORACHA_TOKEN`) in `.env` file.
 
 With the key generated, it is now possible to create a delegation proof:
 
@@ -100,13 +100,13 @@ With the key generated, it is now possible to create a delegation proof:
 storacha delegation create <did_command_above> --can 'store/add' --can 'upload/add' --can 'space/blob/add' --can 'space/index/add' --base64
 ```
 
-Save the command output in a `BLUMEN_STORACHA_PROOF` environment variable.
+Save the command output in a `OMNIPIN_STORACHA_PROOF` environment variable.
 
 In the end your `.env` file should look like this:
 
 ```sh [.env]
-BLUMEN_STORACHA_TOKEN=Mg123456789ogR1enjgn123bi1KqzYz123456v123iLJkeiLIO4=
-BLUMEN_STORACHA_PROOF=mAYIEAJM...uIXm2rXyL...Zxe4Bh6g2RQZwjDUcw3qrvMNXzu2pg/rdd...IGXkvTsk9jnMGkBKPo...A7rC1u/tWHthsGVm8F6...pYJQABcRIgFFoH6R...8ukdZvYKuk2pthEmuyCVkAmPlC/kT3MM
+OMNIPIN_STORACHA_TOKEN=Mg123456789ogR1enjgn123bi1KqzYz123456v123iLJkeiLIO4=
+OMNIPIN_STORACHA_PROOF=mAYIEAJM...uIXm2rXyL...Zxe4Bh6g2RQZwjDUcw3qrvMNXzu2pg/rdd...IGXkvTsk9jnMGkBKPo...A7rC1u/tWHthsGVm8F6...pYJQABcRIgFFoH6R...8ukdZvYKuk2pthEmuyCVkAmPlC/kT3MM
 ```
 
 Omnipin is now ready to deploy your app on IPFS.
@@ -139,7 +139,7 @@ Providers: https://delegated-ipfs.dev/routing/v1/providers/bafybeig2rerivrgw6y2b
 
 Uploading a website to a single IPFS provider doesn't guarantee decentralization or censorship resistance. It is recommended to pin to at least 1-2 more IPFS providers.
 
-Adding more IPFS providers is as easy as adding an API token, for example for [Pinata](https://pinata.cloud) it would be `BLUMEN_PINATA_TOKEN`.
+Adding more IPFS providers is as easy as adding an API token, for example for [Pinata](https://pinata.cloud) it would be `OMNIPIN_PINATA_TOKEN`.
 
 For a full list of supported IPFS providers, refer to the ["IPFS" page](/docs/ipfs).
 
@@ -165,7 +165,7 @@ Automatic ENS updates are as easy as supplying an extra CLI argument during depl
 Using a private key of the ENS name manager account has immediate security risks. Consider [Safe MFA setup](#mfa-with-safe) instead.
 :::
 ```sh [.env]
-BLUMEN_PK=<0xensmanagerprivatekeygoeshere>
+OMNIPIN_PK=<0xensmanagerprivatekeygoeshere>
 ```
 
 ```bash [Terminal]
@@ -192,7 +192,7 @@ Proposer flow requires additional factor of authorisation on every deploy, which
 omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1
 
 # omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --verbose
-# ⚠️ `BLUMEN_PK` environment variable not set.
+# ⚠️ `OMNIPIN_PK` environment variable not set.
 # 🟢 Generating a Secp256k1 keypair
 #    0xeb12099469558be35d53d606e1d5e69d0854c57ef6658e909325c5a0e6493415
 # 🟢 Save the private key and do not share it to anyone
@@ -201,7 +201,7 @@ omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29F
 # Upload zodiac.json in the UI
 ```
 
-This will create a `zodiac.json` in a current directory. If `BLUMEN_PK` is not specified, an Ethereum Account will be generated on the spot.
+This will create a `zodiac.json` in a current directory. If `OMNIPIN_PK` is not specified, an Ethereum Account will be generated on the spot.
 
 4. Head over to the Safe [transaction builder](https://app.safe.global/apps/open?appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder) page.
 
@@ -242,14 +242,14 @@ jobs:
       - name: Build website
         run: bun i && bun run build
       - name: Deploy the site
-        run: omnipin deploy .vitepress/dist --strict --ens ${{ vars.BLUMEN_ENS }} --safe ${{ vars.BLUMEN_SAFE }} --roles-mod-address ${{ vars.BLUMEN_ROLES_MOD }}
+        run: omnipin deploy .vitepress/dist --strict --ens ${{ vars.OMNIPIN_ENS }} --safe ${{ vars.OMNIPIN_SAFE }} --roles-mod-address ${{ vars.OMNIPIN_ROLES_MOD }}
         env:
-          BLUMEN_PINATA_TOKEN: ${{ secrets.BLUMEN_PINATA_TOKEN }}
-          BLUMEN_STORACHA_PROOF: ${{ secrets.BLUMEN_STORACHA_PROOF }}
-          BLUMEN_STORACHA_TOKEN: ${{ secrets.BLUMEN_STORACHA_TOKEN }}
-          BLUMEN_LIGHTHOUSE_TOKEN: ${{ secrets.BLUMEN_LIGHTHOUSE_TOKEN }}
-          BLUMEN_4EVERLAND_TOKEN: ${{ secrets.BLUMEN_4EVERLAND_TOKEN }}
-          BLUMEN_PK: ${{ secrets.BLUMEN_PK }}
+          OMNIPIN_PINATA_TOKEN: ${{ secrets.OMNIPIN_PINATA_TOKEN }}
+          OMNIPIN_STORACHA_PROOF: ${{ secrets.OMNIPIN_STORACHA_PROOF }}
+          OMNIPIN_STORACHA_TOKEN: ${{ secrets.OMNIPIN_STORACHA_TOKEN }}
+          OMNIPIN_LIGHTHOUSE_TOKEN: ${{ secrets.OMNIPIN_LIGHTHOUSE_TOKEN }}
+          OMNIPIN_4EVERLAND_TOKEN: ${{ secrets.OMNIPIN_4EVERLAND_TOKEN }}
+          OMNIPIN_PK: ${{ secrets.OMNIPIN_PK }}
 ```
 
 The "[CI/CD](/docs/ci-cd)" page describes integrations with other CI/CD providers, such as GitLab Actions.
