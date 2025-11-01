@@ -33,12 +33,12 @@ import {
   simulateTransaction,
   waitForTransaction,
 } from '../utils/tx.js'
-import { execTransactonWithRole } from '../utils/zodiac-roles/exec.js'
+import { execTransactionWithRole } from '../utils/zodiac-roles/exec.js'
 
 export type EnsActionArgs = Partial<{
   chain: ChainName
   safe: Address | EIP3770Address
-  rpcUrl: string
+  'rpc-url': string
   'resolver-address': Address
   verbose: boolean
   'dry-run': boolean
@@ -57,13 +57,14 @@ export const ensAction = async ({
   const {
     chain: chainName = 'mainnet',
     safe: safeAddress,
-    rpcUrl,
+    'rpc-url': rpcUrl,
     'resolver-address': resolverAddress,
     'roles-mod-address': rolesModAddress,
+    'dry-run': dryRun,
   } = options
 
   assertCID(cid)
-  if (!domain) throw new MissingCLIArgsError([domain])
+  if (!domain) throw new MissingCLIArgsError(['domain'])
   const chain = chains[chainName]
 
   const transport = fromHttp(rpcUrl ?? chainToRpcUrl(chainName))
@@ -145,10 +146,13 @@ export const ensAction = async ({
       value: 0n,
     }
 
-    if (rolesModAddress) {
+    if (rolesModAddress && !dryRun) {
+      if (!safeAddress) {
+        throw new MissingCLIArgsError(['safe'])
+      }
       logger.info(`Using Zodiac Roles module`)
 
-      await execTransactonWithRole({
+      await execTransactionWithRole({
         provider,
         data,
         resolverAddress: to,
@@ -175,7 +179,7 @@ export const ensAction = async ({
         privateKey: pk,
       })
 
-      if (!options['dry-run']) {
+      if (!dryRun) {
         logger.info('Proposing a Safe transaction')
 
         try {
