@@ -115,7 +115,7 @@ Update DNSLink. After finishing the deployment, DNSLink is updated afterwards (o
 omnipin deploy --dnslink
 ```
 
-## `roles-mod-address`
+### `roles-mod-address`
 
 Zodiac Roles Module address. Requires `safe` option to be provided.
 

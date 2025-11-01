@@ -40,7 +40,7 @@ Use a custom Ethereum RPC for transactions. By default, [Public nodes](https://e
 Use a custom ENS Resolver address. Public resolvers for mainnet and sepolia are set by default.
 
 
-## `roles-mod-address`
+### `roles-mod-address`
 
 Zodiac Roles Module address. Requires `safe` option to be provided.
 
