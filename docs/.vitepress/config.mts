@@ -281,6 +281,10 @@ export default withMermaid({
             text: 'Pin',
             link: '/cli/pin',
           },
+          {
+            text: 'Zodiac',
+            link: '/cli/zodiac',
+          },
         ],
       },
     ],

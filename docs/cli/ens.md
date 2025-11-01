@@ -18,17 +18,17 @@ It is recommended to use multisig wallets for deployments instead of using a pri
 
 ### `chain`
 
-Default: `mainnet`
-Options: `mainnet`, `sepolia`
+* Default: `mainnet`
+* Options: `mainnet`, `sepolia`
 
 EVM Chain to use for ENS deployment. Requires `--ens` option to be defined.
 
-### `safe` (Recommended)
+### `safe`
 
-Deploy using a [Safe](https://safe.global) multisig wallet. Requires private key of a Safe owner/delegate to sign a transaction. [EIP-3770](https://eips.ethereum.org/EIPS/eip-3770) addresses are supported.
+Deploy using a [Safe](https://safe.global) multisig wallet. Requires private key of a Safe owner/delegate to sign a transaction. [EIP-3770](https://eips.ethereum.org/EIPS/eip-3770) addresses are supported. Mainnet is used by default.
 
 ```sh
-omnipin ens bafybeibp54tslsez36quqptgzwyda3vo66za3rraujksmsb3d5q247uht4 v1rtl.eth --safe gor:0x1234567890000000000000000000000000000000 --chain sepolia
+omnipin ens bafybeibp54tslsez36quqptgzwyda3vo66za3rraujksmsb3d5q247uht4 v1rtl.eth --safe 0x1234567890000000000000000000000000000000
 ```
 
 ### `rpc-url`
@@ -37,4 +37,13 @@ Use a custom Ethereum RPC for transactions. By default, [Public nodes](https://e
 
 ### `resolver-address`
 
-Use a custom ENS Resolver address. Resolvers for mainnet and sepolia are set by default.
+Use a custom ENS Resolver address. Public resolvers for mainnet and sepolia are set by default.
+
+
+## `roles-mod-address`
+
+Zodiac Roles Module address. Requires `safe` option to be provided.
+
+```sh
+omnipin ens --roles-mod-address 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --safe 0x1234567890000000000000000000000000000000 omnipin.eth bafybeibp54tslsez36quqptgzwyda3vo66za3rraujksmsb3d5q247uht4
+```
