@@ -34,14 +34,14 @@ Use a custom Ethereum RPC for transactions. By default, [Public nodes](https://e
 
 ### `resolver-address`
 
-Use a custom ENS Resolver address. Resolvers for mainnet and sepolia are set by default.
+Use a custom ENS Resolver address. Public resolvers for mainnet and sepolia are set by default.
 
 ### `chain`
 
-Default: `mainnet`
-Options: `mainnet`, `sepolia`
+* Default: `mainnet`
+* Options: `mainnet`, `sepolia`
 
-EVM Chain to use for ENS deployment. Requires `--ens` option to be defined.
+EVM Chain to use. Requires `--ens` option to be defined.
 
 ```sh
 omnipin deploy --chain mainnet --ens v1rtl.eth
@@ -49,7 +49,7 @@ omnipin deploy --chain mainnet --ens v1rtl.eth
 
 ### `name`
 
-Name of the distribution directory, excluding the file extension (it's always `.car`). By default the current directory name is used.
+Name of the distribution directory, excluding the file extension (it's always `.car` for IPFS and `.tar` for Swarm). By default, the current directory name is used.
 
 ```sh
 omnipin deploy --name my-dapp
@@ -57,19 +57,18 @@ omnipin deploy --name my-dapp
 
 ### `dist`
 
-Custom directory to store the distribution file at before deployment. By default, OS temporary directory is used. Might be useful for verifying/signing integrity of distribution before deployment.
+Target directory for temporary distribution storage. By default, OS temporary directory is used.
 
 ```sh
-omnipin deploy --dist ./
-file ./dist.car
+omnipin deploy --dist $PWD ./dist.car
 ```
 
 ### `providers`
 
-An explicit list of providers to deploy on.
+An explicit list of providers to deploy on. Requires environment variables of specified providers to be defined. The list is comma separated **without** spaces.
 
 ```sh
-omnipin deploy --providers Storacha
+omnipin deploy --providers Storacha,Lighthouse
 ```
 
 ### `verbose`
@@ -92,12 +91,20 @@ omnipin deploy --verbose --providers=Gateway3
 # Providers: https://delegated-ipfs.dev/routing/v1/providers/bafybeihw4r72ynkl2zv4od2ru4537qx2zxjkwlzddadqmochzhe524t7qu
 ```
 
-### `safe` (Recommended)
+### `safe`
 
-Deploy using a [Safe](https://safe.global) multisig wallet. Requires private key of a Safe owner/delegate to sign a transaction. [EIP-3770](https://eips.ethereum.org/EIPS/eip-3770) addresses are supported.
+Deploy using a [Safe](https://safe.global) multisig wallet. Requires private key of a Safe owner/delegate to sign a transaction. [EIP-3770](https://eips.ethereum.org/EIPS/eip-3770) addresses are supported. Mainnet is used by default.
+
+The update will be sent to the Safe Transaction Service. `BLUMEN_PK` must be a proposer's privat key.
+
+In case the `roles-mod-address` option is specified, a transaction will submitted via the Zodiac Roles module instead, skipping the Safe Transaction Service and going directly onchain. Just like with EOA, a transaction is simulated locally first.
 
 ```sh
-omnipin ens bafybeibp54tslsez36quqptgzwyda3vo66za3rraujksmsb3d5q247uht4 v1rtl.eth --safe sep:0x1234567890000000000000000000000000000000 --chain sepolia
+# Propose transaction to Safe
+omnipin deploy --ens v1rtl.eth --safe 0x1234567890000000000000000000000000000000
+
+# Use a restricted role via Zodiac
+omnipin deploy --ens v1rtl.eth --roles-mod-address 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --safe 0x1234567890000000000000000000000000000000
 ```
 
 ### `dnslink`
@@ -106,4 +113,12 @@ Update DNSLink. After finishing the deployment, DNSLink is updated afterwards (o
 
 ```sh
 omnipin deploy --dnslink
+```
+
+## `roles-mod-address`
+
+Zodiac Roles Module address. Requires `safe` option to be provided.
+
+```sh
+omnipin deploy --roles-mod-address 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --safe 0x1234567890000000000000000000000000000000 omnipin.eth
 ```

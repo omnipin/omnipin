@@ -11,7 +11,7 @@ import {
 } from '../tx.js'
 import { ENS_DEPLOYER_ROLE } from './init.js'
 
-const execTransactonWithRoleAbi = {
+const execTransactionWithRoleAbi = {
   inputs: [
     { internalType: 'address', name: 'to', type: 'address' },
     { internalType: 'uint256', name: 'value', type: 'uint256' },
@@ -26,7 +26,7 @@ const execTransactonWithRoleAbi = {
   type: 'function',
 } as const
 
-export const execTransactonWithRole = async ({
+export const execTransactionWithRole = async ({
   provider,
   resolverAddress,
   data: txData,
@@ -45,7 +45,7 @@ export const execTransactonWithRole = async ({
   chainId: number
   explorerUrl: string
 }) => {
-  const data = encodeData(execTransactonWithRoleAbi, [
+  const data = encodeData(execTransactionWithRoleAbi, [
     resolverAddress,
     0n,
     txData,
@@ -56,7 +56,7 @@ export const execTransactonWithRole = async ({
 
   const success = await simulateTransaction({
     provider,
-    abi: execTransactonWithRoleAbi,
+    abi: execTransactionWithRoleAbi,
     to: rolesModAddress,
     data,
     from,

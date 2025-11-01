@@ -123,7 +123,7 @@ export const generateSafeTransactionSignature = async ({
   return sign({ payload, privateKey })
 }
 
-const execTransactionAbi = {
+const _execTransactionAbi = {
   constant: false,
   inputs: [
     { name: 'to', type: 'address' },

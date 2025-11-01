@@ -34,14 +34,12 @@ export const deployAction = async ({
     strict,
     ens,
     chain = 'mainnet',
-    safe,
     name: customName,
     dist,
     verbose = false,
     providers: providersList,
-    resolverAddress,
     dnslink,
-    rpcUrl,
+    ...opts
   } = options
 
   const apiTokens = parseTokensFromEnv()
@@ -204,7 +202,7 @@ export const deployAction = async ({
     await ensAction({
       cid,
       domain: ens,
-      options: { chain, safe, resolverAddress, rpcUrl, verbose },
+      options: { ...opts, chain, verbose },
     })
   }
 
