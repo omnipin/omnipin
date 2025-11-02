@@ -72,7 +72,12 @@ export const createDataSet = async ({
   })
   if (verbose) logger.request('POST', res.url, res.status)
   const text = await res.text()
-  if (!res.ok) throw new Error('Failed to create a dataset', { cause: text })
+  if (!res.ok) {
+    if (text.includes('recordKeeper address not allowed for public service')) {
+      throw new Error('The SP does not support registering data sets')
+    }
+    throw new Error('Failed to create a dataset', { cause: text })
+  }
 
   return text
 }
