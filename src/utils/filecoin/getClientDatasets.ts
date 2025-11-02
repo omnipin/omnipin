@@ -1,7 +1,6 @@
 import { decodeResult, encodeData } from 'ox/AbiFunction'
 import type { Address } from 'ox/Address'
-import * as Provider from 'ox/Provider'
-import { fromHttp } from 'ox/RpcTransport'
+import { FILECOIN_REGISTRY_ADDRESS, filProvider } from './constants.js'
 
 const abi = {
   inputs: [
@@ -23,21 +22,15 @@ const abi = {
   type: 'function',
 } as const
 
-const provider = Provider.from(
-  fromHttp('https://api.calibration.node.glif.io/rpc/v1'),
-)
-
-const FILECOIN_REGISTRY_ADDRESS = '0x87ede87cef4bfefe0374c3470cb3f5be18b739d5'
-
 /**
- * List all known datasets for an address
+ * List all known data sets for an address
  * @param address client address
  * @returns
  */
-export const getClientDatasets = async (address: Address) => {
+export const getClientDataSets = async (address: Address) => {
   const data = encodeData(abi, [address])
 
-  const result = await provider.request({
+  const result = await filProvider.request({
     method: 'eth_call',
     params: [
       {
