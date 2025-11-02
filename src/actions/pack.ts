@@ -24,6 +24,7 @@ export const packAction = async ({
   const { name: customName, dist, verbose, tar } = options
   if (!dir) {
     if (await exists('dist')) dir = 'dist'
+    else if (await exists('.vitepress/dist')) dir = '.vitepress/dist'
     else dir = '.'
   }
   const normalizedPath = path.join(process.cwd(), dir)

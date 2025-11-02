@@ -12,6 +12,7 @@ import {
   statusOnFilebase,
   uploadOnFilebase,
 } from './providers/ipfs/filebase.js'
+import { uploadToFilecoin } from './providers/ipfs/filecoin.js'
 import { pinOnLighthouse } from './providers/ipfs/lighthouse.js'
 import { statusOnPinata, uploadOnPinata } from './providers/ipfs/pinata.js'
 import { pinOnQuicknode } from './providers/ipfs/quicknode.js'
@@ -116,6 +117,12 @@ export const PROVIDERS: Record<
     name: 'SimplePage',
     upload: uploadToSimplePage,
     supported: 'upload',
+    protocol: 'ipfs',
+  },
+  FILECOIN_TOKEN: {
+    name: 'Filecoin',
+    upload: uploadToFilecoin,
+    supported: 'both',
     protocol: 'ipfs',
   },
 }
