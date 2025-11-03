@@ -67,7 +67,6 @@ export const createDataSet = async ({
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       recordKeeper: FWSS_PROXY_ADDRESS,
->>>>>>> 318a37c51eb32540237132731895aed60dfe7521
       extraData,
     }),
   })
