@@ -26,6 +26,17 @@ export const uploadToFilecoin: UploadFunction<{
 }) => {
   const pieceCid = calculatePieceCID(await car.bytes()).toString()
 
+  const publicKey = getPublicKey({ privateKey })
+  const address = fromPublicKey(publicKey)
+
+  const balance = await getUSDfcBalance(address)
+  logger.info(`USDfc balance: ${format(balance, 18)}`)
+
+  if (balance === 0n) throw new DeployError(providerName, 'Empty USDfc balance')
+
+  logger.info(`Filecoin SP address: ${providerAddress}`)
+  logger.info(`Filecoing SP URL: ${providerURL}`)
+
   let res = await fetch(new URL('/pdp/piece', providerURL), {
     method: 'POST',
     headers: {
@@ -87,20 +98,12 @@ export const uploadToFilecoin: UploadFunction<{
   }
   logger.success('Piece found')
 
-  const publicKey = getPublicKey({ privateKey })
-  const address = fromPublicKey(publicKey)
-
-  const balance = await getUSDfcBalance(address)
-  logger.info(`USDfc balance: ${format(balance, 18)}`)
-
   logger.info('Looking up existing datasets')
   const dataSets = await getClientDataSets(address)
 
   let datasetId: string
   if (dataSets.length === 0) {
     logger.info('No dataset found. Creating.')
-    logger.info(`Filecoin SP address: ${providerAddress}`)
-    logger.info(`Filecoing SP URL: ${providerURL}`)
     const res = await createDataSet({
       privateKey,
       providerAddress,

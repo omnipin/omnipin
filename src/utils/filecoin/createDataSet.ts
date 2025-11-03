@@ -28,7 +28,7 @@ export const createDataSet = async ({
   const keys = metadata.map((item) => item.key)
   const values = metadata.map((item) => item.value)
 
-  const clientDataSetId = BigInt(randomInt(255))
+  const clientDataSetId = BigInt(randomInt(10 ** 8))
 
   logger.info(`Client data set ID: ${clientDataSetId}`)
 
@@ -36,12 +36,9 @@ export const createDataSet = async ({
     types: {
       CreateDataSet: [
         { name: 'clientDataSetId', type: 'uint256' },
-        { name: 'metadata', type: 'MetadataEntry[]' },
-        { name: 'payee', type: 'address' },
-      ],
-      MetadataEntry: [
-        { name: 'key', type: 'string' },
-        { name: 'value', type: 'string' },
+        { name: 'payee', type: 'address' }, // ADD THIS
+        { name: 'metadataKeys', type: 'string[]' },
+        { name: 'metadataValues', type: 'string[]' },
       ],
     },
     domain: {
@@ -52,9 +49,10 @@ export const createDataSet = async ({
     },
     primaryType: 'CreateDataSet',
     message: {
-      clientDataSetId, // Your unique dataset ID (start with 0)
-      metadata,
-      payee: providerAddress, // Service provider's payment address
+      clientDataSetId,
+      payee: providerAddress,
+      metadataKeys: keys,
+      metadataValues: values,
     },
   })
 
