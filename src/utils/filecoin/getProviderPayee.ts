@@ -1,5 +1,5 @@
 import { decodeResult, encodeData } from 'ox/AbiFunction'
-import type { Address } from 'ox/Address'
+import { type Address, checksum } from 'ox/Address'
 import { FWSS_PROXY_ADDRESS, filProvider } from './constants.js'
 
 const abi = {
@@ -32,5 +32,5 @@ export const getProviderPayee = async (id: bigint): Promise<Address> => {
     ],
   })
 
-  return decodeResult(abi, result)
+  return checksum(decodeResult(abi, result))
 }

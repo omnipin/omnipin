@@ -1,4 +1,5 @@
 import { randomInt } from 'node:crypto'
+import { decode } from 'ox/AbiError'
 import * as AbiParameters from 'ox/AbiParameters'
 import type { Address } from 'ox/Address'
 import type { Hex } from 'ox/Hex'
@@ -6,9 +7,18 @@ import { sign } from 'ox/Secp256k1'
 import { toHex } from 'ox/Signature'
 import { getSignPayload } from 'ox/TypedData'
 import { logger } from '../logger.js'
-import { FWSS_KEEPER_ADDRESS, FWSS_PROXY_ADDRESS } from './constants.js'
+import { FWSS_KEEPER_ADDRESS } from './constants.js'
 
 const abi = ['address', 'uint256', 'string[]', 'string[]', 'bytes'] as const
+
+const invalidSignatureAbi = {
+  type: 'error',
+  inputs: [
+    { name: 'expected', internalType: 'address', type: 'address' },
+    { name: 'actual', internalType: 'address', type: 'address' },
+  ],
+  name: 'InvalidSignature',
+} as const
 
 export const createDataSet = async ({
   providerURL,
@@ -34,11 +44,14 @@ export const createDataSet = async ({
 
   const payload = getSignPayload({
     types: {
+      MetadataEntry: [
+        { name: 'key', type: 'string' },
+        { name: 'value', type: 'string' },
+      ],
       CreateDataSet: [
         { name: 'clientDataSetId', type: 'uint256' },
-        { name: 'payee', type: 'address' }, // ADD THIS
-        { name: 'metadataKeys', type: 'string[]' },
-        { name: 'metadataValues', type: 'string[]' },
+        { name: 'payee', type: 'address' },
+        { name: 'metadata', type: 'MetadataEntry[]' },
       ],
     },
     domain: {
@@ -50,9 +63,8 @@ export const createDataSet = async ({
     primaryType: 'CreateDataSet',
     message: {
       clientDataSetId,
-      payee: payee,
-      metadataKeys: keys,
-      metadataValues: values,
+      payee,
+      metadata,
     },
   })
 
@@ -79,6 +91,14 @@ export const createDataSet = async ({
   if (!res.ok) {
     if (text.includes('recordKeeper address not allowed for public service')) {
       throw new Error('The SP does not support registering data sets')
+    }
+    const vmErrorMatch = text.match(/vm error=\[(0x[a-fA-F0-9]+)\]/)
+    if (vmErrorMatch) {
+      const errorHex = vmErrorMatch[1] as Hex
+
+      const cause = decode(invalidSignatureAbi, errorHex)
+
+      throw new Error('Signer mismatch', { cause })
     }
     throw new Error('Failed to create a dataset', { cause: text })
   }
