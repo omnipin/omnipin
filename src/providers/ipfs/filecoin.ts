@@ -31,6 +31,8 @@ export const uploadToFilecoin: UploadFunction<{
   const publicKey = getPublicKey({ privateKey })
   const address = fromPublicKey(publicKey)
 
+  logger.info(`Payer address: ${address}`)
+
   const balance = await getUSDfcBalance(address)
   logger.info(`USDfc balance: ${format(balance, 18)}`)
 
