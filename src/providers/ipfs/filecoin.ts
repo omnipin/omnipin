@@ -7,6 +7,8 @@ import type { UploadFunction } from '../../types.js'
 import { calculatePieceCID } from '../../utils/filecoin/calculatePieceCID.js'
 import { createDataSet } from '../../utils/filecoin/createDataSet.js'
 import { getClientDataSets } from '../../utils/filecoin/getClientDatasets.js'
+import { getProviderIdByAddress } from '../../utils/filecoin/getProviderIdByAddress.js'
+import { getProviderPayee } from '../../utils/filecoin/getProviderPayee.js'
 import { getUSDfcBalance } from '../../utils/filecoin/getUSDfcBalance.js'
 import { logger } from '../../utils/logger.js'
 
@@ -35,7 +37,15 @@ export const uploadToFilecoin: UploadFunction<{
   if (balance === 0n) throw new DeployError(providerName, 'Empty USDfc balance')
 
   logger.info(`Filecoin SP address: ${providerAddress}`)
-  logger.info(`Filecoing SP URL: ${providerURL}`)
+  logger.info(`Filecoin SP URL: ${providerURL}`)
+
+  const providerId = await getProviderIdByAddress(providerAddress)
+
+  logger.info(`Filecoin SP ID: ${providerId}`)
+
+  const payee = await getProviderPayee(providerId)
+
+  logger.info(`Filecoin SP Payee: ${payee}`)
 
   let res = await fetch(new URL('/pdp/piece', providerURL), {
     method: 'POST',
@@ -106,7 +116,7 @@ export const uploadToFilecoin: UploadFunction<{
     logger.info('No dataset found. Creating.')
     const res = await createDataSet({
       privateKey,
-      providerAddress,
+      payee,
       providerURL,
       address,
     })
