@@ -66,7 +66,7 @@ export const createDataSet = async ({
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      recordKeeper: providerAddress,
+      recordKeeper: FILECOIN_REGISTRY_ADDRESS,
       extraData,
     }),
   })
