@@ -5,7 +5,7 @@ import { sign } from 'ox/Secp256k1'
 import { toHex } from 'ox/Signature'
 import { getSignPayload } from 'ox/TypedData'
 import { logger } from '../logger.js'
-import { FILECOIN_REGISTRY_ADDRESS } from './constants.js'
+import { FWSS_PROXY_ADDRESS } from './constants.js'
 
 const abi = ['address', 'string[]', 'string[]', 'bytes'] as const
 
@@ -41,7 +41,7 @@ export const createDataSet = async ({
     },
     domain: {
       name: 'FilecoinWarmStorageService',
-      verifyingContract: FILECOIN_REGISTRY_ADDRESS,
+      verifyingContract: FWSS_PROXY_ADDRESS,
       version: '1',
       chainId: 314159,
     },
@@ -61,12 +61,12 @@ export const createDataSet = async ({
     values,
     signature,
   ])
-  logger.info(`Record keeper address: ${providerAddress}`)
+  logger.info(`Record keeper address: ${FWSS_PROXY_ADDRESS}`)
   const res = await fetch(new URL('/pdp/data-sets', providerURL), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      recordKeeper: providerAddress,
+      recordKeeper: FWSS_PROXY_ADDRESS,
       extraData,
     }),
   })
