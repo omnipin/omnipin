@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto'
 import * as AbiParameters from 'ox/AbiParameters'
 import type { Address } from 'ox/Address'
 import type { Hex } from 'ox/Hex'
@@ -7,7 +8,7 @@ import { getSignPayload } from 'ox/TypedData'
 import { logger } from '../logger.js'
 import { FWSS_PROXY_ADDRESS } from './constants.js'
 
-const abi = ['address', 'string[]', 'string[]', 'bytes'] as const
+const abi = ['address', 'uint256', 'string[]', 'string[]', 'bytes'] as const
 
 export const createDataSet = async ({
   providerURL,
@@ -26,6 +27,10 @@ export const createDataSet = async ({
 
   const keys = metadata.map((item) => item.key)
   const values = metadata.map((item) => item.value)
+
+  const clientDataSetId = BigInt(randomInt(255))
+
+  logger.info(`Client data set ID: ${clientDataSetId}`)
 
   const payload = getSignPayload({
     types: {
@@ -47,7 +52,7 @@ export const createDataSet = async ({
     },
     primaryType: 'CreateDataSet',
     message: {
-      clientDataSetId: 0n, // Your unique dataset ID (start with 0)
+      clientDataSetId, // Your unique dataset ID (start with 0)
       metadata,
       payee: providerAddress, // Service provider's payment address
     },
@@ -57,6 +62,7 @@ export const createDataSet = async ({
 
   const extraData = AbiParameters.encode(AbiParameters.from(abi), [
     address,
+    clientDataSetId,
     keys,
     values,
     signature,

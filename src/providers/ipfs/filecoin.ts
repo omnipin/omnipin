@@ -1,11 +1,13 @@
 import { type Address, fromPublicKey } from 'ox/Address'
 import type { Hex } from 'ox/Hex'
 import { getPublicKey } from 'ox/Secp256k1'
+import { format } from 'ox/Value'
 import { DeployError } from '../../errors.js'
 import type { UploadFunction } from '../../types.js'
 import { calculatePieceCID } from '../../utils/filecoin/calculatePieceCID.js'
 import { createDataSet } from '../../utils/filecoin/createDataSet.js'
 import { getClientDataSets } from '../../utils/filecoin/getClientDatasets.js'
+import { getUSDfcBalance } from '../../utils/filecoin/getUSDfcBalance.js'
 import { logger } from '../../utils/logger.js'
 
 const providerName = 'Filecoin'
@@ -88,12 +90,17 @@ export const uploadToFilecoin: UploadFunction<{
   const publicKey = getPublicKey({ privateKey })
   const address = fromPublicKey(publicKey)
 
+  const balance = await getUSDfcBalance(address)
+  logger.info(`USDfc balance: ${format(balance, 18)}`)
+
   logger.info('Looking up existing datasets')
   const dataSets = await getClientDataSets(address)
 
   let datasetId: string
   if (dataSets.length === 0) {
     logger.info('No dataset found. Creating.')
+    logger.info(`Filecoin SP address: ${providerAddress}`)
+    logger.info(`Filecoing SP URL: ${providerURL}`)
     const res = await createDataSet({
       privateKey,
       providerAddress,

@@ -19,6 +19,7 @@ export type DeployActionArgs = Partial<{
   ens: string
   providers: string
   dnslink: string
+  'progress-bar': boolean
 }> &
   PackActionArgs &
   EnsActionArgs
@@ -39,6 +40,7 @@ export const deployAction = async ({
     verbose = false,
     providers: providersList,
     dnslink,
+    'progress-bar': progressBar,
     ...opts
   } = options
 
@@ -93,18 +95,19 @@ export const deployAction = async ({
   let total = 0
 
   const errors: Error[] = []
-  const bar = isTTY
-    ? new AsciiBar({
-        total:
-          swarmProviders.length !== 0
-            ? swarmProviders.length
-            : ipfsProviders.length,
-        formatString: '#spinner #bar #message',
-        hideCursor: false,
-        enableSpinner: true,
-        width: process.stdout.columns - 30,
-      })
-    : undefined
+  const bar =
+    isTTY && progressBar
+      ? new AsciiBar({
+          total:
+            swarmProviders.length !== 0
+              ? swarmProviders.length
+              : ipfsProviders.length,
+          formatString: '#spinner #bar #message',
+          hideCursor: false,
+          enableSpinner: true,
+          width: process.stdout.columns - 30,
+        })
+      : undefined
 
   let swarmCid = ''
   if (swarmProviders.length !== 0) {

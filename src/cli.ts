@@ -106,6 +106,11 @@ cli.command(
         description: 'Update DNSLink',
         type: 'string',
       },
+      {
+        name: 'progress-bar',
+        description: 'Render a progress bar during content upload',
+        type: 'boolean',
+      },
       ...ensOptions,
     ] as const,
   },
