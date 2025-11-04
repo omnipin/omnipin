@@ -209,7 +209,6 @@ export const ensAction = async ({
       provider,
       to,
       data,
-      abi: setContentHash,
       from,
     })
 

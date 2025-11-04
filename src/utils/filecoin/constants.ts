@@ -30,6 +30,12 @@ export type FilecoinChain = {
     payments: {
       address: Address
     }
+    storage: {
+      address: Address
+    }
+  }
+  blockExplorers: {
+    http: string
   }
 }
 
@@ -46,5 +52,11 @@ export const filecoinCalibration: FilecoinChain = {
     payments: {
       address: '0x09a0fDc2723fAd1A7b8e3e00eE5DF73841df55a0',
     },
+    storage: {
+      address: '0x02925630df557f957f70e112ba06e50965417ca0',
+    },
+  },
+  blockExplorers: {
+    http: 'https://filecoin-testnet.blockscout.com',
   },
 } as const

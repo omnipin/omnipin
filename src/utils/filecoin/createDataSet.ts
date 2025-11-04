@@ -6,12 +6,13 @@ import type { Hex } from 'ox/Hex'
 import { sign } from 'ox/Secp256k1'
 import { toHex } from 'ox/Signature'
 import { getSignPayload } from 'ox/TypedData'
-import { DeployError } from '../../errors.js'
+import * as Value from 'ox/Value'
 import { logger } from '../logger.js'
+import { waitForTransaction } from '../tx.js'
 import {
   FWSS_KEEPER_ADDRESS,
-  FWSS_PROXY_ADDRESS,
   filecoinCalibration,
+  filProvider,
 } from './constants.js'
 import { depositAndApproveOperator } from './pay/depositAndApproveOperator.js'
 import { getAccountInfo } from './pay/getAccountInfo.js'
@@ -51,10 +52,20 @@ export const createDataSet = async ({
     logger.warn('USDfc not deposited to Filecoin Pay')
     logger.info('Depositing 1 USDfc to Filecoin Pay')
 
-    await depositAndApproveOperator({
+    const hash = await depositAndApproveOperator({
       privateKey,
-      amount: 1n,
+      amount: Value.from('0.5', 18), // to cover future costs
+      address: payer,
+      chain: filecoinCalibration,
     })
+
+    logger.info(
+      `Transaction pending: ${filecoinCalibration.blockExplorers.http}/tx/${hash}`,
+    )
+
+    await waitForTransaction(filProvider, hash)
+
+    logger.success('Transaction succeeded')
   }
 
   const clientDataSetId = BigInt(randomInt(10 ** 8))

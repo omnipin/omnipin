@@ -1,10 +1,13 @@
 import { encodeData } from 'ox/AbiFunction'
 import type { Address } from 'ox/Address'
-import type { Hex } from 'ox/Hex'
+import { fromNumber, type Hex } from 'ox/Hex'
+import { maxUint256 } from 'ox/Solidity'
+import { logger } from '../../logger.js'
 import { sendTransaction, simulateTransaction } from '../../tx.js'
 import {
   FILECOIN_PAY_ADDRESS,
   type FilecoinChain,
+  FWSS_KEEPER_ADDRESS,
   filecoinCalibration,
   filProvider,
   USDFC_ADDRESS,
@@ -33,14 +36,12 @@ const abi = {
 } as const
 
 export const depositAndApproveOperator = async ({
-  from,
   privateKey,
   address,
   amount,
   deadline,
   chain,
 }: {
-  from: Address
   privateKey: Hex
   address: Address
   amount: bigint
@@ -68,27 +69,35 @@ export const depositAndApproveOperator = async ({
   })
 
   const data = encodeData(abi, [
-    USDFC_ADDRESS,
+    chain.contracts.usdfc.address,
     address,
     amount,
     deadline,
     27,
-    r,
-    s,
+    fromNumber(r),
+    fromNumber(s),
+    chain.contracts.storage.address,
+    maxUint256,
+    maxUint256,
+    30n * 2880n, // lockup period
   ])
 
   const params = {
     provider: filProvider,
     abi,
-    from,
-    to: FILECOIN_PAY_ADDRESS,
+    from: address,
+    to: chain.contracts.payments.address,
     data,
   } as const
-  if (await simulateTransaction(params)) {
-    return await sendTransaction({
-      ...params,
-      privateKey,
-      chainId: filecoinCalibration.id,
-    })
-  }
+
+  logger.info(`Simulating the Filecoing Warm Storage deposit`)
+
+  await simulateTransaction(params)
+
+  logger.info(`Depositing to Filecoin Warm Storage`)
+  return await sendTransaction({
+    ...params,
+    privateKey,
+    chainId: filecoinCalibration.id,
+  })
 }

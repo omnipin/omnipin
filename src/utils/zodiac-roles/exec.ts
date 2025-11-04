@@ -56,7 +56,6 @@ export const execTransactionWithRole = async ({
 
   const success = await simulateTransaction({
     provider,
-    abi: execTransactionWithRoleAbi,
     to: rolesModAddress,
     data,
     from,

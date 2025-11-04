@@ -55,6 +55,7 @@ export const multicall = async ({
         data: encodeData(abi, [calls]),
         to: filecoinCalibration.contracts.multicall3.address,
       },
+      'latest',
     ],
   })
 
