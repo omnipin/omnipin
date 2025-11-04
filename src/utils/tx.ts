@@ -18,7 +18,7 @@ export const simulateTransaction = async <Abi extends AbiFunction>({
   to: Address
   data: Hex
   abi: Abi
-  from: Hex
+  from: Address
 }): Promise<boolean> => {
   const result = await provider.request({
     method: 'eth_call',
@@ -48,7 +48,7 @@ export const sendTransaction = async ({
   privateKey: Hex
   to: Address
   data: Hex
-  from: Hex
+  from: Address
 }) => {
   const feeHistory = await provider.request({
     method: 'eth_feeHistory',

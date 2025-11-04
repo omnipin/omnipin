@@ -6,8 +6,15 @@ import type { Hex } from 'ox/Hex'
 import { sign } from 'ox/Secp256k1'
 import { toHex } from 'ox/Signature'
 import { getSignPayload } from 'ox/TypedData'
+import { DeployError } from '../../errors.js'
 import { logger } from '../logger.js'
-import { FWSS_KEEPER_ADDRESS, FWSS_PROXY_ADDRESS } from './constants.js'
+import {
+  FWSS_KEEPER_ADDRESS,
+  FWSS_PROXY_ADDRESS,
+  filecoinCalibration,
+} from './constants.js'
+import { depositAndApproveOperator } from './pay/depositAndApproveOperator.js'
+import { getAccountInfo } from './pay/getAccountInfo.js'
 
 const abi = ['address', 'uint256', 'string[]', 'string[]', 'bytes'] as const
 
@@ -19,6 +26,11 @@ const invalidSignatureAbi = {
   ],
   name: 'InvalidSignature',
 } as const
+
+const metadata = [{ key: 'withIPFSIndexing', value: '' }] as const
+
+const keys = metadata.map((item) => item.key)
+const values = metadata.map((item) => item.value)
 
 export const createDataSet = async ({
   providerURL,
@@ -33,10 +45,17 @@ export const createDataSet = async ({
   address: Address
   verbose?: boolean
 }): Promise<string> => {
-  const metadata = [{ key: 'withIPFSIndexing', value: '' }] as const
+  const [funds] = await getAccountInfo(payer)
 
-  const keys = metadata.map((item) => item.key)
-  const values = metadata.map((item) => item.value)
+  if (funds === 0n) {
+    logger.warn('USDfc not deposited to Filecoin Pay')
+    logger.info('Depositing 1 USDfc to Filecoin Pay')
+
+    await depositAndApproveOperator({
+      privateKey,
+      amount: 1n,
+    })
+  }
 
   const clientDataSetId = BigInt(randomInt(10 ** 8))
 
@@ -58,7 +77,7 @@ export const createDataSet = async ({
       name: 'FilecoinWarmStorageService',
       verifyingContract: FWSS_KEEPER_ADDRESS,
       version: '1',
-      chainId: 314159,
+      chainId: filecoinCalibration.id,
     },
     primaryType: 'CreateDataSet',
     message: {
@@ -78,6 +97,7 @@ export const createDataSet = async ({
     signature,
   ])
   logger.info(`Record keeper address: ${FWSS_KEEPER_ADDRESS}`)
+
   const res = await fetch(new URL('/pdp/data-sets', providerURL), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -87,6 +107,7 @@ export const createDataSet = async ({
     }),
   })
   if (verbose) logger.request('POST', res.url, res.status)
+
   const text = await res.text()
   if (!res.ok) {
     if (text.includes('recordKeeper address not allowed for public service')) {
@@ -96,9 +117,17 @@ export const createDataSet = async ({
     if (vmErrorMatch) {
       const errorHex = vmErrorMatch[1] as Hex
 
-      const cause = decode(invalidSignatureAbi, errorHex)
+      if (errorHex.includes('0x42d750dc')) {
+        const cause = decode(invalidSignatureAbi, errorHex)
 
-      throw new Error('Signer mismatch', { cause })
+        throw new Error('Signer mismatch', { cause })
+      }
+      if (errorHex.includes('0x57b1cc25')) {
+        throw new Error('Insufficient funds')
+      }
+      throw new Error('SP execution reverted during dataset creation', {
+        cause: text,
+      })
     }
     throw new Error('Failed to create a dataset', { cause: text })
   }

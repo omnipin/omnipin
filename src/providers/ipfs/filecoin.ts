@@ -36,7 +36,7 @@ export const uploadToFilecoin: UploadFunction<{
   const balance = await getUSDfcBalance(address)
   logger.info(`USDfc balance: ${format(balance, 18)}`)
 
-  if (balance === 0n) throw new DeployError(providerName, 'Empty USDfc balance')
+  if (balance === 0n) throw new DeployError(providerName, 'No USDfc on account')
 
   logger.info(`Filecoin SP address: ${providerAddress}`)
   logger.info(`Filecoin SP URL: ${providerURL}`)
@@ -141,8 +141,6 @@ export const uploadToFilecoin: UploadFunction<{
   if (!res.ok) {
     throw new DeployError(providerName, text)
   }
-
-  console.log({ text })
 
   return { cid }
 }
