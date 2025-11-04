@@ -29,7 +29,7 @@
     "ipfs-unixfs-importer": "^15.4.0",
     "multiformats": "^13.4.0",
     "nanotar": "^0.2.0",
-    "ox": "^0.8.7",
+    "ox": "^0.9.14",
     "size-limit": "^11.2.0",
     "spektr": "^0.2.0",
     "tinyglobby": "^0.2.14",

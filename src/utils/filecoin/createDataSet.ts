@@ -7,7 +7,7 @@ import { sign } from 'ox/Secp256k1'
 import { toHex } from 'ox/Signature'
 import { getSignPayload } from 'ox/TypedData'
 import { logger } from '../logger.js'
-import { FWSS_KEEPER_ADDRESS } from './constants.js'
+import { FWSS_KEEPER_ADDRESS, FWSS_PROXY_ADDRESS } from './constants.js'
 
 const abi = ['address', 'uint256', 'string[]', 'string[]', 'bytes'] as const
 
@@ -24,7 +24,7 @@ export const createDataSet = async ({
   providerURL,
   privateKey,
   payee,
-  address,
+  address: payer,
   verbose,
 }: {
   payee: Address
@@ -63,15 +63,15 @@ export const createDataSet = async ({
     primaryType: 'CreateDataSet',
     message: {
       clientDataSetId,
-      payee,
       metadata,
+      payee,
     },
   })
 
   const signature = toHex(sign({ payload, privateKey }))
 
   const extraData = AbiParameters.encode(AbiParameters.from(abi), [
-    address,
+    payer,
     clientDataSetId,
     keys,
     values,
