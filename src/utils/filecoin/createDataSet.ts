@@ -33,6 +33,10 @@ const metadata = [{ key: 'withIPFSIndexing', value: '' }] as const
 const keys = metadata.map((item) => item.key)
 const values = metadata.map((item) => item.value)
 
+/**
+ * Create a data set on an SP, and deposit to Filecoin Pay if balanace is 0
+ * @returns client data set id
+ */
 export const createDataSet = async ({
   providerURL,
   privateKey,
@@ -45,7 +49,7 @@ export const createDataSet = async ({
   privateKey: Hex
   address: Address
   verbose?: boolean
-}): Promise<string> => {
+}): Promise<bigint> => {
   const [funds] = await getAccountInfo(payer)
 
   if (funds === 0n) {
@@ -112,6 +116,7 @@ export const createDataSet = async ({
   const res = await fetch(new URL('/pdp/data-sets', providerURL), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    redirect: 'follow',
     body: JSON.stringify({
       recordKeeper: FWSS_KEEPER_ADDRESS,
       extraData,
@@ -119,29 +124,35 @@ export const createDataSet = async ({
   })
   if (verbose) logger.request('POST', res.url, res.status)
 
-  const text = await res.text()
-  if (!res.ok) {
-    if (text.includes('recordKeeper address not allowed for public service')) {
-      throw new Error('The SP does not support registering data sets')
-    }
-    const vmErrorMatch = text.match(/vm error=\[(0x[a-fA-F0-9]+)\]/)
-    if (vmErrorMatch) {
-      const errorHex = vmErrorMatch[1] as Hex
-
-      if (errorHex.includes('0x42d750dc')) {
-        const cause = decode(invalidSignatureAbi, errorHex)
-
-        throw new Error('Signer mismatch', { cause })
+  if (res.redirected) {
+    logger.info(`Pending data set creation: ${res.url}`)
+  } else {
+    const text = await res.text()
+    if (!res.ok) {
+      if (
+        text.includes('recordKeeper address not allowed for public service')
+      ) {
+        throw new Error('The SP does not support registering data sets')
       }
-      if (errorHex.includes('0x57b1cc25')) {
-        throw new Error('Insufficient funds')
+      const vmErrorMatch = text.match(/vm error=\[(0x[a-fA-F0-9]+)\]/)
+      if (vmErrorMatch) {
+        const errorHex = vmErrorMatch[1] as Hex
+
+        if (errorHex.includes('0x42d750dc')) {
+          const cause = decode(invalidSignatureAbi, errorHex)
+
+          throw new Error('Signer mismatch', { cause })
+        }
+        if (errorHex.includes('0x57b1cc25')) {
+          throw new Error('Insufficient funds')
+        }
+        throw new Error('SP execution reverted during dataset creation', {
+          cause: text,
+        })
       }
-      throw new Error('SP execution reverted during dataset creation', {
-        cause: text,
-      })
+      throw new Error('Failed to create a dataset', { cause: text })
     }
-    throw new Error('Failed to create a dataset', { cause: text })
   }
 
-  return text
+  return clientDataSetId
 }

@@ -1,6 +1,7 @@
 import { encodeData } from 'ox/AbiFunction'
 import type { Address } from 'ox/Address'
 import { fromNumber, type Hex } from 'ox/Hex'
+import { InternalError } from 'ox/RpcResponse'
 import { maxUint256 } from 'ox/Solidity'
 import { logger } from '../../logger.js'
 import { sendTransaction, simulateTransaction } from '../../tx.js'
@@ -92,12 +93,19 @@ export const depositAndApproveOperator = async ({
 
   logger.info(`Simulating the Filecoing Warm Storage deposit`)
 
-  await simulateTransaction(params)
+  try {
+    await simulateTransaction(params)
 
-  logger.info(`Depositing to Filecoin Warm Storage`)
-  return await sendTransaction({
-    ...params,
-    privateKey,
-    chainId: filecoinCalibration.id,
-  })
+    logger.info(`Depositing to Filecoin Warm Storage`)
+    return await sendTransaction({
+      ...params,
+      privateKey,
+      chainId: filecoinCalibration.id,
+    })
+  } catch (e) {
+    if (e instanceof InternalError && e.message.includes('actor not found')) {
+      throw new Error('No FIL on account')
+    }
+    throw e
+  }
 }

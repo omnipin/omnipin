@@ -116,15 +116,14 @@ export const uploadToFilecoin: UploadFunction<{
   let datasetId: string
   if (dataSets.length === 0) {
     logger.info('No dataset found. Creating.')
-    const res = await createDataSet({
+    const clientDataSetId = await createDataSet({
       privateKey,
       payee,
       providerURL,
       address,
     })
 
-    console.log(res)
-    datasetId = res.datasetId
+    datasetId = String(clientDataSetId)
   } else {
     logger.info(`Using existing dataset: ${dataSets[0]}`)
     datasetId = String(dataSets[0])
