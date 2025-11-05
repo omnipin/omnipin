@@ -7,6 +7,7 @@ import { sign } from 'ox/Secp256k1'
 import { toHex } from 'ox/Signature'
 import { getSignPayload } from 'ox/TypedData'
 import * as Value from 'ox/Value'
+import { DeployError } from '../../errors.js'
 import { logger } from '../logger.js'
 import { waitForTransaction } from '../tx.js'
 import {
@@ -18,15 +19,6 @@ import { depositAndApproveOperator } from './pay/depositAndApproveOperator.js'
 import { getAccountInfo } from './pay/getAccountInfo.js'
 
 const abi = ['address', 'uint256', 'string[]', 'string[]', 'bytes'] as const
-
-const invalidSignatureAbi = {
-  type: 'error',
-  inputs: [
-    { name: 'expected', internalType: 'address', type: 'address' },
-    { name: 'actual', internalType: 'address', type: 'address' },
-  ],
-  name: 'InvalidSignature',
-} as const
 
 const metadata = [{ key: 'withIPFSIndexing', value: '' }] as const
 
@@ -49,7 +41,7 @@ export const createDataSet = async ({
   privateKey: Hex
   address: Address
   verbose?: boolean
-}): Promise<bigint> => {
+}) => {
   const [funds] = await getAccountInfo(payer)
 
   if (funds === 0n) {
@@ -124,35 +116,53 @@ export const createDataSet = async ({
   })
   if (verbose) logger.request('POST', res.url, res.status)
 
-  if (res.redirected) {
-    logger.info(`Pending data set creation: ${res.url}`)
-  } else {
-    const text = await res.text()
-    if (!res.ok) {
-      if (
-        text.includes('recordKeeper address not allowed for public service')
-      ) {
-        throw new Error('The SP does not support registering data sets')
-      }
-      const vmErrorMatch = text.match(/vm error=\[(0x[a-fA-F0-9]+)\]/)
-      if (vmErrorMatch) {
-        const errorHex = vmErrorMatch[1] as Hex
-
-        if (errorHex.includes('0x42d750dc')) {
-          const cause = decode(invalidSignatureAbi, errorHex)
-
-          throw new Error('Signer mismatch', { cause })
-        }
-        if (errorHex.includes('0x57b1cc25')) {
-          throw new Error('Insufficient funds')
-        }
-        throw new Error('SP execution reverted during dataset creation', {
-          cause: text,
-        })
-      }
-      throw new Error('Failed to create a dataset', { cause: text })
+  const text = await res.text()
+  if (!res.ok) {
+    if (text.includes('recordKeeper address not allowed for public service')) {
+      throw new Error('The SP does not support registering data sets')
     }
+    const vmErrorMatch = text.match(/vm error=\[(0x[a-fA-F0-9]+)\]/)
+    if (vmErrorMatch) {
+      const errorHex = vmErrorMatch[1] as Hex
+
+      if (errorHex.includes('0x42d750dc')) {
+        const cause = decode(
+          {
+            type: 'error',
+            inputs: [
+              {
+                name: 'expected',
+                internalType: 'address',
+                type: 'address',
+              },
+              { name: 'actual', internalType: 'address', type: 'address' },
+            ],
+            name: 'InvalidSignature',
+          } as const,
+          errorHex,
+        )
+
+        throw new Error('Signer mismatch', { cause })
+      }
+      if (errorHex.includes('0x57b1cc25')) {
+        throw new Error('Insufficient funds')
+      }
+      throw new Error('SP execution reverted during dataset creation', {
+        cause: text,
+      })
+    }
+    throw new Error('Failed to create a dataset', { cause: text })
   }
 
-  return clientDataSetId
+  const location = res.headers.get('Location')
+  const hash = location?.split('/').pop()
+  if (!location || !hash || !hash.startsWith('0x')) {
+    throw new DeployError('Filecoin', 'Failed to locate transaction hash')
+  }
+
+  return {
+    clientDataSetId,
+    hash: hash as Hex,
+    statusUrl: new URL(location, providerURL).toString(),
+  }
 }

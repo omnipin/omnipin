@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto'
 import { type Address, fromPublicKey } from 'ox/Address'
 import type { Hex } from 'ox/Hex'
 import { getPublicKey } from 'ox/Secp256k1'
@@ -5,12 +6,15 @@ import { format } from 'ox/Value'
 import { DeployError } from '../../errors.js'
 import type { UploadFunction } from '../../types.js'
 import { calculatePieceCID } from '../../utils/filecoin/calculatePieceCID.js'
+import { filProvider } from '../../utils/filecoin/constants.js'
 import { createDataSet } from '../../utils/filecoin/createDataSet.js'
 import { getClientDataSets } from '../../utils/filecoin/getClientDatasets.js'
 import { getProviderIdByAddress } from '../../utils/filecoin/getProviderIdByAddress.js'
 import { getProviderPayee } from '../../utils/filecoin/getProviderPayee.js'
 import { getUSDfcBalance } from '../../utils/filecoin/getUSDfcBalance.js'
+import { uploadPieceToDataSet } from '../../utils/filecoin/uploadPieceToDataSet.js'
 import { logger } from '../../utils/logger.js'
+import { waitForTransaction } from '../../utils/tx.js'
 
 const providerName = 'Filecoin'
 
@@ -26,7 +30,9 @@ export const uploadToFilecoin: UploadFunction<{
   payerPrivateKey: privateKey,
   verbose,
 }) => {
-  const pieceCid = calculatePieceCID(await car.bytes()).toString()
+  const pieceCid = calculatePieceCID(await car.bytes())
+
+  logger.info(`Piece CID: ${pieceCid.toString()}`)
 
   const publicKey = getPublicKey({ privateKey })
   const address = fromPublicKey(publicKey)
@@ -49,19 +55,43 @@ export const uploadToFilecoin: UploadFunction<{
 
   logger.info(`Filecoin SP Payee: ${payee}`)
 
+  logger.info('Looking up existing datasets')
+  const dataSets = await getClientDataSets(address)
+
+  let datasetId: bigint
+  if (dataSets.length === 0) {
+    logger.info('No dataset found. Creating.')
+    const { clientDataSetId, hash, statusUrl } = await createDataSet({
+      privateKey,
+      payee,
+      providerURL,
+      address,
+    })
+
+    datasetId = clientDataSetId
+    logger.info(`Pending data set creation: ${statusUrl}`)
+    logger.info(
+      `Pending transaction: https://filecoin-testnet.blockscout.com/tx/${hash}`,
+    )
+    await waitForTransaction(filProvider, hash)
+  } else {
+    logger.info(`Using existing dataset: ${dataSets[0]}`)
+    datasetId = dataSets[0]
+  }
+
   let res = await fetch(new URL('/pdp/piece', providerURL), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      pieceCid,
+      pieceCid: pieceCid.toString(),
     }),
   })
 
   if (verbose) logger.request('POST', res.url, res.status)
 
-  let text = await res.text()
+  const text = await res.text()
 
   if (!res.ok) {
     throw new DeployError(providerName, text)
@@ -99,7 +129,7 @@ export const uploadToFilecoin: UploadFunction<{
   logger.info('Attempting to retrieve the piece from PDP API')
   for (let i = 0; i < 30; i++) {
     const res = await fetch(
-      new URL(`/pdp/piece?pieceCid=${pieceCid}`, providerURL),
+      new URL(`/pdp/piece?pieceCid=${pieceCid.toString()}`, providerURL),
     )
     if (verbose) logger.request('POST', res.url, res.status)
 
@@ -110,36 +140,19 @@ export const uploadToFilecoin: UploadFunction<{
   }
   logger.success('Piece found')
 
-  logger.info('Looking up existing datasets')
-  const dataSets = await getClientDataSets(address)
-
-  let datasetId: string
-  if (dataSets.length === 0) {
-    logger.info('No dataset found. Creating.')
-    const clientDataSetId = await createDataSet({
-      privateKey,
-      payee,
-      providerURL,
-      address,
-    })
-
-    datasetId = String(clientDataSetId)
-  } else {
-    logger.info(`Using existing dataset: ${dataSets[0]}`)
-    datasetId = String(dataSets[0])
-  }
-
-  res = await fetch(new URL(`/pdp/dataset/${datasetId}/piece`, providerURL), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pieceCid }),
+  const { hash, statusUrl } = await uploadPieceToDataSet({
+    pieceCid,
+    providerURL,
+    verbose,
+    datasetId,
+    privateKey,
+    nonce: BigInt(randomInt(10 ** 8)),
   })
-
-  if (verbose) logger.request('POST', res.url, res.status)
-  text = await res.text()
-  if (!res.ok) {
-    throw new DeployError(providerName, text)
-  }
+  logger.info(`Pending piece upload: ${statusUrl}`)
+  logger.info(
+    `Pending transaction: https://filecoin-testnet.blockscout.com/tx/${hash}`,
+  )
+  await waitForTransaction(filProvider, hash)
 
   return { cid }
 }
