@@ -26,6 +26,7 @@ export const uploadPieceToDataSet = async ({
   verbose,
   privateKey,
   nonce,
+  clientDataSetId,
 }: {
   pieceCid: PieceLink
   providerURL: string
@@ -33,6 +34,7 @@ export const uploadPieceToDataSet = async ({
   verbose?: boolean
   privateKey: Hex
   nonce: bigint
+  clientDataSetId?: bigint
 }) => {
   const pieces = [pieceCid]
   const pieceData = [{ data: `0x${toHex(pieceCid.bytes)}` }] as const
@@ -40,7 +42,10 @@ export const uploadPieceToDataSet = async ({
   if (!pieceData[0].data.startsWith('0x015591'))
     throw new DeployError('Filecoin', 'Invalid piece CID in hex')
 
-  const { clientDataSetId } = await getDataSet(datasetId)
+  if (!clientDataSetId) {
+    const dataSet = await getDataSet(datasetId)
+    clientDataSetId = dataSet.clientDataSetId
+  }
 
   logger.info(`Client data set ID: ${clientDataSetId}`)
 

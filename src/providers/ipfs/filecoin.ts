@@ -57,24 +57,33 @@ export const uploadToFilecoin: UploadFunction<{
   const dataSets = await getClientDataSets(address)
 
   let datasetId: bigint
-  if (dataSets.length === 0) {
+  let clientDataSetId: bigint | undefined
+  const providerDataSets = dataSets.filter(
+    (set) => set.providerId === providerId,
+  )
+  if (providerDataSets.length === 0) {
     logger.info('No dataset found. Creating.')
-    const { clientDataSetId, hash, statusUrl } = await createDataSet({
+    const {
+      clientDataSetId: clientId,
+      hash,
+      statusUrl,
+    } = await createDataSet({
       privateKey,
       payee,
       providerURL,
       address,
     })
 
-    datasetId = clientDataSetId
+    datasetId = clientId
+    clientDataSetId = clientId
     logger.info(`Pending data set creation: ${statusUrl}`)
     logger.info(
       `Pending transaction: https://filecoin-testnet.blockscout.com/tx/${hash}`,
     )
     await waitForTransaction(filProvider, hash)
   } else {
-    logger.info(`Using existing dataset: ${dataSets[0]}`)
-    datasetId = dataSets[0]
+    logger.info(`Using existing dataset: ${providerDataSets[0]}`)
+    datasetId = providerDataSets[0].dataSetId
   }
 
   const calculatedCid = calculatePieceCID(await car.bytes())
@@ -157,6 +166,7 @@ export const uploadToFilecoin: UploadFunction<{
     datasetId,
     privateKey,
     nonce: BigInt(randomInt(10 ** 8)),
+    clientDataSetId,
   })
   logger.info(`Pending piece upload: ${statusUrl}`)
   logger.info(
