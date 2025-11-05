@@ -86,11 +86,21 @@ export const uploadToFilecoin: UploadFunction<{
     datasetId = providerDataSets[0].dataSetId
   }
 
-  const calculatedCid = calculatePieceCID(await car.bytes())
-  if (!pieceCid) {
-    pieceCid = calculatedCid.toString()
+  // Buffer CAR bytes once and derive Piece CID
+  const carBytes = new Uint8Array(await car.arrayBuffer())
+  const calculatedCid = calculatePieceCID(carBytes)
+  const expectedPieceCid = calculatedCid.toString()
 
-    logger.info(`Piece CID: ${pieceCid}`)
+  // Validate provided pieceCid (if any) and resolve final value
+  if (pieceCid && pieceCid !== expectedPieceCid)
+    throw new DeployError(
+      providerName,
+      'Provided pieceCid does not match CAR content',
+    )
+  const resolvedPieceCid = pieceCid || expectedPieceCid
+
+  if (!pieceCid) {
+    logger.info(`Piece CID: ${resolvedPieceCid}`)
 
     let res = await fetch(new URL('/pdp/piece', providerURL), {
       method: 'POST',
@@ -98,7 +108,7 @@ export const uploadToFilecoin: UploadFunction<{
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        pieceCid,
+        pieceCid: resolvedPieceCid,
       }),
     })
 
@@ -127,13 +137,13 @@ export const uploadToFilecoin: UploadFunction<{
           method: 'PUT',
           headers: {
             'Content-Type': 'application/octet-stream',
-            'Content-Length': (await car.bytes()).length.toString(),
+            'Content-Length': carBytes.length.toString(),
           },
-          body: await car.bytes(),
+          body: carBytes,
         },
       )
 
-      if (verbose) logger.request('POST', res.url, res.status)
+      if (verbose) logger.request('PUT', res.url, res.status)
 
       if (res.status !== 204) {
         throw new DeployError(providerName, await res.text())
@@ -142,15 +152,15 @@ export const uploadToFilecoin: UploadFunction<{
       logger.success('Uploaded piece to the SP')
     }
   } else {
-    logger.info(`Piece CID: ${pieceCid}`)
+    logger.info(`Piece CID: ${resolvedPieceCid}`)
   }
 
   logger.info('Attempting to retrieve the piece from PDP API')
   for (let i = 0; i < 30; i++) {
     const res = await fetch(
-      new URL(`/pdp/piece?pieceCid=${pieceCid.toString()}`, providerURL),
+      new URL(`/pdp/piece?pieceCid=${resolvedPieceCid}`, providerURL),
     )
-    if (verbose) logger.request('POST', res.url, res.status)
+    if (verbose) logger.request('GET', res.url, res.status)
 
     if (res.ok) {
       break
