@@ -41,7 +41,7 @@ export const execTransactionWithRole = async ({
   rolesModAddress: Address
   data: Hex
   from: Address
-  privateKey: Address
+  privateKey: Hex
   chainId: number
   explorerUrl: string
 }) => {
