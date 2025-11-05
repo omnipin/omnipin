@@ -46,7 +46,7 @@ export const createDataSet = async ({
 
   if (funds === 0n) {
     logger.warn('USDfc not deposited to Filecoin Pay')
-    logger.info('Depositing 1 USDfc to Filecoin Pay')
+    logger.info('Depositing 0.5 USDfc to Filecoin Pay')
 
     const hash = await depositAndApproveOperator({
       privateKey,
