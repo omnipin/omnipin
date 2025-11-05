@@ -57,7 +57,7 @@ export const depositAndApproveOperator = async ({
   })
 
   if (balance < amount)
-    throw new Error(`Not enough USDfc to deposit (need: ${amount - balance}`)
+    throw new Error(`Not enough USDfc to deposit (need: ${amount - balance})`)
 
   const { r, s } = await signErc20Permit({
     privateKey,
@@ -91,7 +91,7 @@ export const depositAndApproveOperator = async ({
     data,
   } as const
 
-  logger.info(`Simulating the Filecoing Warm Storage deposit`)
+  logger.info(`Simulating the Filecoin Warm Storage deposit`)
 
   try {
     await simulateTransaction(params)
