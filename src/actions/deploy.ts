@@ -157,9 +157,12 @@ export const deployAction = async ({
           first: ipfsProviders.indexOf(provider) === 0,
           verbose,
           baseURL: apiTokens.get('SPEC_URL'),
+
+          // Filecoin
           providerURL: apiTokens.get('FILECOIN_SP_URL'),
           providerAddress: apiTokens.get('FILECOIN_SP_ADDRESS'),
           payerPrivateKey: apiTokens.get('FILECOIN_PAYER_PK'),
+          pieceCid: apiTokens.get('FILECOIN_PIECE_CID'),
         })
       } catch (e) {
         if (strict) throw e

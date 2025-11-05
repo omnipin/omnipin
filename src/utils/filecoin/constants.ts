@@ -53,7 +53,7 @@ export const filecoinCalibration: FilecoinChain = {
       address: '0x09a0fDc2723fAd1A7b8e3e00eE5DF73841df55a0',
     },
     storage: {
-      address: '0x02925630df557f957f70e112ba06e50965417ca0',
+      address: '0x02925630df557F957f70E112bA06e50965417CA0',
     },
   },
   blockExplorers: {

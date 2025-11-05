@@ -22,6 +22,7 @@ export const uploadToFilecoin: UploadFunction<{
   providerAddress: Address
   providerURL: string
   payerPrivateKey: Hex
+  pieceCid: string
 }> = async ({
   providerAddress,
   providerURL,
@@ -29,11 +30,8 @@ export const uploadToFilecoin: UploadFunction<{
   car,
   payerPrivateKey: privateKey,
   verbose,
+  pieceCid,
 }) => {
-  const pieceCid = calculatePieceCID(await car.bytes())
-
-  logger.info(`Piece CID: ${pieceCid.toString()}`)
-
   const publicKey = getPublicKey({ privateKey })
   const address = fromPublicKey(publicKey)
 
@@ -79,51 +77,63 @@ export const uploadToFilecoin: UploadFunction<{
     datasetId = dataSets[0]
   }
 
-  let res = await fetch(new URL('/pdp/piece', providerURL), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      pieceCid: pieceCid.toString(),
-    }),
-  })
+  const calculatedCid = calculatePieceCID(await car.bytes())
+  if (!pieceCid) {
+    pieceCid = calculatedCid.toString()
 
-  if (verbose) logger.request('POST', res.url, res.status)
+    logger.info(`Piece CID: ${pieceCid}`)
 
-  const text = await res.text()
-
-  if (!res.ok) {
-    throw new DeployError(providerName, text)
-  }
-
-  if (res.status === 201) {
-    const location = res.headers.get('Location')
-    if (!location)
-      throw new DeployError(
-        providerName,
-        'Missing "Location" Header in response',
-      )
-    const uploadUuid = location.match(/\/piece\/upload\/([a-fA-F0-9-]+)/)?.[1]
-
-    logger.info(`Upload UUID: ${uploadUuid}`)
-
-    res = await fetch(new URL(`/pdp/piece/upload/${uploadUuid}`, providerURL), {
-      method: 'PUT',
+    let res = await fetch(new URL('/pdp/piece', providerURL), {
+      method: 'POST',
       headers: {
-        'Content-Type': 'application/octet-stream',
-        'Content-Length': (await car.bytes()).length.toString(),
+        'Content-Type': 'application/json',
       },
-      body: await car.bytes(),
+      body: JSON.stringify({
+        pieceCid,
+      }),
     })
 
     if (verbose) logger.request('POST', res.url, res.status)
 
-    if (res.status !== 204) {
-      throw new DeployError(providerName, await res.text())
+    const text = await res.text()
+
+    if (!res.ok) {
+      throw new DeployError(providerName, text)
     }
 
-    logger.success('Uploaded piece to the SP')
+    if (res.status === 201) {
+      const location = res.headers.get('Location')
+      if (!location)
+        throw new DeployError(
+          providerName,
+          'Missing "Location" Header in response',
+        )
+      const uploadUuid = location.match(/\/piece\/upload\/([a-fA-F0-9-]+)/)?.[1]
+
+      logger.info(`Upload UUID: ${uploadUuid}`)
+
+      res = await fetch(
+        new URL(`/pdp/piece/upload/${uploadUuid}`, providerURL),
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/octet-stream',
+            'Content-Length': (await car.bytes()).length.toString(),
+          },
+          body: await car.bytes(),
+        },
+      )
+
+      if (verbose) logger.request('POST', res.url, res.status)
+
+      if (res.status !== 204) {
+        throw new DeployError(providerName, await res.text())
+      }
+
+      logger.success('Uploaded piece to the SP')
+    }
+  } else {
+    logger.info(`Piece CID: ${pieceCid}`)
   }
 
   logger.info('Attempting to retrieve the piece from PDP API')
@@ -141,7 +151,7 @@ export const uploadToFilecoin: UploadFunction<{
   logger.success('Piece found')
 
   const { hash, statusUrl } = await uploadPieceToDataSet({
-    pieceCid,
+    pieceCid: calculatedCid,
     providerURL,
     verbose,
     datasetId,
