@@ -1,5 +1,4 @@
 import { CID } from 'multiformats/cid'
-import type { Address } from 'ox/Address'
 import { toHex } from 'ox/Bytes'
 import { namehash, normalize } from 'ox/Ens'
 import * as varint from 'varint'

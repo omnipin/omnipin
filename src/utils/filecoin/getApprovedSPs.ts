@@ -1,5 +1,5 @@
 import { decodeResult, encodeData } from 'ox/AbiFunction'
-import { filecoinCalibration, filProvider } from './constants.js'
+import { type FilecoinChain, filProvider } from './constants.js'
 
 const abi = [
   {
@@ -23,15 +23,16 @@ const abi = [
   },
 ] as const
 
-export const getApprovedSPs = async () => {
+export const getApprovedSPs = async ({ chain }: { chain: FilecoinChain }) => {
+  const provider = filProvider[chain.id]
   // 1) Get total count
   const lenData = encodeData(abi[0])
-  const lenResult = await filProvider.request({
+  const lenResult = await provider.request({
     method: 'eth_call',
     params: [
       {
         data: lenData,
-        to: filecoinCalibration.contracts.registryView.address,
+        to: chain.contracts.storageView.address,
       },
       'latest',
     ],
@@ -40,12 +41,12 @@ export const getApprovedSPs = async () => {
 
   // 2) Fetch providerIds (offset=0, limit=count)
   const listData = encodeData(abi[1], [0n, count])
-  const listResult = await filProvider.request({
+  const listResult = await provider.request({
     method: 'eth_call',
     params: [
       {
         data: listData,
-        to: filecoinCalibration.contracts.registryView.address,
+        to: chain.contracts.storageView.address,
       },
       'latest',
     ],

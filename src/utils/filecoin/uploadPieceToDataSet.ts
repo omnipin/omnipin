@@ -8,7 +8,7 @@ import * as Signature from 'ox/Signature'
 import { getSignPayload } from 'ox/TypedData'
 import { DeployError } from '../../errors.js'
 import { logger } from '../logger.js'
-import { filecoinCalibration } from './constants.js'
+import type { FilecoinChain } from './constants.js'
 import { getDataSet } from './getDataSet.js'
 
 const metadata = [{ key: 'withIPFSIndexing', value: '' }] as const
@@ -27,6 +27,7 @@ export const uploadPieceToDataSet = async ({
   privateKey,
   nonce,
   clientDataSetId,
+  chain,
 }: {
   pieceCid: PieceLink
   providerURL: string
@@ -35,6 +36,7 @@ export const uploadPieceToDataSet = async ({
   privateKey: Hex
   nonce: bigint
   clientDataSetId?: bigint
+  chain: FilecoinChain
 }) => {
   const pieces = [pieceCid]
   const pieceData = [{ data: `0x${toHex(pieceCid.bytes)}` }] as const
@@ -43,7 +45,7 @@ export const uploadPieceToDataSet = async ({
     throw new DeployError('Filecoin', 'Invalid piece CID in hex')
 
   if (!clientDataSetId) {
-    const dataSet = await getDataSet(datasetId)
+    const dataSet = await getDataSet({ dataSetId: datasetId, chain })
     clientDataSetId = dataSet.clientDataSetId
   }
 
@@ -69,9 +71,9 @@ export const uploadPieceToDataSet = async ({
     },
     domain: {
       name: 'FilecoinWarmStorageService',
-      verifyingContract: filecoinCalibration.contracts.storage.address,
+      verifyingContract: chain.contracts.storage.address,
       version: '1',
-      chainId: filecoinCalibration.id,
+      chainId: chain.id,
     },
     primaryType: 'AddPieces',
     message: {

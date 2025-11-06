@@ -10,7 +10,11 @@ import * as Value from 'ox/Value'
 import { DeployError } from '../../errors.js'
 import { logger } from '../logger.js'
 import { waitForTransaction } from '../tx.js'
-import { filecoinCalibration, filProvider } from './constants.js'
+import {
+  type FilecoinChain,
+  filecoinCalibration,
+  filProvider,
+} from './constants.js'
 import { depositAndApproveOperator } from './pay/depositAndApproveOperator.js'
 import { getAccountInfo } from './pay/getAccountInfo.js'
 
@@ -31,14 +35,17 @@ export const createDataSet = async ({
   payee,
   address: payer,
   verbose,
+  chain,
 }: {
   payee: Address
   providerURL: string
   privateKey: Hex
   address: Address
+  chain: FilecoinChain
   verbose?: boolean
 }) => {
-  const [funds] = await getAccountInfo(payer)
+  const provider = filProvider[chain.id]
+  const [funds] = await getAccountInfo({ address: payer, chain })
 
   if (funds === 0n) {
     logger.warn('USDfc not deposited to Filecoin Pay')
@@ -48,14 +55,12 @@ export const createDataSet = async ({
       privateKey,
       amount: Value.from('0.5', 18), // to cover future costs
       address: payer,
-      chain: filecoinCalibration,
+      chain,
     })
 
-    logger.info(
-      `Transaction pending: ${filecoinCalibration.blockExplorers.http}/tx/${hash}`,
-    )
+    logger.info(`Transaction pending: ${chain.blockExplorer}/tx/${hash}`)
 
-    await waitForTransaction(filProvider, hash)
+    await waitForTransaction(provider, hash)
 
     logger.success('Transaction succeeded')
   }
@@ -99,16 +104,14 @@ export const createDataSet = async ({
     values,
     signature,
   ])
-  logger.info(
-    `Record keeper address: ${filecoinCalibration.contracts.storage.address}`,
-  )
+  logger.info(`Record keeper address: ${chain.contracts.storage.address}`)
 
   const res = await fetch(new URL('/pdp/data-sets', providerURL), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     redirect: 'follow',
     body: JSON.stringify({
-      recordKeeper: filecoinCalibration.contracts.storage.address,
+      recordKeeper: chain.contracts.storage.address,
       extraData,
     }),
   })

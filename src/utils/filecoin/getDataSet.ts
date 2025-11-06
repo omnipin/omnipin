@@ -1,5 +1,5 @@
 import { decodeResult, encodeData } from 'ox/AbiFunction'
-import { filecoinCalibration, filProvider } from './constants.js'
+import { type FilecoinChain, filProvider } from './constants.js'
 
 const abi = {
   type: 'function',
@@ -28,13 +28,20 @@ const abi = {
   stateMutability: 'view',
 } as const
 
-export const getDataSet = async (dataSetId: bigint) => {
-  const result = await filProvider.request({
+export const getDataSet = async ({
+  dataSetId,
+  chain,
+}: {
+  dataSetId: bigint
+  chain: FilecoinChain
+}) => {
+  const provider = filProvider[chain.id]
+  const result = await provider.request({
     method: 'eth_call',
     params: [
       {
         data: encodeData(abi, [dataSetId]),
-        to: filecoinCalibration.contracts.registryView.address,
+        to: chain.contracts.storageView.address,
       },
       'latest',
     ],

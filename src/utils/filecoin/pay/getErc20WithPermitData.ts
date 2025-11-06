@@ -63,7 +63,7 @@ export const getErc20WithPermitData = async ({
   const target = chain.contracts.usdfc.address
 
   const results = await multicall({
-    provider: filProvider,
+    provider: filProvider[chain.id],
     calls: [
       encodeData(erc20Abi[0], [address]),
       encodeData(erc20Abi[1]),

@@ -2,7 +2,7 @@ import { decodeResult, encodeData } from 'ox/AbiFunction'
 import type { Address } from 'ox/Address'
 import type { Hex } from 'ox/Hex'
 import type { Provider } from 'ox/Provider'
-import { filecoinCalibration } from './filecoin/constants.js'
+import type { FilecoinChain } from './filecoin/constants.js'
 
 const abi = {
   inputs: [
@@ -44,16 +44,18 @@ const abi = {
 export const multicall = async ({
   calls,
   provider,
+  chain,
 }: {
   calls: readonly { callData: Hex; target: Address }[]
   provider: Provider
+  chain: FilecoinChain
 }) => {
   const result = await provider.request({
     method: 'eth_call',
     params: [
       {
         data: encodeData(abi, [calls]),
-        to: filecoinCalibration.contracts.multicall3.address,
+        to: chain.contracts.multicall3.address,
       },
       'latest',
     ],

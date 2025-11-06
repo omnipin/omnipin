@@ -1,7 +1,7 @@
 import { styleText } from 'node:util'
 import mod from 'ascii-bar'
 import { isTTY, PROVIDERS } from '../constants.js'
-import { NoProvidersError } from '../errors.js'
+import { MissingKeyError, NoProvidersError } from '../errors.js'
 import {
   findEnvVarProviderName,
   parseTokensFromEnv,
@@ -20,6 +20,7 @@ export type DeployActionArgs = Partial<{
   providers: string
   dnslink: string
   'progress-bar': boolean
+  'filecoin-chain': 'mainnet' | 'calibration'
 }> &
   PackActionArgs &
   EnsActionArgs
@@ -41,6 +42,7 @@ export const deployAction = async ({
     providers: providersList,
     dnslink,
     'progress-bar': progressBar,
+    'filecoin-chain': filecoinChain,
     ...opts
   } = options
 
@@ -146,6 +148,15 @@ export const deployAction = async ({
       else if (envVar.includes('4EVERLAND'))
         bucketName = apiTokens.get('4EVERLAND_BUCKET_NAME')
 
+      // Filecoin
+      const providerURL = apiTokens.get('FILECOIN_SP_URL'),
+        providerAddress = apiTokens.get('FILECOIN_SP_ADDRESS'),
+        payerPrivateKey = apiTokens.get('FILECOIN_PAYER_PK'),
+        pieceCid = apiTokens.get('FILECOIN_PIECE_CID')
+
+      if (filecoinChain && !providerURL)
+        throw new MissingKeyError('FILECOIN_SP_URL')
+
       try {
         await provider.upload({
           name,
@@ -159,10 +170,11 @@ export const deployAction = async ({
           baseURL: apiTokens.get('SPEC_URL'),
 
           // Filecoin
-          providerURL: apiTokens.get('FILECOIN_SP_URL'),
-          providerAddress: apiTokens.get('FILECOIN_SP_ADDRESS'),
-          payerPrivateKey: apiTokens.get('FILECOIN_PAYER_PK'),
-          pieceCid: apiTokens.get('FILECOIN_PIECE_CID'),
+          providerURL,
+          providerAddress,
+          pieceCid,
+          payerPrivateKey,
+          filecoinChain,
         })
       } catch (e) {
         if (strict) throw e

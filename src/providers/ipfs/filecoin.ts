@@ -6,7 +6,11 @@ import { format } from 'ox/Value'
 import { DeployError } from '../../errors.js'
 import type { UploadFunction } from '../../types.js'
 import { calculatePieceCID } from '../../utils/filecoin/calculatePieceCID.js'
-import { filProvider } from '../../utils/filecoin/constants.js'
+import {
+  filecoinCalibration,
+  filecoinMainnet,
+  filProvider,
+} from '../../utils/filecoin/constants.js'
 import { createDataSet } from '../../utils/filecoin/createDataSet.js'
 import { getClientDataSets } from '../../utils/filecoin/getClientDatasets.js'
 import { getProviderIdByAddress } from '../../utils/filecoin/getProviderIdByAddress.js'
@@ -23,6 +27,7 @@ export const uploadToFilecoin: UploadFunction<{
   providerURL: string
   payerPrivateKey: Hex
   pieceCid: string
+  filecoinChain: 'mainnet' | 'calibration'
 }> = async ({
   providerAddress,
   providerURL,
@@ -31,13 +36,20 @@ export const uploadToFilecoin: UploadFunction<{
   payerPrivateKey: privateKey,
   verbose,
   pieceCid,
+  filecoinChain = 'mainnet',
 }) => {
   const publicKey = getPublicKey({ privateKey })
   const address = fromPublicKey(publicKey)
 
   logger.info(`Payer address: ${address}`)
 
-  const balance = await getUSDfcBalance(address)
+  const chain =
+    filecoinChain === 'mainnet' ? filecoinMainnet : filecoinCalibration
+  const chainId = chain.id
+
+  logger.info(`Filecoin chain: ${chain.name}`)
+
+  const balance = await getUSDfcBalance({ address, chain })
   logger.info(`USDfc balance: ${format(balance, 18)}`)
 
   if (balance === 0n) throw new DeployError(providerName, 'No USDfc on account')
@@ -45,16 +57,19 @@ export const uploadToFilecoin: UploadFunction<{
   logger.info(`Filecoin SP address: ${providerAddress}`)
   logger.info(`Filecoin SP URL: ${providerURL}`)
 
-  const providerId = await getProviderIdByAddress(providerAddress)
+  const providerId = await getProviderIdByAddress({
+    providerAddress,
+    chain,
+  })
 
   logger.info(`Filecoin SP ID: ${providerId}`)
 
-  const payee = await getProviderPayee(providerId)
+  const payee = await getProviderPayee({ id: providerId, chain })
 
   logger.info(`Filecoin SP Payee: ${payee}`)
 
   logger.info('Looking up existing datasets')
-  const dataSets = await getClientDataSets(address)
+  const dataSets = await getClientDataSets({ address, chain })
 
   let datasetId: bigint
   let clientDataSetId: bigint | undefined
@@ -72,6 +87,7 @@ export const uploadToFilecoin: UploadFunction<{
       payee,
       providerURL,
       address,
+      chain,
     })
 
     datasetId = clientId
@@ -80,9 +96,9 @@ export const uploadToFilecoin: UploadFunction<{
     logger.info(
       `Pending transaction: https://filecoin-testnet.blockscout.com/tx/${hash}`,
     )
-    await waitForTransaction(filProvider, hash)
+    await waitForTransaction(filProvider[chainId], hash)
   } else {
-    logger.info(`Using existing dataset: ${providerDataSets[0]}`)
+    logger.info(`Using existing dataset: ${providerDataSets[0].dataSetId}`)
     datasetId = providerDataSets[0].dataSetId
   }
 
@@ -177,12 +193,13 @@ export const uploadToFilecoin: UploadFunction<{
     privateKey,
     nonce: BigInt(randomInt(10 ** 8)),
     clientDataSetId,
+    chain,
   })
   logger.info(`Pending piece upload: ${statusUrl}`)
   logger.info(
     `Pending transaction: https://filecoin-testnet.blockscout.com/tx/${hash}`,
   )
-  await waitForTransaction(filProvider, hash)
+  await waitForTransaction(filProvider[chainId], hash)
 
   return { cid }
 }
