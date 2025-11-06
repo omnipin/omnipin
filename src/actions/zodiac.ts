@@ -6,7 +6,6 @@ import type { Hex } from 'ox/Hex'
 import { getPublicKey, randomPrivateKey } from 'ox/Secp256k1'
 import { chains } from '../constants.js'
 import { MissingCLIArgsError } from '../errors.js'
-import { PUBLIC_RESOLVER_ADDRESS } from '../utils/ens.js'
 import { logger } from '../utils/logger.js'
 
 import {
@@ -29,7 +28,7 @@ export const zodiacAction = async ({
 
   const resolverAddress =
     options['resolver-address'] ??
-    PUBLIC_RESOLVER_ADDRESS[options.chain ?? 'mainnet']
+    chains[options.chain ?? 'mainnet'].contracts.publicResolver.address
 
   const safe = options.safe
 

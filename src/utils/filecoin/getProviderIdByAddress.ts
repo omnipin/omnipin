@@ -1,6 +1,6 @@
 import { decodeResult, encodeData } from 'ox/AbiFunction'
 import type { Address } from 'ox/Address'
-import { FWSS_PROXY_ADDRESS, filProvider } from './constants.js'
+import { filecoinCalibration, filProvider } from './constants.js'
 
 const abi = {
   type: 'function',
@@ -28,7 +28,7 @@ export const getProviderIdByAddress = async (
     params: [
       {
         data: encodeData(abi, [providerAddress]),
-        to: FWSS_PROXY_ADDRESS,
+        to: filecoinCalibration.contracts.proxy.address,
       },
       'latest',
     ],

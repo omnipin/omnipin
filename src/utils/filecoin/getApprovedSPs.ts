@@ -1,5 +1,5 @@
 import { decodeResult, encodeData } from 'ox/AbiFunction'
-import { FWSS_REGISTRY_VIEW_ADDRESS, filProvider } from './constants.js'
+import { filecoinCalibration, filProvider } from './constants.js'
 
 const abi = [
   {
@@ -31,7 +31,7 @@ export const getApprovedSPs = async () => {
     params: [
       {
         data: lenData,
-        to: FWSS_REGISTRY_VIEW_ADDRESS,
+        to: filecoinCalibration.contracts.registryView.address,
       },
       'latest',
     ],
@@ -45,7 +45,7 @@ export const getApprovedSPs = async () => {
     params: [
       {
         data: listData,
-        to: FWSS_REGISTRY_VIEW_ADDRESS,
+        to: filecoinCalibration.contracts.registryView.address,
       },
       'latest',
     ],

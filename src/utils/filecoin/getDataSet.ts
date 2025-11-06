@@ -1,9 +1,5 @@
 import { decodeResult, encodeData } from 'ox/AbiFunction'
-import {
-  FWSS_REGISTRY_VIEW_ADDRESS,
-  filecoinCalibration,
-  filProvider,
-} from './constants.js'
+import { filecoinCalibration, filProvider } from './constants.js'
 
 const abi = {
   type: 'function',
@@ -36,7 +32,10 @@ export const getDataSet = async (dataSetId: bigint) => {
   const result = await filProvider.request({
     method: 'eth_call',
     params: [
-      { data: encodeData(abi, [dataSetId]), to: FWSS_REGISTRY_VIEW_ADDRESS },
+      {
+        data: encodeData(abi, [dataSetId]),
+        to: filecoinCalibration.contracts.registryView.address,
+      },
       'latest',
     ],
   })

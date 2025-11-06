@@ -1,10 +1,6 @@
 import { decodeResult, encodeData } from 'ox/AbiFunction'
 import type { Address } from 'ox/Address'
-import {
-  FILECOIN_PAY_ADDRESS,
-  filProvider,
-  USDFC_ADDRESS,
-} from '../constants.js'
+import { filecoinCalibration, filProvider } from '../constants.js'
 
 const abi = {
   type: 'function',
@@ -27,8 +23,8 @@ export const getAccountInfo = async (address: Address) => {
     method: 'eth_call',
     params: [
       {
-        data: encodeData(abi, [USDFC_ADDRESS, address]),
-        to: FILECOIN_PAY_ADDRESS,
+        data: encodeData(abi, [filecoinCalibration.contracts.usdfc.address, address]),
+        to: filecoinCalibration.contracts.payments.address,
       },
       'latest',
     ],

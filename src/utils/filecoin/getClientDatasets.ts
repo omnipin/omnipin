@@ -1,6 +1,6 @@
 import { decodeResult, encodeData } from 'ox/AbiFunction'
 import type { Address } from 'ox/Address'
-import { FWSS_REGISTRY_VIEW_ADDRESS, filProvider } from './constants.js'
+import { filecoinCalibration, filProvider } from './constants.js'
 
 const abi = {
   type: 'function',
@@ -92,7 +92,7 @@ export const getClientDataSets = async (address: Address) => {
     params: [
       {
         data,
-        to: FWSS_REGISTRY_VIEW_ADDRESS,
+        to: filecoinCalibration.contracts.registryView.address,
       },
       'latest',
     ],
