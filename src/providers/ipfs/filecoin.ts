@@ -3,7 +3,7 @@ import { type Address, fromPublicKey } from 'ox/Address'
 import type { Hex } from 'ox/Hex'
 import { getPublicKey } from 'ox/Secp256k1'
 import { format } from 'ox/Value'
-import { DeployError } from '../../errors.js'
+import { DeployError, MissingKeyError } from '../../errors.js'
 import type { UploadFunction } from '../../types.js'
 import { calculatePieceCID } from '../../utils/filecoin/calculatePieceCID.js'
 import {
@@ -25,19 +25,21 @@ const providerName = 'Filecoin'
 export const uploadToFilecoin: UploadFunction<{
   providerAddress: Address
   providerURL: string
-  payerPrivateKey: Hex
   pieceCid: string
   filecoinChain: 'mainnet' | 'calibration'
+  token: Hex
 }> = async ({
   providerAddress,
   providerURL,
   cid,
   car,
-  payerPrivateKey: privateKey,
+  token: privateKey,
   verbose,
   pieceCid,
   filecoinChain = 'mainnet',
 }) => {
+  if (!providerURL) throw new MissingKeyError('FILECOIN_SP_URL')
+  if (!providerAddress) throw new MissingKeyError('FILECOIN_SP_ADDRESS')
   const publicKey = getPublicKey({ privateKey })
   const address = fromPublicKey(publicKey)
 

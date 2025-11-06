@@ -2,6 +2,43 @@
 
 Omnipin supports a wide range of different IPFS providers. If you would like to integrate your provider, feel free to submit a pull request.
 
+## Filecoin
+
+- API Docs: https://synapse.filecoin.services
+- API env variables: `OMNIPIN_FILECOIN_SP_URL`, `OMNIPIN_FILECOIN_SP_ADDRESS` and `OMNIPIN_FILECOIN_TOKEN`
+- Supported methods: Upload
+
+Omnipin integrates with Filecoin on both mainnet and testnet (calibration). The integration handles balance checks, automatic deposits to a payment service, file upload and verification and a payment transaction submission.
+
+Create a new wallet keypair and save a private key to the `OMNIPIN_FILECOIN_TOKEN` environment variable.
+
+```
+OMNIPIN_FILECOIN_TOKEN=0xdeadbeef
+```
+
+Top up the wallet with a bit of FIL and USDfc.
+
+Use a [faucet](https://forest-explorer.chainsafe.dev/faucet) to get FIL (0.01 FIL should be enough for most websites not exceeding 10GB).
+
+If using the calibration testnet, you can get USDFc through a faucet as well [here](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc).
+
+Next, choose a service provider to upload to.
+
+The full list of SPs providing upload "warm storage" support can be found on the [official website](https://www.filecoin.services/providers).
+
+Obtain the URL and the provider address and save it to the following environment variables:
+
+```sh
+OMNIPIN_FILECOIN_SP_URL=https://pdp-dev.kubuxu.com # Service provider URL
+OMNIPIN_FILECOIN_SP_ADDRESS=0x8c8c7a9BE47ed491B33B941fBc0276BD2ec25E7e # Service provider address
+```
+
+:::info
+By default, Filecoin mainnet is used. Switch to the calibration testnet via `--filecoin-chain=calibration`
+:::
+
+A more detailed guide on Filecoin can be found [here](/docs/filecoin).
+
 ## Spec-compliant Pinning Service
 
 - API Docs: https://ipfs.github.io/pinning-services-api-spec

@@ -151,7 +151,6 @@ export const deployAction = async ({
       // Filecoin
       const providerURL = apiTokens.get('FILECOIN_SP_URL'),
         providerAddress = apiTokens.get('FILECOIN_SP_ADDRESS'),
-        payerPrivateKey = apiTokens.get('FILECOIN_PAYER_PK'),
         pieceCid = apiTokens.get('FILECOIN_PIECE_CID')
 
       if (filecoinChain && !providerURL)
@@ -173,7 +172,6 @@ export const deployAction = async ({
           providerURL,
           providerAddress,
           pieceCid,
-          payerPrivateKey,
           filecoinChain,
         })
       } catch (e) {
