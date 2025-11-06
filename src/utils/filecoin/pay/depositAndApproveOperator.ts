@@ -5,14 +5,7 @@ import { InternalError } from 'ox/RpcResponse'
 import { maxUint256 } from 'ox/Solidity'
 import { logger } from '../../logger.js'
 import { sendTransaction, simulateTransaction } from '../../tx.js'
-import {
-  FILECOIN_PAY_ADDRESS,
-  type FilecoinChain,
-  FWSS_KEEPER_ADDRESS,
-  filecoinCalibration,
-  filProvider,
-  USDFC_ADDRESS,
-} from '../constants.js'
+import { type FilecoinChain, filecoinCalibration, filProvider } from '../constants.js'
 import { getErc20WithPermitData } from './getErc20WithPermitData.js'
 import { signErc20Permit } from './signErc20Permit.js'
 

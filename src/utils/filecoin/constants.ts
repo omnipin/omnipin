@@ -6,17 +6,6 @@ export const filProvider = Provider.from(
   fromHttp('https://api.calibration.node.glif.io/rpc/v1'),
 )
 
-export const FWSS_KEEPER_ADDRESS = '0x02925630df557F957f70E112bA06e50965417CA0'
-
-export const FWSS_PROXY_ADDRESS = '0x839e5c9988e4e9977d40708d0094103c0839Ac9D'
-
-export const FWSS_REGISTRY_VIEW_ADDRESS =
-  '0xA5D87b04086B1d591026cCE10255351B5AA4689B'
-
-export const USDFC_ADDRESS = '0xb3042734b608a1B16e9e86B374A3f3e389B4cDf0'
-
-export const FILECOIN_PAY_ADDRESS = '0x09a0fDc2723fAd1A7b8e3e00eE5DF73841df55a0'
-
 export type FilecoinChain = {
   id: number
   name: string
@@ -31,6 +20,12 @@ export type FilecoinChain = {
       address: Address
     }
     storage: {
+      address: Address
+    }
+    proxy: {
+      address: Address
+    }
+    registryView: {
       address: Address
     }
   }
@@ -54,6 +49,12 @@ export const filecoinCalibration: FilecoinChain = {
     },
     storage: {
       address: '0x02925630df557F957f70E112bA06e50965417CA0',
+    },
+    proxy: {
+      address: '0x839e5c9988e4e9977d40708d0094103c0839Ac9D',
+    },
+    registryView: {
+      address: '0xA5D87b04086B1d591026cCE10255351B5AA4689B',
     },
   },
   blockExplorers: {

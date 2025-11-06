@@ -1,6 +1,6 @@
 import { decodeResult, encodeData } from 'ox/AbiFunction'
 import { type Address, checksum } from 'ox/Address'
-import { FWSS_PROXY_ADDRESS, filProvider } from './constants.js'
+import { filecoinCalibration, filProvider } from './constants.js'
 
 const abi = {
   type: 'function',
@@ -26,7 +26,7 @@ export const getProviderPayee = async (id: bigint): Promise<Address> => {
     params: [
       {
         data: encodeData(abi, [id]),
-        to: FWSS_PROXY_ADDRESS,
+        to: filecoinCalibration.contracts.proxy.address,
       },
       'latest',
     ],

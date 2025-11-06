@@ -10,11 +10,7 @@ import * as Value from 'ox/Value'
 import { DeployError } from '../../errors.js'
 import { logger } from '../logger.js'
 import { waitForTransaction } from '../tx.js'
-import {
-  FWSS_KEEPER_ADDRESS,
-  filecoinCalibration,
-  filProvider,
-} from './constants.js'
+import { filecoinCalibration, filProvider } from './constants.js'
 import { depositAndApproveOperator } from './pay/depositAndApproveOperator.js'
 import { getAccountInfo } from './pay/getAccountInfo.js'
 
@@ -82,7 +78,7 @@ export const createDataSet = async ({
     },
     domain: {
       name: 'FilecoinWarmStorageService',
-      verifyingContract: FWSS_KEEPER_ADDRESS,
+      verifyingContract: filecoinCalibration.contracts.storage.address,
       version: '1',
       chainId: filecoinCalibration.id,
     },
@@ -103,14 +99,16 @@ export const createDataSet = async ({
     values,
     signature,
   ])
-  logger.info(`Record keeper address: ${FWSS_KEEPER_ADDRESS}`)
+  logger.info(
+    `Record keeper address: ${filecoinCalibration.contracts.storage.address}`,
+  )
 
   const res = await fetch(new URL('/pdp/data-sets', providerURL), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     redirect: 'follow',
     body: JSON.stringify({
-      recordKeeper: FWSS_KEEPER_ADDRESS,
+      recordKeeper: filecoinCalibration.contracts.storage.address,
       extraData,
     }),
   })
