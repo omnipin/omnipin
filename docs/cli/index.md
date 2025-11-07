@@ -95,7 +95,7 @@ omnipin deploy --verbose --providers=Gateway3
 
 Deploy using a [Safe](https://safe.global) multisig wallet. Requires private key of a Safe owner/delegate to sign a transaction. [EIP-3770](https://eips.ethereum.org/EIPS/eip-3770) addresses are supported. Mainnet is used by default.
 
-The update will be sent to the Safe Transaction Service. `BLUMEN_PK` must be a proposer's privat key.
+The update will be sent to the Safe Transaction Service. `OMNIPIN_PK` must be a proposer's privat key.
 
 In case the `roles-mod-address` option is specified, a transaction will submitted via the Zodiac Roles module instead, skipping the Safe Transaction Service and going directly onchain. Just like with EOA, a transaction is simulated locally first.
 

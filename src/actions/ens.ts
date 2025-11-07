@@ -11,7 +11,6 @@ import { MissingCLIArgsError, MissingKeyError } from '../errors.js'
 import type { ChainName } from '../types.js'
 import {
   chainToRpcUrl,
-  PUBLIC_RESOLVER_ADDRESS,
   prepareUpdateEnsArgs,
   setContentHash,
 } from '../utils/ens.js'
@@ -108,9 +107,13 @@ export const ensAction = async ({
 
   if (options.verbose) console.log('Transaction encoded data:', data)
 
-  const to = resolverAddress || PUBLIC_RESOLVER_ADDRESS[chainName]
+  const to =
+    resolverAddress || chains[chainName].contracts.publicResolver.address
 
-  if (to === PUBLIC_RESOLVER_ADDRESS[chainName] && !domain.endsWith('.eth'))
+  if (
+    to === chains[chainName].contracts.publicResolver.address &&
+    !domain.endsWith('.eth')
+  )
     throw new Error('Domain must end with .eth')
 
   if (safeAddress) {
@@ -209,7 +212,6 @@ export const ensAction = async ({
       provider,
       to,
       data,
-      abi: setContentHash,
       from,
     })
 

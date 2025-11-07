@@ -160,7 +160,7 @@ This will create a `zodiac.json` in a current directory. If `OMNIPIN_PK` is not 
 
 6. Drag and drop the JSON file and confirm transaction execution.
 
-7. This will create a new role with a key `ENS_DEPLOYER`, which is going to be automatically used in `blumen ens` and `blumen deploy` every time the `--roles-mod-address` option is specified.
+7. This will create a new role with a key `ENS_DEPLOYER`, which is going to be automatically used in `omnipin ens` and `omnipin deploy` every time the `--roles-mod-address` option is specified.
 
 #### Usage
 

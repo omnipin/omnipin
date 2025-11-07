@@ -12,6 +12,7 @@ import {
   statusOnFilebase,
   uploadOnFilebase,
 } from './providers/ipfs/filebase.js'
+import { uploadToFilecoin } from './providers/ipfs/filecoin.js'
 import { pinOnLighthouse } from './providers/ipfs/lighthouse.js'
 import { statusOnPinata, uploadOnPinata } from './providers/ipfs/pinata.js'
 import { pinOnQuicknode } from './providers/ipfs/quicknode.js'
@@ -118,6 +119,12 @@ export const PROVIDERS: Record<
     supported: 'upload',
     protocol: 'ipfs',
   },
+  FILECOIN_TOKEN: {
+    name: 'Filecoin',
+    upload: uploadToFilecoin,
+    supported: 'both',
+    protocol: 'ipfs',
+  },
 }
 
 export const isTTY = process.stdout.isTTY
@@ -128,6 +135,11 @@ export const chains = {
   mainnet: {
     id: 1,
     name: 'Ethereum',
+    contracts: {
+      publicResolver: {
+        address: '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63',
+      },
+    },
     blockExplorers: {
       default: {
         name: 'Etherscan',
@@ -138,6 +150,11 @@ export const chains = {
   sepolia: {
     id: 11_155_111,
     name: 'Sepolia',
+    contracts: {
+      publicResolver: {
+        address: '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD',
+      },
+    },
     blockExplorers: {
       default: {
         name: 'Etherscan',

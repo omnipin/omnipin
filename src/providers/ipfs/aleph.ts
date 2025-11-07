@@ -24,7 +24,7 @@ export const pinToAleph: PinFunction<{ token: Hex; chain: Chain }> = async ({
     chain,
     sender: fromPublicKey(getPublicKey({ privateKey: token })),
     type: 'STORE',
-    channel: 'POWERED-BY-BLUMEN',
+    channel: 'POWERED-BY-OMNIPIN',
     time: Date.now() / 1000,
     item_type: 'ipfs',
     item_hash: cid,

@@ -14,8 +14,10 @@ export type UploadArgs<T = object> = {
   name: string
   verbose?: boolean
   car: Blob
-} & ({ cid?: never; first: true } | { cid: string; first: false }) &
-  AuthArgs &
+  cid: string
+  first: boolean
+  size: number
+} & AuthArgs &
   T
 
 export type PinArgs<T = object> = {

@@ -1,5 +1,4 @@
 import { CID } from 'multiformats/cid'
-import type { Address } from 'ox/Address'
 import { toHex } from 'ox/Bytes'
 import { namehash, normalize } from 'ox/Ens'
 import * as varint from 'varint'
@@ -69,11 +68,6 @@ export const setContentHash = {
     },
   ],
   outputs: [],
-} as const
-
-export const PUBLIC_RESOLVER_ADDRESS: Record<ChainName, Address> = {
-  mainnet: '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63',
-  sepolia: '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD',
 } as const
 
 export const chainToRpcUrl = (chain: ChainName) => {

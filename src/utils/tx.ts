@@ -1,4 +1,3 @@
-import { type AbiFunction, decodeResult } from 'ox/AbiFunction'
 import type { Address } from 'ox/Address'
 import { type Hex, toBigInt } from 'ox/Hex'
 import type { Provider } from 'ox/Provider'
@@ -7,20 +6,18 @@ import * as TransactionEnvelopeEip1559 from 'ox/TransactionEnvelopeEip1559'
 import { fromRpc } from 'ox/TransactionReceipt'
 import { logger } from './logger.js'
 
-export const simulateTransaction = async <Abi extends AbiFunction>({
+export const simulateTransaction = async ({
   provider,
   to,
   data,
-  abi,
   from,
 }: {
   provider: Provider
   to: Address
   data: Hex
-  abi: Abi
-  from: Hex
-}): Promise<boolean> => {
-  const result = await provider.request({
+  from: Address
+}): Promise<unknown> => {
+  return provider.request({
     method: 'eth_call',
     params: [
       {
@@ -31,8 +28,6 @@ export const simulateTransaction = async <Abi extends AbiFunction>({
       'latest',
     ],
   })
-
-  return decodeResult(abi, result) as boolean
 }
 
 export const sendTransaction = async ({
@@ -48,7 +43,7 @@ export const sendTransaction = async ({
   privateKey: Hex
   to: Address
   data: Hex
-  from: Hex
+  from: Address
 }) => {
   const feeHistory = await provider.request({
     method: 'eth_feeHistory',
@@ -65,6 +60,7 @@ export const sendTransaction = async ({
           data,
           value: '0x0',
         },
+        'latest',
       ],
     }),
   )

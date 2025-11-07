@@ -41,7 +41,7 @@ export const execTransactionWithRole = async ({
   rolesModAddress: Address
   data: Hex
   from: Address
-  privateKey: Address
+  privateKey: Hex
   chainId: number
   explorerUrl: string
 }) => {
@@ -56,7 +56,6 @@ export const execTransactionWithRole = async ({
 
   const success = await simulateTransaction({
     provider,
-    abi: execTransactionWithRoleAbi,
     to: rolesModAddress,
     data,
     from,
