@@ -21,6 +21,8 @@ const metadata = [{ key: 'withIPFSIndexing', value: '' }] as const
 const keys = metadata.map((item) => item.key)
 const values = metadata.map((item) => item.value)
 
+const priceBuffer = Value.from('0.5', 18)
+
 /**
  * Create a data set on an SP, and deposit to Filecoin Pay if balanace is 0
  * @returns client data set id
@@ -45,15 +47,18 @@ export const createDataSet = async ({
   const provider = filProvider[chain.id]
   const [funds] = await getAccountInfo({ address: payer, chain })
 
-  if (funds < perMonth) {
+  logger.info(`Deposited funds: ${Value.format(funds, 18)}`)
+
+  if (funds <= perMonth + priceBuffer) {
+    const depositAmount = perMonth - funds + priceBuffer // $0.5 buffer to avoid "Insufficient funds" errors
     logger.warn('Not enough USDfc deposited to Filecoin Pay')
     logger.info(
-      `Depositing ${Value.format(perMonth - funds, 18)} USDfc to Filecoin Pay`,
+      `Depositing ${Value.format(depositAmount, 18)} USDfc to Filecoin Pay`,
     )
 
     const hash = await depositAndApproveOperator({
       privateKey,
-      amount: perMonth - funds, // to cover future costs
+      amount: depositAmount, // to cover future costs
       address: payer,
       chain,
     })

@@ -2,7 +2,7 @@ import type { Address } from 'ox/Address'
 import type { Hex } from 'ox/Hex'
 import { sign } from 'ox/Secp256k1'
 import { getSignPayload } from 'ox/TypedData'
-import { type FilecoinChain, filecoinCalibration } from '../constants.js'
+import type { FilecoinChain } from '../constants.js'
 
 export const signErc20Permit = async ({
   privateKey,
