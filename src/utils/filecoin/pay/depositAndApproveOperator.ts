@@ -63,6 +63,7 @@ export const depositAndApproveOperator = async ({
     name,
     nonce,
     version,
+    chain,
   })
 
   const data = encodeData(abi, [
