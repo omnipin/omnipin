@@ -2,7 +2,7 @@ import type { Address } from 'ox/Address'
 import type { Hex } from 'ox/Hex'
 import { sign } from 'ox/Secp256k1'
 import { getSignPayload } from 'ox/TypedData'
-import { filecoinCalibration } from '../constants.js'
+import { type FilecoinChain, filecoinCalibration } from '../constants.js'
 
 export const signErc20Permit = async ({
   privateKey,
@@ -12,6 +12,7 @@ export const signErc20Permit = async ({
   deadline,
   name,
   version,
+  chain,
 }: {
   privateKey: Hex
   address: Address
@@ -20,19 +21,20 @@ export const signErc20Permit = async ({
   deadline: bigint
   name: string
   version: string
+  chain: FilecoinChain
 }) => {
   return sign({
     privateKey,
     payload: getSignPayload({
       domain: {
-        chainId: filecoinCalibration.id,
+        chainId: chain.id,
         name,
         version,
-        verifyingContract: filecoinCalibration.contracts.usdfc.address,
+        verifyingContract: chain.contracts.usdfc.address,
       },
       message: {
         owner: address,
-        spender: filecoinCalibration.contracts.payments.address,
+        spender: chain.contracts.payments.address,
         value: amount,
         nonce,
         deadline,

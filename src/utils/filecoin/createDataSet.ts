@@ -10,14 +10,9 @@ import * as Value from 'ox/Value'
 import { DeployError } from '../../errors.js'
 import { logger } from '../logger.js'
 import { waitForTransaction } from '../tx.js'
-import {
-  type FilecoinChain,
-  filecoinCalibration,
-  filProvider,
-} from './constants.js'
+import { type FilecoinChain, filProvider } from './constants.js'
 import { depositAndApproveOperator } from './pay/depositAndApproveOperator.js'
 import { getAccountInfo } from './pay/getAccountInfo.js'
-import { getServicePrice } from './pay/getServicePrice.js'
 
 const abi = ['address', 'uint256', 'string[]', 'string[]', 'bytes'] as const
 

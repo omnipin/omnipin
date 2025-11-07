@@ -6,11 +6,7 @@ import { maxUint256 } from 'ox/Solidity'
 import * as Value from 'ox/Value'
 import { logger } from '../../logger.js'
 import { sendTransaction, simulateTransaction } from '../../tx.js'
-import {
-  type FilecoinChain,
-  filecoinCalibration,
-  filProvider,
-} from '../constants.js'
+import { type FilecoinChain, filProvider } from '../constants.js'
 import { getErc20WithPermitData } from './getErc20WithPermitData.js'
 import { signErc20Permit } from './signErc20Permit.js'
 
@@ -100,7 +96,7 @@ export const depositAndApproveOperator = async ({
     return await sendTransaction({
       ...params,
       privateKey,
-      chainId: filecoinCalibration.id,
+      chainId: chain.id,
     })
   } catch (e) {
     if (e instanceof InternalError && e.message.includes('actor not found')) {
