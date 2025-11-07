@@ -24,6 +24,7 @@ export const packAction = async ({
   const { name: customName, dist, verbose, tar } = options
   if (!dir) {
     if (await exists('dist')) dir = 'dist'
+    else if (await exists('.vitepress/dist')) dir = '.vitepress/dist'
     else dir = '.'
   }
   const normalizedPath = path.join(process.cwd(), dir)
@@ -40,13 +41,13 @@ export const packAction = async ({
   if (tar) {
     const tar = await packTAR(files)
     const blob = new Blob([tar as BlobPart])
-    return { blob }
+    return { blob, size }
   } else {
     const { rootCID, blob } = await packCAR(files, name, dist)
 
     const cid = rootCID.toString()
     logger.info(`Root CID: ${isTTY ? styleText('white', cid) : cid}`)
 
-    return { name, cid, blob, files }
+    return { name, cid, blob, files, size }
   }
 }

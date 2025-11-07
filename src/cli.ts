@@ -66,7 +66,7 @@ cli.command(
       options: options as DeployActionArgs,
     }),
   {
-    description: 'Deploy a web app on IPFS',
+    description: 'Start the deployment process',
     options: [
       {
         name: 'strict',
@@ -104,6 +104,16 @@ cli.command(
       {
         name: 'dnslink',
         description: 'Update DNSLink',
+        type: 'string',
+      },
+      {
+        name: 'progress-bar',
+        description: 'Render a progress bar during content upload',
+        type: 'boolean',
+      },
+      {
+        name: 'filecoin-chain',
+        description: 'Filecoin network',
         type: 'string',
       },
       ...ensOptions,

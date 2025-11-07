@@ -1,7 +1,7 @@
 import { styleText } from 'node:util'
 import mod from 'ascii-bar'
 import { isTTY, PROVIDERS } from '../constants.js'
-import { NoProvidersError } from '../errors.js'
+import { MissingKeyError, NoProvidersError } from '../errors.js'
 import {
   findEnvVarProviderName,
   parseTokensFromEnv,
@@ -19,6 +19,8 @@ export type DeployActionArgs = Partial<{
   ens: string
   providers: string
   dnslink: string
+  'progress-bar': boolean
+  'filecoin-chain': 'mainnet' | 'calibration'
 }> &
   PackActionArgs &
   EnsActionArgs
@@ -39,6 +41,8 @@ export const deployAction = async ({
     verbose = false,
     providers: providersList,
     dnslink,
+    'progress-bar': progressBar,
+    'filecoin-chain': filecoinChain,
     ...opts
   } = options
 
@@ -78,6 +82,7 @@ export const deployAction = async ({
     name,
     cid: ipfsCid,
     blob,
+    size,
   } = await packAction({
     dir,
     options: {
@@ -93,18 +98,19 @@ export const deployAction = async ({
   let total = 0
 
   const errors: Error[] = []
-  const bar = isTTY
-    ? new AsciiBar({
-        total:
-          swarmProviders.length !== 0
-            ? swarmProviders.length
-            : ipfsProviders.length,
-        formatString: '#spinner #bar #message',
-        hideCursor: false,
-        enableSpinner: true,
-        width: process.stdout.columns - 30,
-      })
-    : undefined
+  const bar =
+    isTTY && progressBar
+      ? new AsciiBar({
+          total:
+            swarmProviders.length !== 0
+              ? swarmProviders.length
+              : ipfsProviders.length,
+          formatString: '#spinner #bar #message',
+          hideCursor: false,
+          enableSpinner: true,
+          width: process.stdout.columns - 30,
+        })
+      : undefined
 
   let swarmCid = ''
   if (swarmProviders.length !== 0) {
@@ -143,6 +149,14 @@ export const deployAction = async ({
       else if (envVar.includes('4EVERLAND'))
         bucketName = apiTokens.get('4EVERLAND_BUCKET_NAME')
 
+      // Filecoin
+      const providerURL = apiTokens.get('FILECOIN_SP_URL'),
+        providerAddress = apiTokens.get('FILECOIN_SP_ADDRESS'),
+        pieceCid = apiTokens.get('FILECOIN_PIECE_CID')
+
+      if (filecoinChain && !providerURL)
+        throw new MissingKeyError('FILECOIN_SP_URL')
+
       try {
         await provider.upload({
           name,
@@ -154,6 +168,13 @@ export const deployAction = async ({
           first: ipfsProviders.indexOf(provider) === 0,
           verbose,
           baseURL: apiTokens.get('SPEC_URL'),
+          size,
+
+          // Filecoin
+          providerURL,
+          providerAddress,
+          pieceCid,
+          filecoinChain,
         })
       } catch (e) {
         if (strict) throw e
