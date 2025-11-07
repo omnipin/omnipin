@@ -150,7 +150,7 @@ export const uploadPieceToDataSet = async ({
         cause: text,
       })
     }
-    throw new Error('Failed to create a dataset', { cause: text })
+    throw new Error('Failed to upload to a data set', { cause: text })
   }
 
   const location = res.headers.get('Location')
