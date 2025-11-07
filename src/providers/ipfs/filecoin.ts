@@ -18,6 +18,7 @@ import { getProviderPayee } from '../../utils/filecoin/getProviderPayee.js'
 import { getUSDfcBalance } from '../../utils/filecoin/getUSDfcBalance.js'
 import { getServicePrice } from '../../utils/filecoin/pay/getServicePrice.js'
 import { uploadPieceToDataSet } from '../../utils/filecoin/uploadPieceToDataSet.js'
+import { waitForDatasetReady } from '../../utils/filecoin/waitForDataSetCreation.js'
 import { logger } from '../../utils/logger.js'
 import { waitForTransaction } from '../../utils/tx.js'
 
@@ -57,9 +58,6 @@ export const uploadToFilecoin: UploadFunction<{
   logger.info(`USDfc balance: ${Value.format(balance, 18)}`)
 
   if (balance === 0n) throw new DeployError(providerName, 'No USDfc on account')
-
-  logger.info(`Filecoin SP address: ${providerAddress}`)
-  logger.info(`Filecoin SP URL: ${providerURL}`)
 
   const providerId = await getProviderIdByAddress({
     providerAddress,
@@ -105,6 +103,10 @@ export const uploadToFilecoin: UploadFunction<{
     logger.info(`Pending data set creation: ${statusUrl}`)
     logger.info(`Pending transaction: ${chain.blockExplorer}/tx/${hash}`)
     await waitForTransaction(filProvider[chainId], hash)
+
+    await waitForDatasetReady(statusUrl)
+
+    logger.success('Data set registered')
   } else {
     logger.info(`Using existing dataset: ${providerDataSets[0].dataSetId}`)
     datasetId = providerDataSets[0].dataSetId
