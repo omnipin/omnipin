@@ -17,6 +17,7 @@ import {
 } from './constants.js'
 import { depositAndApproveOperator } from './pay/depositAndApproveOperator.js'
 import { getAccountInfo } from './pay/getAccountInfo.js'
+import { getServicePrice } from './pay/getServicePrice.js'
 
 const abi = ['address', 'uint256', 'string[]', 'string[]', 'bytes'] as const
 
@@ -36,6 +37,7 @@ export const createDataSet = async ({
   address: payer,
   verbose,
   chain,
+  perMonth,
 }: {
   payee: Address
   providerURL: string
@@ -43,17 +45,20 @@ export const createDataSet = async ({
   address: Address
   chain: FilecoinChain
   verbose?: boolean
+  perMonth: bigint
 }) => {
   const provider = filProvider[chain.id]
   const [funds] = await getAccountInfo({ address: payer, chain })
 
-  if (funds === 0n) {
-    logger.warn('USDfc not deposited to Filecoin Pay')
-    logger.info('Depositing 0.5 USDfc to Filecoin Pay')
+  if (funds < perMonth) {
+    logger.warn('Not enough USDfc deposited to Filecoin Pay')
+    logger.info(
+      `Depositing ${Value.format(perMonth - funds, 18)} USDfc to Filecoin Pay`,
+    )
 
     const hash = await depositAndApproveOperator({
       privateKey,
-      amount: Value.from('0.5', 18), // to cover future costs
+      amount: perMonth - funds, // to cover future costs
       address: payer,
       chain,
     })
@@ -83,9 +88,9 @@ export const createDataSet = async ({
     },
     domain: {
       name: 'FilecoinWarmStorageService',
-      verifyingContract: filecoinCalibration.contracts.storage.address,
+      verifyingContract: chain.contracts.storage.address,
       version: '1',
-      chainId: filecoinCalibration.id,
+      chainId: chain.id,
     },
     primaryType: 'CreateDataSet',
     message: {

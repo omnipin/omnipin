@@ -82,6 +82,7 @@ export const deployAction = async ({
     name,
     cid: ipfsCid,
     blob,
+    size,
   } = await packAction({
     dir,
     options: {
@@ -167,6 +168,7 @@ export const deployAction = async ({
           first: ipfsProviders.indexOf(provider) === 0,
           verbose,
           baseURL: apiTokens.get('SPEC_URL'),
+          size,
 
           // Filecoin
           providerURL,

@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto'
 import { type Address, fromPublicKey } from 'ox/Address'
 import type { Hex } from 'ox/Hex'
 import { getPublicKey } from 'ox/Secp256k1'
-import { format } from 'ox/Value'
+import * as Value from 'ox/Value'
 import { DeployError, MissingKeyError } from '../../errors.js'
 import type { UploadFunction } from '../../types.js'
 import { calculatePieceCID } from '../../utils/filecoin/calculatePieceCID.js'
@@ -16,6 +16,7 @@ import { getClientDataSets } from '../../utils/filecoin/getClientDatasets.js'
 import { getProviderIdByAddress } from '../../utils/filecoin/getProviderIdByAddress.js'
 import { getProviderPayee } from '../../utils/filecoin/getProviderPayee.js'
 import { getUSDfcBalance } from '../../utils/filecoin/getUSDfcBalance.js'
+import { getServicePrice } from '../../utils/filecoin/pay/getServicePrice.js'
 import { uploadPieceToDataSet } from '../../utils/filecoin/uploadPieceToDataSet.js'
 import { logger } from '../../utils/logger.js'
 import { waitForTransaction } from '../../utils/tx.js'
@@ -37,6 +38,7 @@ export const uploadToFilecoin: UploadFunction<{
   verbose,
   pieceCid,
   filecoinChain = 'mainnet',
+  size,
 }) => {
   if (!providerURL) throw new MissingKeyError('FILECOIN_SP_URL')
   if (!providerAddress) throw new MissingKeyError('FILECOIN_SP_ADDRESS')
@@ -52,7 +54,7 @@ export const uploadToFilecoin: UploadFunction<{
   logger.info(`Filecoin chain: ${chain.name}`)
 
   const balance = await getUSDfcBalance({ address, chain })
-  logger.info(`USDfc balance: ${format(balance, 18)}`)
+  logger.info(`USDfc balance: ${Value.format(balance, 18)}`)
 
   if (balance === 0n) throw new DeployError(providerName, 'No USDfc on account')
 
@@ -70,6 +72,10 @@ export const uploadToFilecoin: UploadFunction<{
 
   logger.info(`Filecoin SP Payee: ${payee}`)
 
+  const { perMonth } = await getServicePrice({ size, chain })
+
+  logger.info(`Price for storage: ${Value.format(perMonth, 18)} USDfc/month`)
+
   logger.info('Looking up existing datasets')
   const dataSets = await getClientDataSets({ address, chain })
 
@@ -78,6 +84,7 @@ export const uploadToFilecoin: UploadFunction<{
   const providerDataSets = dataSets.filter(
     (set) => set.providerId === providerId,
   )
+
   if (providerDataSets.length === 0) {
     logger.info('No dataset found. Creating.')
     const {
@@ -90,6 +97,7 @@ export const uploadToFilecoin: UploadFunction<{
       providerURL,
       address,
       chain,
+      perMonth,
     })
 
     datasetId = clientId

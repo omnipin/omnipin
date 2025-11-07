@@ -18,7 +18,7 @@ OMNIPIN_FILECOIN_TOKEN=0xdeadbeef
 
 Top up the wallet with a bit of FIL and USDfc.
 
-Use a [faucet](https://forest-explorer.chainsafe.dev/faucet) to get FIL (0.01 FIL should be enough for most websites not exceeding 10GB).
+Buy FIL and USDfc via [Squid Router](https://app.squidrouter.com/?chains=137%2C314&tokens=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359%2C0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee) or [SushiSwap](https://www.sushi.com/filecoin/swap?token0=NATIVE&token1=0x80b98d3aa09ffff255c3ba4a241111ff1262f045). It is recommended to bridge a bit of FIL first, and then swap a portion of it to USDfc, since cross-chain swaps for USDfc have low liquidity in pools. For most (<10GB) uploads, $0.1 of USDfc and 0.1 FIL should be enough.
 
 If using the calibration testnet, you can get USDFc through a faucet as well [here](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc).
 

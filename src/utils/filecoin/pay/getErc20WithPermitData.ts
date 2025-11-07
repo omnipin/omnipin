@@ -70,6 +70,7 @@ export const getErc20WithPermitData = async ({
       encodeData(erc20Abi[2], [address]),
       encodeData(erc20Abi[3]),
     ].map((callData) => ({ target, callData })),
+    chain,
   })
 
   const data: [bigint, string, bigint, string] = [0n, '', 0n, '']

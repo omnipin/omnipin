@@ -3,6 +3,7 @@ import type { Address } from 'ox/Address'
 import { fromNumber, type Hex } from 'ox/Hex'
 import { InternalError } from 'ox/RpcResponse'
 import { maxUint256 } from 'ox/Solidity'
+import * as Value from 'ox/Value'
 import { logger } from '../../logger.js'
 import { sendTransaction, simulateTransaction } from '../../tx.js'
 import {
@@ -54,7 +55,9 @@ export const depositAndApproveOperator = async ({
   })
 
   if (balance < amount)
-    throw new Error(`Not enough USDfc to deposit (need: ${amount - balance})`)
+    throw new Error(
+      `Not enough USDfc to deposit (need: ${Value.format(amount - balance, 18).slice(0, 5)})`,
+    )
 
   const { r, s } = await signErc20Permit({
     privateKey,

@@ -16,6 +16,7 @@ export type UploadArgs<T = object> = {
   car: Blob
   cid: string
   first: boolean
+  size: number
 } & AuthArgs &
   T
 
