@@ -33,7 +33,7 @@ export const getProviderIdByAddress = async ({
     params: [
       {
         data: encodeData(abi, [providerAddress]),
-        to: chain.contracts.proxy.address,
+        to: chain.contracts.providerRegistry.address,
       },
       'latest',
     ],

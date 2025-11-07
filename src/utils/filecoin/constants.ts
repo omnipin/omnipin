@@ -20,7 +20,7 @@ export type FilecoinChain = {
     storage: {
       address: Address
     }
-    proxy: {
+    providerRegistry: {
       address: Address
     }
     storageView: {
@@ -46,7 +46,7 @@ export const filecoinMainnet = {
     storage: {
       address: '0x8408502033C418E1bbC97cE9ac48E5528F371A9f',
     },
-    proxy: {
+    providerRegistry: {
       address: '0xf55dDbf63F1b55c3F1D4FA7e339a68AB7b64A5eB',
     },
     storageView: {
@@ -72,7 +72,7 @@ export const filecoinCalibration = {
     storage: {
       address: '0x02925630df557F957f70E112bA06e50965417CA0',
     },
-    proxy: {
+    providerRegistry: {
       address: '0x839e5c9988e4e9977d40708d0094103c0839Ac9D',
     },
     storageView: {

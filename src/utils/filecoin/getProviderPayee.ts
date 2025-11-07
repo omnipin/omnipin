@@ -33,7 +33,7 @@ export const getProviderPayee = async ({
     params: [
       {
         data: encodeData(abi, [id]),
-        to: chain.contracts.proxy.address,
+        to: chain.contracts.providerRegistry.address,
       },
       'latest',
     ],

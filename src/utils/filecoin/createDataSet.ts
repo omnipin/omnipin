@@ -69,6 +69,10 @@ export const createDataSet = async ({
 
   logger.info(`Client data set ID: ${clientDataSetId}`)
 
+  const recordKeeper = chain.contracts.storage.address
+
+  logger.info(`Record keeper address: ${recordKeeper}`)
+
   const payload = getSignPayload({
     types: {
       MetadataEntry: [
@@ -83,7 +87,7 @@ export const createDataSet = async ({
     },
     domain: {
       name: 'FilecoinWarmStorageService',
-      verifyingContract: chain.contracts.storage.address,
+      verifyingContract: recordKeeper,
       version: '1',
       chainId: chain.id,
     },
@@ -104,14 +108,12 @@ export const createDataSet = async ({
     values,
     signature,
   ])
-  logger.info(`Record keeper address: ${chain.contracts.storage.address}`)
-
   const res = await fetch(new URL('/pdp/data-sets', providerURL), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     redirect: 'follow',
     body: JSON.stringify({
-      recordKeeper: chain.contracts.storage.address,
+      recordKeeper,
       extraData,
     }),
   })

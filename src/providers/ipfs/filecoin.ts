@@ -103,9 +103,7 @@ export const uploadToFilecoin: UploadFunction<{
     datasetId = clientId
     clientDataSetId = clientId
     logger.info(`Pending data set creation: ${statusUrl}`)
-    logger.info(
-      `Pending transaction: https://filecoin-testnet.blockscout.com/tx/${hash}`,
-    )
+    logger.info(`Pending transaction: ${chain.blockExplorer}/tx/${hash}`)
     await waitForTransaction(filProvider[chainId], hash)
   } else {
     logger.info(`Using existing dataset: ${providerDataSets[0].dataSetId}`)
@@ -206,9 +204,7 @@ export const uploadToFilecoin: UploadFunction<{
     chain,
   })
   logger.info(`Pending piece upload: ${statusUrl}`)
-  logger.info(
-    `Pending transaction: https://filecoin-testnet.blockscout.com/tx/${hash}`,
-  )
+  logger.info(`Pending transaction: ${chain.blockExplorer}/tx/${hash}`)
   await waitForTransaction(filProvider[chainId], hash)
 
   return { cid }
