@@ -13,7 +13,7 @@
       </h1>
       <img src="/demo.png" alt="Omnipin logo" />
       <p class="subtitle">
-        Omnipin is a trustless command-line website deployment tool with
+        Omnipin is a self-custodial command-line website deployment tool with
         automatic content replication and secure ENS updates, powered by Safe.
         No sign up required.
       </p>

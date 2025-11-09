@@ -7,7 +7,7 @@ features:
   - title: Replicate anywhere
     details: Pin the website to independent storage providers in one command.
   - title: Multiple storage protocols
-    details: Complete IPFS and Swarm integration.
+    details: Complete IPFS, Filecoin and Swarm integration.
   - title: Use your existing ENS or DNS name
     details: Automatic updates of ENS names and DNS names through DNSLink.
   - title: Protected with Safe
