@@ -194,8 +194,15 @@ const radicleIcon = `
 // https://vitepress.dev/reference/site-config
 export default withMermaid({
   title: 'Omnipin',
-  head: [['link', { rel: 'icon', href: '/favicon.svg' }]],
+  head: [
+    ['link', { rel: 'icon', href: '/favicon.svg' }],
+    [
+      'meta',
+      { property: 'og:image', content: 'https://omnipin.eth.limo/cover.jpg' },
+    ],
+  ],
   description: 'Supercharged dweb deployments',
+
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
