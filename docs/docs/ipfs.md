@@ -1,14 +1,122 @@
 # IPFS
 
-Omnipin supports a wide range of different IPFS providers. If you would like to integrate your provider, feel free to submit a pull request.
+Omnipin supports a wide range of different IPFS providers.
+
+<table>
+  <thead>
+    <tr>
+      <th colspan="3">Provider</th>
+      <th colspan="3">Supported by Omnipin</th>
+    </tr>
+    <tr>
+      <th>Name</th>
+      <th>Docs</th>
+      <th>Permissionless</th>
+      <th>Upload</th>
+      <th>Pin by CID</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#filecoin">Filecoin</a></td>
+      <td><a href="https://synapse.filecoin.services">Docs</a></td>
+      <td>✅</td>
+      <td>✅</td>
+      <td>❌</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td><a href="#spec-compliant-pinning-service">Spec</a></td>
+      <td><a href="https://ipfs.github.io/pinning-services-api-spec">Docs</a></td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>✅</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td><a href="#filebase">Filebase</a></td>
+      <td><a href="https://docs.filebase.com">Docs</a></td>
+      <td>❌</td>
+      <td>✅ ($20/mo)</td>
+      <td>✅</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td><a href="#storacha">Storacha</a></td>
+      <td><a href="https://docs.storacha.network/how-to/upload">Docs</a></td>
+      <td>❌</td>
+      <td>✅</td>
+      <td>❌</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td><a href="#pinata">Pinata</a></td>
+      <td><a href="https://docs.pinata.cloud/files/uploading-files">Docs</a></td>
+      <td>❌</td>
+      <td>✅ ($20/mo)</td>
+      <td>✅ ($20/mo)</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td><a href="#4everland">4EVERLAND</a></td>
+      <td><a href="https://docs.4everland.org/">Docs</a></td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>✅</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td><a href="#quicknode">QuickNode</a></td>
+      <td><a href="https://www.quicknode.com/docs/ipfs/Pinning/create-pinnedObject-by-CID">Docs</a></td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>✅ ($49/mo)</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td><a href="#lighthouse">Lighthouse</a></td>
+      <td><a href="https://docs.lighthouse.storage/lighthouse-1/how-to/pin-cid">Docs</a></td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>✅</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td><a href="#blockfrost">Blockfrost</a></td>
+      <td><a href="https://blockfrost.dev">Docs</a></td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>✅</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td><a href="#aleph">Aleph</a></td>
+      <td><a href="https://docs.aleph.im">Docs</a></td>
+      <td>✅</td>
+      <td>❌</td>
+      <td>✅</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td><a href="#aleph">SimplePage</a></td>
+      <td><a href="https://simplepage.eth.limo/architecture">Docs</a></td>
+      <td>✅</td>
+      <td>✅</td>
+      <td>❌</td>
+      <td>❌</td>
+    </tr>
+
+  </tbody>
+</table>
+
+> Permissionless in this context means that there is no need to register an account in order to upload content.
 
 ## Filecoin
 
-- API Docs: https://synapse.filecoin.services
-- API env variables: `OMNIPIN_FILECOIN_SP_URL`, `OMNIPIN_FILECOIN_SP_ADDRESS` and `OMNIPIN_FILECOIN_TOKEN`
-- Supported methods: Upload
+- Environment variables: `OMNIPIN_FILECOIN_SP_URL`, `OMNIPIN_FILECOIN_SP_ADDRESS` and `OMNIPIN_FILECOIN_TOKEN`
 
-Omnipin integrates with Filecoin on both mainnet and testnet (calibration). The integration handles balance checks, automatic deposits to a payment service, file upload and verification and a payment transaction submission.
+Omnipin integrates with Filecoin on both mainnet and testnet (calibration). The integration handles balance checks, automatic deposits to a payment service, file upload and verification and a payment transaction submission. Only a wallet account with FIL and USDfc is required.
 
 Create a new wallet keypair and save a private key to the `OMNIPIN_FILECOIN_TOKEN` environment variable.
 
@@ -18,7 +126,7 @@ OMNIPIN_FILECOIN_TOKEN=0xdeadbeef
 
 Top up the wallet with a bit of FIL and USDfc.
 
-Buy FIL and USDfc via [Squid Router](https://app.squidrouter.com/?chains=137%2C314&tokens=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359%2C0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee) or [SushiSwap](https://www.sushi.com/filecoin/swap?token0=NATIVE&token1=0x80b98d3aa09ffff255c3ba4a241111ff1262f045). It is recommended to bridge a bit of FIL first, and then swap a portion of it to USDfc, since cross-chain swaps for USDfc have low liquidity in pools. For most (<10GB) uploads, $0.1 of USDfc and 0.1 FIL should be enough.
+Buy FIL and USDfc via [Squid Router](https://app.squidrouter.com/?chains=137%2C314&tokens=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359%2C0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee) or [SushiSwap](https://www.sushi.com/filecoin/swap?token0=NATIVE&token1=0x80b98d3aa09ffff255c3ba4a241111ff1262f045). It is recommended to bridge a bit of FIL first, and then swap a portion of it to USDfc, since cross-chain swaps for USDfc have low liquidity in pools. For most (<10GB) uploads, $1 of USDfc and 0.1 FIL should be enough.
 
 If using the calibration testnet, you can get USDFc through a faucet as well [here](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc).
 
@@ -41,9 +149,7 @@ A more detailed guide on Filecoin can be found [here](/docs/filecoin).
 
 ## Spec-compliant Pinning Service
 
-- API Docs: https://ipfs.github.io/pinning-services-api-spec
 - API env variables: `OMNIPIN_SPEC_TOKEN`, `OMNIPIN_SPEC_URL`
-- Supported methods: Pin
 
 Obtain an opaque access token from the service. Populate your environment as such:
 
@@ -59,10 +165,7 @@ A few services provide a pinning service API:
 
 ## Filebase
 
-- URL: https://filebase.com
-- API Docs: https://docs.filebase.com/api-documentation/ipfs-pinning-service-api
 - API env variables: `OMNIPIN_FILEBASE_TOKEN` for pinning (if not the first provider), additionally `OMNIPIN_FILEBASE_BUCKET_NAME` for upload + pin.
-- Supported methods: Upload, Pin, Status
 
 ### Upload
 
@@ -84,10 +187,7 @@ Request a new token in the "IPFS RPC API Keys" section in "Access Keys" page of 
 
 ## Storacha
 
-- URL: https://storacha.network
-- API Docs: https://docs.storacha.network/how-to/upload
 - API env variables: `STORACHA_TOKEN`, `STORACHA_PROOF`
-- Supported methods: Upload
 
 Generating a key for Storacha requires a CLI tool.
 
@@ -169,10 +269,7 @@ OMNIPIN_STORACHA_PROOF=mAYIEAJM...uIXm2rXyL...Zxe4Bh6g2RQZwjDUcw3qrvMNXzu2pg/rdd
 
 ## Pinata
 
-- URL: https://pinata.cloud
-- API Docs: https://docs.pinata.cloud/files/uploading-files
 - API env variables: `OMNIPIN_PINATA_TOKEN`
-- Supported methods: Upload, Pin, Status
 
 Go to the dashboard page, then "API Keys" under "Developer" section. Click "New Key". An API key creation dialog should apppear. Select the checkboxes related to pinning. Click "Generate API Key".
 
@@ -182,19 +279,13 @@ Save the JWT token to the `OMNIPIN_PINATA_TOKEN` environment variable.
 
 ## 4EVERLAND
 
-- URL: https://www.4everland.org/
-- API Docs: https://docs.4everland.org/
 - API env variables: `OMNIPIN_4EVERLAND_TOKEN`
-- Supported methods: Pin, Status
 
 Open 4EVERLAND dashboard. Navigate to Storage > 4Ever Pin. Click "Access token". Copy the token and save it to the `OMNIPIN_4EVERLAND_TOKEN` environment variable.
 
 ## QuickNode
 
-- URL: https://quicknode.com
-- API Docs: https://www.quicknode.com/docs/ipfs/Pinning/create-pinnedObject-by-CID
 - API env variables: `OMNIPIN_QUICKNODE_TOKEN`
-- Supported methods: Pin
 
 Go to the dashboard and open the ["API Keys" page](https://dashboard.quicknode.com/api-keys). Click "Add API Key". In the "Applications" modal choose only "IPFS_REST".
 
@@ -202,36 +293,24 @@ Go to the dashboard and open the ["API Keys" page](https://dashboard.quicknode.c
 
 ## Lighthouse
 
-- URL: https://lighthouse.storage
-- API Docs: https://docs.lighthouse.storage/api-docs/lighthouse-api
 - API env variables: `OMNIPIN_LIGHTHOUSE_TOKEN`
-- Supported methods: Pin
 
 Go to "API Key", enter "Omnipin" in the input box and click "Generate".
 
 ## Blockfrost
 
-- URL: https://blockfrost.io
-- API Docs: https://blockfrost.dev
 - API env variables: `OMNIPIN_BLOCKFROST_TOKEN`
-- Supported methods: Pin, Status
 
 Create a new project. It will automatically create a token. Save the token to the `OMNIPIN_BLOCKFROST_TOKEN` environment variable.
 
 ## Aleph
 
-- URL: https://aleph.im
-- API Docs: https://docs.aleph.im
 - API env variables: `OMNIPIN_ALEPH_TOKEN`, `OMNIPIN_ALEPH_CHAIN`
-- Supported methods: Pin
 
 `OMNIPIN_ALEPH_TOKEN` is the private key of the account. Buy [$ALEPH](https://aleph.cloud/aleph-token) token for an account, around the same amount as the size of the website distribution. By default, mainnet will be used, but you can specify the chain with `OMNIPIN_ALEPH_CHAIN`. Supported chain are Ethereum (`ETH`), Avalanche (`AVAX`) and Base (`BASE`).
 
 ## SimplePage
 
-- URL: https://simplepage.eth.limo
-- API Docs: https://simplepage.eth.limo/architecture
 - API env variables: `OMNIPIN_SIMPLEPAGE_TOKEN`
-- Supported methods: Upload
 
 `OMNIPIN_SIMPLEPAGE_TOKEN` is an ENS name used for a page. SimplePage requires an onchain [subscription](https://simplepage.eth.limo/user-guide/#subscription-management) ($1/month).
