@@ -97,7 +97,8 @@ export const ensAction = async ({
 
   const address = fromPublicKey(getPublicKey({ privateKey: pk }))
 
-  logger.info(`Validating transaction for wallet ${address}`)
+  if (options.verbose)
+    logger.info(`Validating transaction for wallet ${address}`)
 
   const from = safeAddress
     ? getEip3770Address({ fullAddress: safeAddress, chainId: chain.id }).address
@@ -183,7 +184,7 @@ export const ensAction = async ({
       })
 
       if (!dryRun) {
-        logger.info('Proposing a Safe transaction')
+        if (options.verbose) logger.info('Proposing a Safe transaction')
 
         try {
           await proposeTransaction({
