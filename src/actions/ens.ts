@@ -9,8 +9,10 @@ import { toHex } from 'ox/Signature'
 import { chains, isTTY } from '../constants.js'
 import { MissingCLIArgsError, MissingKeyError } from '../errors.js'
 import type { ChainName } from '../types.js'
+import { getExactAddress } from '../utils/address/getExactAddress.js'
 import {
   chainToRpcUrl,
+  type EnsName,
   prepareUpdateEnsArgs,
   setContentHash,
 } from '../utils/ens.js'
@@ -36,7 +38,7 @@ import { execTransactionWithRole } from '../utils/zodiac-roles/exec.js'
 
 export type EnsActionArgs = Partial<{
   chain: ChainName
-  safe: Address | EIP3770Address
+  safe: Address | EIP3770Address | EnsName
   'rpc-url': string
   'resolver-address': Address
   verbose: boolean
@@ -57,7 +59,7 @@ export const ensAction = async ({
     chain: chainName = 'mainnet',
     safe: safeAddress,
     'rpc-url': rpcUrl,
-    'resolver-address': resolverAddress,
+    'resolver-address': _resolverAddress,
     'roles-mod-address': rolesModAddress,
     'dry-run': dryRun,
   } = options
@@ -101,18 +103,18 @@ export const ensAction = async ({
     logger.info(`Validating transaction for wallet ${address}`)
 
   const from = safeAddress
-    ? getEip3770Address({ fullAddress: safeAddress, chainId: chain.id }).address
+    ? await getExactAddress({ chain, addressOrEns: safeAddress, provider })
     : address
 
   const data = encodeData(setContentHash, [node, `0x${contentHash}`])
 
   if (options.verbose) console.log('Transaction encoded data:', data)
 
-  const to =
-    resolverAddress || chains[chainName].contracts.publicResolver.address
+  const resolverAddress =
+    _resolverAddress || chains[chainName].contracts.publicResolver.address
 
   if (
-    to === chains[chainName].contracts.publicResolver.address &&
+    resolverAddress === chains[chainName].contracts.publicResolver.address &&
     !domain.endsWith('.eth')
   )
     throw new Error('Domain must end with .eth')
@@ -123,7 +125,7 @@ export const ensAction = async ({
     )
 
     const { address: safe } = getEip3770Address({
-      fullAddress: safeAddress,
+      fullAddress: from,
       chainId: chain.id,
     })
 
@@ -145,7 +147,7 @@ export const ensAction = async ({
     const txData: SafeTransactionData = {
       nonce,
       operation: OperationType.Call,
-      to,
+      to: resolverAddress,
       data,
       value: 0n,
     }
@@ -159,7 +161,7 @@ export const ensAction = async ({
       await execTransactionWithRole({
         provider,
         data,
-        resolverAddress: to,
+        resolverAddress,
         rolesModAddress,
         from: address,
         privateKey: pk,
@@ -169,7 +171,7 @@ export const ensAction = async ({
     } else {
       const { safeTxHash } = await prepareSafeTransactionData({
         txData,
-        safeAddress,
+        safeAddress: from,
         chainId: chain.id,
         provider,
       })
@@ -177,7 +179,7 @@ export const ensAction = async ({
       logger.info(`Signing a Safe transaction with a hash ${safeTxHash}`)
 
       const senderSignature = await generateSafeTransactionSignature({
-        safeAddress,
+        safeAddress: from,
         txData,
         chainId: chain.id,
         privateKey: pk,
@@ -189,7 +191,7 @@ export const ensAction = async ({
         try {
           await proposeTransaction({
             txData,
-            safeAddress,
+            safeAddress: from,
             safeTxHash,
             senderSignature: toHex(senderSignature),
             chainId: chain.id,
@@ -211,7 +213,7 @@ export const ensAction = async ({
   } else {
     await simulateTransaction({
       provider,
-      to,
+      to: resolverAddress,
       data,
       from,
     })
@@ -220,7 +222,7 @@ export const ensAction = async ({
       privateKey: pk,
       provider,
       chainId: chain.id,
-      to,
+      to: resolverAddress,
       data,
       from,
     })

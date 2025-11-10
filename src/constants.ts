@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Address } from 'ox/Address'
 import {
   statusOn4everland,
   uploadOn4everland,
@@ -131,6 +132,22 @@ export const isTTY = process.stdout.isTTY
 
 export const CLOUDFLARE_API_URL = 'https://api.cloudflare.com/client/v4'
 
+export type EthereumChain = {
+  id: 1 | 11_155_111
+  name: 'Ethereum' | 'Sepolia'
+  contracts: {
+    publicResolver: {
+      address: Address
+    }
+  }
+  blockExplorers: {
+    default: {
+      name: string
+      url: string
+    }
+  }
+}
+
 export const chains = {
   mainnet: {
     id: 1,
@@ -162,4 +179,4 @@ export const chains = {
       },
     },
   },
-} as const
+} as const satisfies Record<'mainnet' | 'sepolia', EthereumChain>

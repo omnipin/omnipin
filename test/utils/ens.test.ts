@@ -1,6 +1,9 @@
 import { describe, it } from 'bun:test'
 import * as assert from 'node:assert'
+import { Provider } from 'ox'
+import { fromHttp } from 'ox/RpcTransport'
 import { chainToRpcUrl, prepareUpdateEnsArgs } from '../../src/utils/ens'
+import { resolveEnsName } from '../../src/utils/ens/ur'
 
 describe('ens utils', () => {
   describe('prepareUpdateEnsArgs', () => {
@@ -75,6 +78,18 @@ describe('ens utils', () => {
         chainToRpcUrl('sepolia'),
         'https://ethereum-sepolia-rpc.publicnode.com',
       )
+    })
+  })
+  describe('resolveEnsName', () => {
+    it('should resolve .eth names', async () => {
+      const provider = Provider.from(fromHttp(chainToRpcUrl('mainnet')))
+
+      const addr = await resolveEnsName({
+        provider,
+        name: 'safe.omnipin.eth',
+      })
+
+      assert.equal(addr, '0x0fd2ca6b1a52a1153da0b31d02fd53854627d262')
     })
   })
 })
