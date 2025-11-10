@@ -49,7 +49,7 @@ export const uploadPieceToDataSet = async ({
     clientDataSetId = dataSet.clientDataSetId
   }
 
-  logger.info(`Client data set ID: ${clientDataSetId}`)
+  if (verbose) logger.info(`Client data set ID: ${clientDataSetId}`)
 
   const payload = getSignPayload({
     types: {

@@ -64,17 +64,17 @@ export const uploadToFilecoin: UploadFunction<{
     chain,
   })
 
-  logger.info(`Filecoin SP ID: ${providerId}`)
+  if (verbose) logger.info(`Filecoin SP ID: ${providerId}`)
 
   const payee = await getProviderPayee({ id: providerId, chain })
 
-  logger.info(`Filecoin SP Payee: ${payee}`)
+  if (verbose) logger.info(`Filecoin SP Payee: ${payee}`)
 
   const { perMonth } = await getServicePrice({ size, chain })
 
   logger.info(`Price for storage: ${Value.format(perMonth, 18)} USDfc/month`)
 
-  logger.info('Looking up existing datasets')
+  if (verbose) logger.info('Looking up existing datasets')
   const dataSets = await getClientDataSets({ address, chain })
 
   let datasetId: bigint
@@ -84,7 +84,7 @@ export const uploadToFilecoin: UploadFunction<{
   )
 
   if (providerDataSets.length === 0) {
-    logger.info('No dataset found. Creating.')
+    if (verbose) logger.info('No dataset found. Creating.')
     const {
       clientDataSetId: clientId,
       hash,
