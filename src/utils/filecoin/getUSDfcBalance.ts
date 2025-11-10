@@ -28,7 +28,7 @@ export const getUSDfcBalance = async ({
 }: {
   address: Address
   chain: FilecoinChain
-}) => {
+}): Promise<bigint> => {
   const provider = filProvider[chain.id]
   const result = await provider.request({
     method: 'eth_call',
