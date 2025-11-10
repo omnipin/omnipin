@@ -17,7 +17,7 @@ type Chain = 'ETH' | 'AVAX' | 'BASE'
 export const pinToAleph: PinFunction<{ token: Hex; chain: Chain }> = async ({
   cid,
   token,
-  chain,
+  chain = 'ETH',
   verbose,
 }) => {
   const message = {
@@ -47,11 +47,20 @@ export const pinToAleph: PinFunction<{ token: Hex; chain: Chain }> = async ({
     body: JSON.stringify({ message }),
   })
   if (verbose) logger.request('POST', res.url, res.status)
+
+  if (!res.ok) {
+    const text = await res.text()
+
+    if (text.startsWith('{')) {
+      const json = JSON.parse(text)
+      throw new DeployError(providerName, json[0].msg, {
+        cause: text,
+      })
+    }
+    throw new DeployError(providerName, text, { cause: text })
+  }
+
   const json = await res.json()
-  if (!res.ok)
-    throw new DeployError(providerName, json[0].msg, {
-      cause: JSON.stringify(json),
-    })
 
   return { cid, status: json.publication_status.status }
 }
