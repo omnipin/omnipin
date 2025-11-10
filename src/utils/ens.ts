@@ -78,3 +78,5 @@ export const chainToRpcUrl = (chain: ChainName) => {
       return 'https://ethereum-sepolia-rpc.publicnode.com'
   }
 }
+
+export type EnsName = `${string}.eth`

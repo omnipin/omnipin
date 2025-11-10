@@ -1,14 +1,12 @@
 import type { Address } from 'ox/Address'
 import type { Hex } from 'ox/Hex'
-import type { EIP3770Address } from './eip3770.js'
-
 export enum OperationType {
   Call, // 0
   DelegateCall, // 1
 }
 
 export type SafeTransactionData = {
-  to: Address | EIP3770Address
+  to: Address
   value: bigint
   data: Hex
   operation: OperationType

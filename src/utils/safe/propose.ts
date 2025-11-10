@@ -2,7 +2,6 @@ import { type Address, checksum } from 'ox/Address'
 import type { Hex } from 'ox/Hex'
 import type { ChainName } from '../../types.js'
 import { chainToSafeApiUrl } from '../safe.js'
-import { type EIP3770Address, getEip3770Address } from './eip3770.js'
 import type { SafeTransactionData } from './types.js'
 
 export const proposeTransaction = async ({
@@ -12,10 +11,9 @@ export const proposeTransaction = async ({
   address,
   safeTxHash,
   senderSignature,
-  chainId,
 }: {
   txData: SafeTransactionData
-  safeAddress: Address | EIP3770Address
+  safeAddress: Address
   chainName: ChainName
   address: Address
   safeTxHash: Hex
@@ -29,13 +27,8 @@ export const proposeTransaction = async ({
     },
   })
 
-  const { address: safe } = getEip3770Address({
-    fullAddress: safeAddress,
-    chainId,
-  })
-
   const res = await fetch(
-    `${chainToSafeApiUrl(chainName)}/api/v1/safes/${safe}/multisig-transactions/`,
+    `${chainToSafeApiUrl(chainName)}/api/v1/safes/${safeAddress}/multisig-transactions/`,
     {
       method: 'POST',
       body: JSON.stringify({

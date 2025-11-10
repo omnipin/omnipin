@@ -66,16 +66,10 @@ export const generateSafeTransactionSignature = async ({
   privateKey,
 }: {
   txData: SafeTransactionData
-  safeAddress: EIP3770Address | Address
+  safeAddress: Address
   chainId: number
   privateKey: Hex
 }): Promise<Signature> => {
-  const { address: safeAddressWithoutPrefix } = getEip3770Address({
-    fullAddress: safeAddress,
-    chainId,
-  })
-  const { address: to } = getEip3770Address({ fullAddress: txData.to, chainId })
-
   const payload = getSignPayload({
     types: {
       EIP712Domain: [
@@ -104,10 +98,10 @@ export const generateSafeTransactionSignature = async ({
     primaryType: 'SafeTx',
     domain: {
       chainId: BigInt(chainId),
-      verifyingContract: safeAddressWithoutPrefix,
+      verifyingContract: safeAddress,
     },
     message: {
-      to: to,
+      to: txData.to,
       value: 0n,
       data: txData.data ?? '0x',
       operation: txData.operation,

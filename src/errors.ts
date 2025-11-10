@@ -96,3 +96,10 @@ export class MissingCLIArgsError extends Error {
     super(`Missing CLI arguments: ${args.join(', ')}`)
   }
 }
+
+export class InvalidLabelhashError extends Error {
+  name = 'InvalidLabelhashError'
+  constructor({ labelhash, details }: { labelhash: string; details: string }) {
+    super(`${labelhash}: ${details}`)
+  }
+}
