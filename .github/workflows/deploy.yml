@@ -2,6 +2,8 @@ name: Deploy with Omnipin
 on:
   push:
     branches: [main]
+    paths:
+      - "docs/**"
   workflow_dispatch: {}
 jobs:
   deploy:
