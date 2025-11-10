@@ -93,7 +93,7 @@ omnipin deploy --verbose --providers=Gateway3
 
 ### `safe`
 
-Deploy using a [Safe](https://safe.global) multisig wallet. Requires private key of a Safe owner/delegate to sign a transaction. [EIP-3770](https://eips.ethereum.org/EIPS/eip-3770) addresses are supported. Mainnet is used by default.
+Deploy using a [Safe](https://safe.global) multisig wallet. Requires private key of a Safe owner/delegate to sign a transaction. [EIP-3770](https://eips.ethereum.org/EIPS/eip-3770) addresses and ENS names are supported. Mainnet is used by default.
 
 The update will be sent to the Safe Transaction Service. `OMNIPIN_PK` must be a proposer's privat key.
 
@@ -101,10 +101,10 @@ In case the `roles-mod-address` option is specified, a transaction will submitte
 
 ```sh
 # Propose transaction to Safe
-omnipin deploy --ens v1rtl.eth --safe 0x1234567890000000000000000000000000000000
+omnipin deploy --ens v1rtl.eth --safe safe.omnipin.eth
 
 # Use a restricted role via Zodiac
-omnipin deploy --ens v1rtl.eth --roles-mod-address 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --safe 0x1234567890000000000000000000000000000000
+omnipin deploy --ens v1rtl.eth --roles-mod-address 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --safe safe.omnipin.eth
 ```
 
 ### `dnslink`
