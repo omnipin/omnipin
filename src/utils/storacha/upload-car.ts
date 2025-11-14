@@ -48,10 +48,8 @@ export const uploadCAR = async (conf: InvocationConfig, car: Blob) => {
   const content = Link.create(raw.code, digest)
   const offer = await Storefront.filecoinOffer(
     {
-      issuer: conf.issuer,
+      ...conf,
       audience: uploadServicePrincipal,
-      with: conf.issuer.did(),
-      proofs: conf.proofs,
     },
     content,
     piece,
