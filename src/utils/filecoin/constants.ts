@@ -2,7 +2,7 @@ import type { Address } from 'ox/Address'
 import * as Provider from 'ox/Provider'
 import { fromHttp } from 'ox/RpcTransport'
 
-export type FilecoinChainId = 314 | 314159
+export type FilecoinChainId = 314 | 314159 | 31415926
 
 export type FilecoinChain = {
   id: FilecoinChainId
@@ -82,18 +82,47 @@ export const filecoinCalibration = {
   blockExplorer: 'https://filecoin-testnet.blockscout.com',
 } as const satisfies FilecoinChain
 
-export const filecoinChains = {}
+const env = process.env
+const envRpc = env.OMNIPIN_FILECOIN_RPC_URL
+
+export const filecoinDevnet = {
+  id: 31415926,
+  name: 'Filecoin Devnet',
+  contracts: {
+    multicall3: {
+      address: env.OMNIPIN_MULTICALL3_ADDRESS as Address,
+    },
+    usdfc: {
+      address: env.OMNIPIN_USDFC_ADDRESS as Address,
+    },
+    payments: {
+      address: env.OMNIPIN_FILECOIN_PAY_ADDRESS as Address,
+    },
+    storage: {
+      address: env.OMNIPIN_FILECOIN_STORAGE_ADDRESS as Address,
+    },
+    providerRegistry: {
+      address: env.OMNIPIN_FILECOIN_REGISTRY_ADDRESS as Address,
+    },
+    storageView: {
+      address: env.OMNIPIN_FILECOIN_STORAGE_VIEW_ADDRESS as Address,
+    },
+  },
+  blockExplorer: '',
+} as const satisfies FilecoinChain
 
 export const filProvider = {
   [filecoinMainnet.id]: Provider.from(
-    fromHttp('https://api.node.glif.io/rpc/v1'),
+    fromHttp(envRpc || 'https://api.node.glif.io/rpc/v1'),
   ),
   [filecoinCalibration.id]: Provider.from(
-    fromHttp('https://api.calibration.node.glif.io/rpc/v1'),
+    fromHttp(envRpc || 'https://api.calibration.node.glif.io/rpc/v1'),
   ),
+  [filecoinDevnet.id]: Provider.from(fromHttp(envRpc || '')),
 }
 
 export const chains = {
-  [filecoinMainnet.id]: filecoinMainnet,
-  [filecoinCalibration.id]: filecoinCalibration,
+  mainnet: filecoinMainnet,
+  calibration: filecoinCalibration,
+  devnet: filecoinDevnet,
 }

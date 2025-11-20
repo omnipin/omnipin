@@ -12,7 +12,8 @@
       "src/**/*.ts",
       "test/**/*.ts",
       "scripts/*.ts",
-      "biome.json"
+      "biome.json",
+      "bun.lock"
     ]
   },
   "formatter": {
