@@ -122,3 +122,10 @@ Zodiac Roles Module address. Requires `safe` option to be provided.
 ```sh
 omnipin deploy --roles-mod-address 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --safe 0x1234567890000000000000000000000000000000 omnipin.eth
 ```
+
+### `filecoin-chain`
+
+Filecoin FEVM chain to use.
+
+- Default: `mainnet`
+- Available: `mainnet`, `calibration`, `devnet`
