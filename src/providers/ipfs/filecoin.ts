@@ -1,4 +1,5 @@
 import { randomInt } from 'node:crypto'
+import { setTimeout } from 'node:timers/promises'
 import { type Address, fromPublicKey } from 'ox/Address'
 import type { Hex } from 'ox/Hex'
 import { getPublicKey } from 'ox/Secp256k1'
@@ -107,6 +108,8 @@ export const uploadToFilecoin: UploadFunction<{
     await waitForDatasetReady(statusUrl)
 
     logger.success('Data set registered')
+    logger.info('Waiting for 5 seconds to ensure everything is in sync')
+    await setTimeout(5000)
   } else {
     logger.info(`Using existing dataset: ${providerDataSets[0].dataSetId}`)
     datasetId = providerDataSets[0].dataSetId
@@ -191,7 +194,7 @@ export const uploadToFilecoin: UploadFunction<{
     if (res.ok) {
       break
     }
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await setTimeout(1000)
   }
   logger.success('Piece found')
 
