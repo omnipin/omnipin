@@ -1,3 +1,4 @@
+import { setTimeout } from 'node:timers/promises'
 import { styleText } from 'node:util'
 import { isTTY } from '../constants.js'
 import { logger } from '../utils/logger.js'
@@ -39,7 +40,7 @@ export const pingAction = async ({
       if (response.status === 504) {
         if (attempt < maxRetries) {
           logger.text(`🔄 Retrying in ${retryInterval / 1000} seconds...`)
-          await new Promise((resolve) => setTimeout(resolve, retryInterval))
+          await setTimeout(retryInterval)
         } else {
           return logger.error(gwOfflineMessage)
         }
@@ -60,7 +61,7 @@ export const pingAction = async ({
     } catch (error) {
       if (error instanceof DOMException && attempt < maxRetries) {
         logger.info(`⌛ Timed out. Retrying...`)
-        await new Promise((resolve) => setTimeout(resolve, retryInterval))
+        await setTimeout(retryInterval)
       } else {
         logger.error(
           error instanceof DOMException

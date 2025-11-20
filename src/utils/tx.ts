@@ -1,3 +1,4 @@
+import { setTimeout } from 'node:timers/promises'
 import type { Address } from 'ox/Address'
 import { type Hex, toBigInt } from 'ox/Hex'
 import type { Provider } from 'ox/Provider'
@@ -127,7 +128,7 @@ export const waitForTransaction = async (provider: Provider, hash: Hex) => {
 
     // exponential backoff (1s → 2s → 4s → ... → max 30s)
     const delay = Math.min(1000 * 2 ** attempt, 30000)
-    await new Promise((resolve) => setTimeout(resolve, delay))
+    await setTimeout(delay)
   }
 
   throw new Error(`Transaction ${hash} not mined within timeout period`)

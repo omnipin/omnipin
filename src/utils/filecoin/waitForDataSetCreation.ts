@@ -1,3 +1,5 @@
+import { setTimeout } from 'node:timers/promises'
+
 type Payload = {
   txStatus: 'confirmed' | 'pending'
   dataSetId: number
@@ -16,7 +18,7 @@ export const waitForDatasetReady = async (
     }
 
     if (!json.dataSetCreated) {
-      await new Promise((resolve) => setTimeout(resolve, 3000))
+      await setTimeout(3000)
       continue
     }
 
