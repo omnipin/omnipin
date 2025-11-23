@@ -61,16 +61,24 @@ const sponsorSections = [
         name: "WalletBeat",
         href: "https://beta.walletbeat.eth.limo",
         img: "/WalletBeat.svg",
-        columns: 2,
+        columns: 3,
         height: "80px",
       },
       {
         name: "StorageBeat",
         href: "https://storagebeat.eth.limo",
         img: "/StorageBeat.svg",
-        columns: 2,
+        columns: 3,
         height: "80px",
         invert: true,
+      },
+      {
+        name: "Alcove",
+        href: "https://alcovetools.eth.limo/",
+        img: "/Alcove.svg",
+        columns: 3,
+        height: "80px",
+        invert: true
       },
       {
         name: "v1rtl.site",
