@@ -255,7 +255,7 @@ Save this private key (which starts with `Mg..`) to an environment variable (`OM
 With the key generated, it is now possible to create a delegation proof:
 
 ```bash [Terminal]
-storacha delegation create <did_command_above> --can 'store/add' --can 'upload/add' --can 'space/blob/add' --can 'space/index/add' --base64
+storacha delegation create <did_command_above> --can 'store/add' --can 'upload/add' --can 'space/blob/add' --can 'space/index/add' --can 'filecoin/offer' --base64
 ```
 
 Save the command output in a `OMNIPIN_STORACHA_PROOF` environment variable.
