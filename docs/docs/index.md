@@ -102,7 +102,7 @@ storacha delegation create <did_command_above> --can 'store/add' --can 'upload/a
 
 Save the command output in a `OMNIPIN_STORACHA_PROOF` environment variable.
 
-In the end your `.env` file should look like this:
+In the end your environment variables should look like this:
 
 ```sh [.env]
 OMNIPIN_STORACHA_TOKEN=Mg123456789ogR1enjgn123bi1KqzYz123456v123iLJkeiLIO4=
@@ -110,12 +110,6 @@ OMNIPIN_STORACHA_PROOF=mAYIEAJM...uIXm2rXyL...Zxe4Bh6g2RQZwjDUcw3qrvMNXzu2pg/rdd
 ```
 
 Omnipin is now ready to deploy your app on IPFS.
-
-Read the environment variables from `.env` file:
-
-```bash [Terminal]
-source .env
-```
 
 And run `omnipin deploy` (will deploy `dist` dir by default):
 

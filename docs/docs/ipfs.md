@@ -250,7 +250,7 @@ When both the account and the space are set up, you need to generate a unique pr
 storacha key create
 ```
 
-Save this private key (which starts with `Mg..`) to an environment variable (`OMNIPIN_STORACHA_TOKEN`) in `.env` file.
+Save this private key (which starts with `Mg..`) to an environment variable (`OMNIPIN_STORACHA_TOKEN`).
 
 With the key generated, it is now possible to create a delegation proof:
 
@@ -260,7 +260,7 @@ storacha delegation create <did_command_above> --can 'store/add' --can 'upload/a
 
 Save the command output in a `OMNIPIN_STORACHA_PROOF` environment variable.
 
-In the end your `.env` file should look like this:
+In the end your environment variables should look like this:
 
 ```sh [.env]
 OMNIPIN_STORACHA_TOKEN=Mg123456789ogR1enjgn123bi1KqzYz123456v123iLJkeiLIO4=
