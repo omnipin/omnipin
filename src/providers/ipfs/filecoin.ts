@@ -16,6 +16,7 @@ import { createDataSet } from '../../utils/filecoin/createDataSet.js'
 import { getClientDataSets } from '../../utils/filecoin/getClientDatasets.js'
 import { getProviderIdByAddress } from '../../utils/filecoin/getProviderIdByAddress.js'
 import { getProviderPayee } from '../../utils/filecoin/getProviderPayee.js'
+import { getRandomProviderId } from '../../utils/filecoin/getRandomProviderId.js'
 import { getUSDfcBalance } from '../../utils/filecoin/getUSDfcBalance.js'
 import { getServicePrice } from '../../utils/filecoin/pay/getServicePrice.js'
 import { uploadPieceToDataSet } from '../../utils/filecoin/uploadPieceToDataSet.js'
@@ -42,8 +43,11 @@ export const uploadToFilecoin: UploadFunction<{
   filecoinChain = 'mainnet',
   size,
 }) => {
-  if (!providerURL) throw new MissingKeyError('FILECOIN_SP_URL')
-  if (!providerAddress) throw new MissingKeyError('FILECOIN_SP_ADDRESS')
+  if (!providerURL && providerAddress)
+    throw new MissingKeyError('FILECOIN_SP_URL')
+  if (!providerAddress && providerURL)
+    throw new MissingKeyError('FILECOIN_SP_ADDRESS')
+
   const publicKey = getPublicKey({ privateKey })
   const address = fromPublicKey(publicKey)
 
@@ -60,10 +64,22 @@ export const uploadToFilecoin: UploadFunction<{
 
   if (balance === 0n) throw new DeployError(providerName, 'No USDfc on account')
 
-  const providerId = await getProviderIdByAddress({
-    providerAddress,
-    chain,
-  })
+  if (verbose) logger.info('Looking up existing data sets')
+  const dataSets = await getClientDataSets({ address, chain })
+
+  let providerId: bigint
+
+  if (dataSets.length > 0) {
+    // biome-ignore lint/style/noNonNullAssertion: if there is more than one data set it must be defined
+    providerId = dataSets.at(-1)!.providerId
+  } else if (providerAddress) {
+    providerId = await getProviderIdByAddress({
+      providerAddress,
+      chain,
+    })
+  } else {
+    providerId = await getRandomProviderId({ chain })
+  }
 
   if (verbose) logger.info(`Filecoin SP ID: ${providerId}`)
 
@@ -74,9 +90,6 @@ export const uploadToFilecoin: UploadFunction<{
   const { perMonth } = await getServicePrice({ size, chain })
 
   logger.info(`Price for storage: ${Value.format(perMonth, 18)} USDfc/month`)
-
-  if (verbose) logger.info('Looking up existing datasets')
-  const dataSets = await getClientDataSets({ address, chain })
 
   let datasetId: bigint
   let clientDataSetId: bigint | undefined
