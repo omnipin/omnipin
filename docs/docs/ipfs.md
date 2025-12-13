@@ -130,17 +130,6 @@ Buy FIL and USDfc via [Squid Router](https://app.squidrouter.com/?chains=137%2C3
 
 If using the calibration testnet, you can get USDFc through a faucet as well [here](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc).
 
-Next, choose a service provider to upload to.
-
-The full list of SPs providing upload "warm storage" support can be found on the [official website](https://www.filecoin.services/providers).
-
-Obtain the URL and the provider address and save it to the following environment variables:
-
-```sh
-OMNIPIN_FILECOIN_SP_URL=https://pdp-dev.kubuxu.com # Service provider URL
-OMNIPIN_FILECOIN_SP_ADDRESS=0x8c8c7a9BE47ed491B33B941fBc0276BD2ec25E7e # Service provider address
-```
-
 :::info
 By default, Filecoin mainnet is used. Switch to the calibration testnet via `--filecoin-chain=calibration`
 :::
