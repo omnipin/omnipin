@@ -15,6 +15,7 @@ import {
 import { createDataSet } from '../../utils/filecoin/createDataSet.js'
 import { getClientDataSets } from '../../utils/filecoin/getClientDatasets.js'
 import { getProviderIdByAddress } from '../../utils/filecoin/getProviderIdByAddress.js'
+import { getProviderMetadata } from '../../utils/filecoin/getProviderMetadata.js'
 import { getProviderPayee } from '../../utils/filecoin/getProviderPayee.js'
 import { getRandomProviderId } from '../../utils/filecoin/getRandomProviderId.js'
 import { getUSDfcBalance } from '../../utils/filecoin/getUSDfcBalance.js'
@@ -71,7 +72,8 @@ export const uploadToFilecoin: UploadFunction<{
 
   if (dataSets.length > 0) {
     // biome-ignore lint/style/noNonNullAssertion: if there is more than one data set it must be defined
-    providerId = dataSets.at(-1)!.providerId
+    const lastProvider = dataSets.at(-1)!
+    providerId = lastProvider.providerId
   } else if (providerAddress) {
     providerId = await getProviderIdByAddress({
       providerAddress,
@@ -82,6 +84,15 @@ export const uploadToFilecoin: UploadFunction<{
   }
 
   if (verbose) logger.info(`Filecoin SP ID: ${providerId}`)
+
+  if (!providerURL) {
+    const { serviceURL, address } = await getProviderMetadata({
+      chain,
+      providerId,
+    })
+    providerURL = serviceURL
+    providerAddress = address
+  }
 
   const payee = await getProviderPayee({ id: providerId, chain })
 
