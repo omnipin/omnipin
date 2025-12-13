@@ -1,5 +1,5 @@
 import { decodeResult, encodeData } from 'ox/AbiFunction'
-import { toString } from 'ox/Hex'
+import * as Hex from 'ox/Hex'
 import { type FilecoinChain, filProvider } from './constants.js'
 
 const abi = {
@@ -90,7 +90,7 @@ export const getProviderMetadata = async ({
     result,
   )
   const { capabilityKeys } = product
-  const serviceURL = toString(
+  const serviceURL = Hex.toString(
     productCapabilityValues[capabilityKeys.indexOf('serviceURL')],
   )
 
