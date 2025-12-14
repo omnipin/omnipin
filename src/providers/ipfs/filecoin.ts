@@ -28,8 +28,8 @@ import { waitForTransaction } from '../../utils/tx.js'
 const providerName = 'Filecoin'
 
 export const uploadToFilecoin: UploadFunction<{
-  providerAddress: Address
-  providerURL: string
+  providerAddress?: Address
+  providerURL?: string
   pieceCid: string
   filecoinChain: 'mainnet' | 'calibration'
   token: Hex

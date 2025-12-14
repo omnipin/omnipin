@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'bun:test'
-import { UploadNotSupportedError } from '../../src/errors'
-import { pinOnLighthouse } from '../../src/providers/ipfs/lighthouse'
+import { UploadNotSupportedError } from '../../src/errors.js'
+import { pinOnLighthouse } from '../../src/providers/ipfs/lighthouse.js'
 
 describe('Lighthouse', () => {
   describe('pin', () => {
     it('should throw if pinning was chosen as a first provider', () => {
       expect(
-        // @ts-expect-error only checking if it throws by passing `first`
         pinOnLighthouse({ first: true, providerName: 'Test' }),
       ).rejects.toThrowError(new UploadNotSupportedError('Lighthouse'))
     })
