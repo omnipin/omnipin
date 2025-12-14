@@ -1,6 +1,6 @@
 import { describe, expect, it, mock } from 'bun:test'
-import { DeployError } from '../../src/errors'
-import { uploadOnS3 } from '../../src/providers/ipfs/s3'
+import { DeployError } from '../../src/errors.js'
+import { uploadOnS3 } from '../../src/providers/ipfs/s3.js'
 
 const success = new Response(null, { status: 200 })
 const failure = new Response('mock', { status: 400 })

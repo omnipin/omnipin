@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: asserting env tokens */
 import { describe, expect, it } from 'bun:test'
-import { MissingKeyError } from '../../src/errors'
+import { MissingKeyError } from '../../src/errors.js'
 import { uploadOnStoracha } from '../../src/providers/ipfs/storacha.js'
 import { walk } from '../../src/utils/fs.js'
 import { packCAR } from '../../src/utils/ipfs.js'
@@ -16,7 +16,7 @@ describe('Storacha provider', () => {
     it.skip(
       'uploads a file',
       async () => {
-        const [_, files] = await walk('./dist', false)
+        const [size, files] = await walk('./dist', false)
         const car = await packCAR(files, 'test.car')
 
         const { cid } = await uploadOnStoracha({
@@ -25,6 +25,8 @@ describe('Storacha provider', () => {
           name: 'test',
           first: true,
           car: car.blob,
+          cid: car.rootCID.toString(),
+          size,
         })
 
         expect(cid).toEqual(car.rootCID.toString())
