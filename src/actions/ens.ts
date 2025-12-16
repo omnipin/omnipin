@@ -1,6 +1,6 @@
 import { styleText } from 'node:util'
 import { encodeData } from 'ox/AbiFunction'
-import { type Address, fromPublicKey } from 'ox/Address'
+import { type Address, checksum, fromPublicKey } from 'ox/Address'
 import { type Hex, toBigInt } from 'ox/Hex'
 import * as Provider from 'ox/Provider'
 import { fromHttp } from 'ox/RpcTransport'
@@ -10,6 +10,7 @@ import { chains, isTTY } from '../constants.js'
 import { MissingCLIArgsError, MissingKeyError } from '../errors.js'
 import type { ChainName } from '../types.js'
 import { getExactAddress } from '../utils/address/getExactAddress.js'
+import { resolveEnsName } from '../utils/ens/ur.js'
 import {
   chainToRpcUrl,
   type EnsName,
@@ -179,7 +180,7 @@ export const ensAction = async ({
       logger.info(`Signing a Safe transaction with a hash ${safeTxHash}`)
 
       const senderSignature = await generateSafeTransactionSignature({
-        safeAddress: from,
+        safeAddress: checksum(from),
         txData,
         chainId: chain.id,
         privateKey: pk,
@@ -191,14 +192,17 @@ export const ensAction = async ({
         try {
           await proposeTransaction({
             txData,
-            safeAddress: from,
+            safeAddress: checksum(from),
             safeTxHash,
             senderSignature: toHex(senderSignature),
             chainId: chain.id,
             chainName: chainName,
             address,
           })
-          const safeLink = `https://app.safe.global/transactions/queue?safe=${safeAddress}`
+          const safe = safeAddress.endsWith('.eth')
+            ? await resolveEnsName({ name: safeAddress, provider })
+            : safeAddress
+          const safeLink = `https://app.safe.global/transactions/queue?safe=${safe}`
           logger.success(
             `Transaction proposed to a Safe wallet.\nOpen in a browser: ${
               isTTY ? styleText('underline', safeLink) : safeLink
