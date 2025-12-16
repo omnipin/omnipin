@@ -29,100 +29,36 @@ deno install --global --allow-read --allow-env --allow-write --allow-net npm:omn
 
 ### Initial deployment
 
-The first step is setting up content storage providers to deploy the web application to. The full list is available with detailed instructions on the ["IPFS" page](/docs/ipfs). At the moment of writing, [Storacha](https://storacha.network) is the only provider that allows uploading web content on a free tier, which is why it is used in this guide.
+The first step is setting up content storage providers to deploy the web application to. The full list is available with detailed instructions on the ["IPFS" page](/docs/ipfs). Filecoin will be used as an example because it allows permissionless uploads.
 
-Generating a key for Storacha requires a CLI tool.
+Storage on Filecoin requires FIL and USDfc for payment. In this tutorial, the Filecoin calibration testnet will be used.
 
-Install it with:
-
-:::code-group
-
-```sh [pnpm]
-pnpm i -g @storacha/cli
-```
-
-```sh [npm]
-npm i -g @storacha/cli
-```
-
-```sh [bun]
-bun i -g @storacha/cli
-```
-
-:::
-
-Next, login to your Storacha account:
+Create a new Ethereum private key:
 
 ```bash [Terminal]
-storacha login
-# ? How do you want to login? Via GitHub
-# ? Open the GitHub login URL in your default browser? yes
+cast wallet new
 ```
 
-Storacha uses spaces (similar to buckets). You would need to create one, if you don't have one already:
+Save the private key to a `OMNIPIN_FILECOIN_TOKEN` variable.
 
-```bash [Terminal]
-storacha space create
-# ? What would you like to call this space? omnipin-docs
-# 🔑 You need to save the following secret recovery key somewhere safe! For example write it down on
-# a piece of paper and put it inside your favorite book.
-
-# •••• •••••• ••••• ••••• •••••• •••••••• ••••••• ••••••• •••• •••••• •••••• •••• •••••• •••••••
-# ••••• •••• ••••••• ••••• •••• ••••• •••••• ••••••• ••••• ••••
-
-# 🔐 Secret recovery key is correct!
-# 🏗️ To serve this space we need to set a billing account
-# ✨ Billing account is set
-# ⛓️ To manage space across devices we need to authorize an account
-# ✨ Account is authorized
-# 🐔 Space created: did:key:z6Mkw...qAk
-```
-
-Save the recovery key in a safe place.
-
-Once you have a space, you need to select it:
-
-```bash [Terminal]
-storacha space use <space DID>
-```
-
-When both the account and the space are set up, you need to generate a unique private key. It is required to create a delegation proof to be able ot upload files to the space.
-
-```bash [Terminal]
-storacha key create
-```
-
-Save this private key (which starts with `Mg..`) to an environment variable (`OMNIPIN_STORACHA_TOKEN`) in `.env` file.
-
-With the key generated, it is now possible to create a delegation proof:
-
-```bash [Terminal]
-storacha delegation create <did_command_above> --can 'store/add' --can 'upload/add' --can 'space/blob/add' --can 'space/index/add' --can 'filecoin/offer' --base64
-```
-
-Save the command output in a `OMNIPIN_STORACHA_PROOF` environment variable.
-
-In the end your environment variables should look like this:
-
-```sh [.env]
-OMNIPIN_STORACHA_TOKEN=Mg123456789ogR1enjgn123bi1KqzYz123456v123iLJkeiLIO4=
-OMNIPIN_STORACHA_PROOF=mAYIEAJM...uIXm2rXyL...Zxe4Bh6g2RQZwjDUcw3qrvMNXzu2pg/rdd...IGXkvTsk9jnMGkBKPo...A7rC1u/tWHthsGVm8F6...pYJQABcRIgFFoH6R...8ukdZvYKuk2pthEmuyCVkAmPlC/kT3MM
-```
+Request testnet FIL from [this faucet](https://forest-explorer.chainsafe.dev/faucet/calibnet) and USDFc from [another faucet](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc) on a freshly created account.
 
 Omnipin is now ready to deploy your app on IPFS.
 
-And run `omnipin deploy` (will deploy `dist` dir by default):
+And run `omnipin deploy` (will deploy `dist` directory by default):
 
 ```bash [Terminal]
-omnipin deploy
+omnipin deploy --providers=Filecoin --filecoin-chain=calibration
 ```
 
-```
-🟢 Deploying with providers: Storacha
+```bash
+🟢 Deploying with providers: Filecoin
 📦 Packing dist (4.43MB)
 🟢 Root CID: bafybeig2rerivrgw6y2bbh65hib2fxicmc7te4xygakkln4foocprcppeq
 ✓ [>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>] Finished in 12s
 ✔ Deployed across all providers
+
+# ...Filecoin logs
 
 Open in a browser:
 IPFS:      https://bafybeig2rerivrgw6y2bbh65hib2fxicmc7te4xygakkln4foocprcppeq.ipfs.dweb.link
