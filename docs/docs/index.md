@@ -39,13 +39,13 @@ Create a new Ethereum private key:
 cast wallet new
 ```
 
-Save the private key to a `OMNIPIN_FILECOIN_TOKEN` variable.
+Save the private key to the `OMNIPIN_FILECOIN_TOKEN` variable.
 
 Request testnet FIL from [this faucet](https://forest-explorer.chainsafe.dev/faucet/calibnet) and USDFc from [another faucet](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc) on a freshly created account.
 
 Omnipin is now ready to deploy your app on IPFS.
 
-And run `omnipin deploy` (will deploy `dist` directory by default):
+Run `omnipin deploy` (will deploy `dist` directory by default) with the arguments below to make sure the testnet is used:
 
 ```bash [Terminal]
 omnipin deploy --providers=Filecoin --filecoin-chain=calibration
