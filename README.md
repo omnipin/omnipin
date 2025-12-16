@@ -4,7 +4,7 @@
 <h1>Omnipin</h1>
 
 [![GitHub Workflow
-Status][gh-actions-img]][github-actions] ![npm](https://img.shields.io/npm/dt/omnipin?style=for-the-badge&logo=npm&color=%232B4AD4&label)
+Status][gh-actions-img]][github-actions] ![npm](https://img.shields.io/npm/dt/omnipin?style=for-the-badge&logo=npm&color=%232B4AD4&label) <a href="https://www.drips.network/app/projects/github/omnipin/omnipin" target="_blank"><img src="https://www.drips.network/api/embed/project/https%3A%2F%2Fgithub.com%2Fomnipin%2Fomnipin/support.png?background=blue&style=drips&text=project&stat=none" alt="Support omnipin on drips.network" height="32"></a>
 
 <sub>The ultimate decentralized website deployment toolkit</sub>
 </div>
