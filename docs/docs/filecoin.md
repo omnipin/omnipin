@@ -6,7 +6,7 @@ Unlike many other IPFS hosting services that Omnipin integrates with, Filecoin i
 
 ## Custom Filecoin SP
 
-Filecoin SP choice can be overidden using environment variables.
+By default, a Filecoin SP (storage provider) is chosen at random for convenience. This can be overridden using environment variables.
 
 The full list of SPs providing upload "warm storage" support can be found on the [official website](https://filecoin.cloud/service-providers).
 
