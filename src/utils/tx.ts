@@ -3,8 +3,8 @@ import type { Address } from 'ox/Address'
 import { type Hex, toBigInt } from 'ox/Hex'
 import type { Provider } from 'ox/Provider'
 import * as Secp256k1 from 'ox/Secp256k1'
-import * as TransactionEnvelopeEip1559 from 'ox/TransactionEnvelopeEip1559'
 import { fromRpc } from 'ox/TransactionReceipt'
+import * as TxEnvelopeEip1559 from 'ox/TxEnvelopeEip1559'
 import { logger } from './logger.js'
 
 export const simulateTransaction = async ({
@@ -82,7 +82,7 @@ export const sendTransaction = async ({
   const maxPriorityFeePerGas = priorityFeePerGas
   const maxFeePerGas = baseFeePerGas * 2n + maxPriorityFeePerGas
 
-  const envelope = TransactionEnvelopeEip1559.from({
+  const envelope = TxEnvelopeEip1559.from({
     from,
     chainId,
     maxFeePerGas,
@@ -95,11 +95,11 @@ export const sendTransaction = async ({
   })
 
   const signature = Secp256k1.sign({
-    payload: TransactionEnvelopeEip1559.getSignPayload(envelope),
+    payload: TxEnvelopeEip1559.getSignPayload(envelope),
     privateKey,
   })
 
-  const serialized = TransactionEnvelopeEip1559.serialize(envelope, {
+  const serialized = TxEnvelopeEip1559.serialize(envelope, {
     signature,
   })
 
