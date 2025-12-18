@@ -9,6 +9,21 @@ import { InvalidCIDError } from '../errors.js'
 
 const tmp = tmpdir()
 
+const concatBytes = (chunks: Uint8Array[]): Uint8Array => {
+  let total = 0
+  for (const c of chunks) total += c.byteLength
+
+  const out = new Uint8Array(total)
+  let offset = 0
+
+  for (const c of chunks) {
+    out.set(c, offset)
+    offset += c.byteLength
+  }
+
+  return out
+}
+
 export const packCAR = async (
   files: FileCandidate[],
   name: string,
@@ -38,10 +53,12 @@ export const packCAR = async (
     }
   })()
 
-  for await (const { cid } of blockstore.getAll()) {
+  for await (const { cid, bytes } of blockstore.getAll()) {
     try {
-      const bytes = await blockstore.get(cid)
-      await writer.put({ cid, bytes })
+      await writer.put({
+        cid,
+        bytes: concatBytes(await Array.fromAsync(bytes)),
+      })
     } catch (error) {
       console.warn(`Failed to add block ${cid.toString()} to CAR:`, error)
     }
