@@ -83,7 +83,6 @@ export const sendTransaction = async ({
   const maxFeePerGas = baseFeePerGas * 2n + maxPriorityFeePerGas
 
   const envelope = TxEnvelopeEip1559.from({
-    from,
     chainId,
     maxFeePerGas,
     maxPriorityFeePerGas,
