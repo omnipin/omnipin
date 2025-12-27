@@ -222,29 +222,31 @@ export const ensAction = async ({
       from,
     })
 
-    const hash = await sendTransaction({
-      privateKey: pk,
-      provider,
-      chainId: chain.id,
-      to: resolverAddress,
-      data,
-      from,
-    })
+    if (!dryRun) {
+      const hash = await sendTransaction({
+        privateKey: pk,
+        provider,
+        chainId: chain.id,
+        to: resolverAddress,
+        data,
+        from,
+      })
 
-    logger.info(
-      `Transaction pending: ${chain.blockExplorers.default.url}/tx/${hash}`,
-    )
+      logger.info(
+        `Transaction pending: ${chain.blockExplorers.default.url}/tx/${hash}`,
+      )
 
-    try {
-      await waitForTransaction(provider, hash)
-    } catch (e) {
-      return logger.error(e)
+      try {
+        await waitForTransaction(provider, hash)
+      } catch (e) {
+        return logger.error(e)
+      }
+
+      logger.success('Transaction succeeded')
+      const browserLink = `https://${domain}.limo`
+      logger.info(
+        `Open in a browser: ${isTTY ? styleText('underline', browserLink) : browserLink}`,
+      )
     }
-
-    logger.success('Transaction succeeded')
-    const browserLink = `https://${domain}.limo`
-    logger.info(
-      `Open in a browser: ${isTTY ? styleText('underline', browserLink) : browserLink}`,
-    )
   }
 }
