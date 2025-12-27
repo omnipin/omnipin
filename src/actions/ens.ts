@@ -42,7 +42,6 @@ export type EnsActionArgs = Partial<{
   chain: ChainName
   safe: Address | EIP3770Address | EnsName
   'rpc-url': string
-  'resolver-address': Address
   verbose: boolean
   'dry-run': boolean
   'roles-mod-address': Address
@@ -61,7 +60,6 @@ export const ensAction = async ({
     chain: chainName = 'mainnet',
     safe: safeAddress,
     'rpc-url': rpcUrl,
-    'resolver-address': _resolverAddress,
     'roles-mod-address': rolesModAddress,
     'dry-run': dryRun,
   } = options

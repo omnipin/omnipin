@@ -27,11 +27,6 @@ const onchainOptions = [
     type: 'string',
   },
   {
-    name: 'resolver-address',
-    description: 'Custom ENS Resolver address',
-    type: 'string',
-  },
-  {
     name: 'rpc-url',
     description: 'Custom Ethereum RPC',
     type: 'string',
@@ -258,9 +253,10 @@ cli.command<[string]>('pin', ([cid], options) => pinAction({ cid, options }), {
   description: 'Pin an IPFS CID on multiple providers',
 })
 
-cli.command<[Address]>(
+cli.command<[Address, Address]>(
   'zodiac',
-  ([rolesModAddress], options) => zodiacAction({ rolesModAddress, options }),
+  ([rolesModAddress, resolverAddress], options) =>
+    zodiacAction({ rolesModAddress, resolverAddress, options }),
   {
     options: [...onchainOptions] as const,
   },

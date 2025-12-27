@@ -32,10 +32,6 @@ omnipin deploy --ens v1rtl.eth
 
 Use a custom Ethereum RPC for transactions. By default, [Public nodes](https://ethereum-rpc.publicnode.com) are used.
 
-### `resolver-address`
-
-Use a custom ENS Resolver address. Public resolvers for mainnet and sepolia are set by default.
-
 ### `chain`
 
 * Default: `mainnet`

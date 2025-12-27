@@ -7,7 +7,6 @@ import { getPublicKey, randomPrivateKey } from 'ox/Secp256k1'
 import { chains } from '../constants.js'
 import { MissingCLIArgsError } from '../errors.js'
 import { logger } from '../utils/logger.js'
-
 import {
   type EIP3770Address,
   getEip3770Address,
@@ -15,21 +14,19 @@ import {
 import { ENS_DEPLOYER_ROLE } from '../utils/zodiac-roles/init.js'
 import type { DeployActionArgs } from './deploy.js'
 
-type ZodiacActionOptions = Pick<
-  DeployActionArgs,
-  'safe' | 'chain' | 'ens' | 'resolver-address'
->
+type ZodiacActionOptions = Pick<DeployActionArgs, 'safe' | 'chain' | 'ens'>
 
 export const zodiacAction = async ({
   rolesModAddress,
+  resolverAddress,
   options = {},
 }: {
   rolesModAddress: Address
+  resolverAddress: Address
   options?: ZodiacActionOptions
 }) => {
+  if (!resolverAddress) throw new MissingCLIArgsError(['resolverAddress'])
   if (!rolesModAddress) throw new MissingCLIArgsError(['rolesModAddress'])
-
-  const resolverAddress = options['resolver-address']
 
   const safe = options.safe
 
