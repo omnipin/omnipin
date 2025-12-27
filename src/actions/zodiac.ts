@@ -13,9 +13,12 @@ import {
   getEip3770Address,
 } from '../utils/safe/eip3770.js'
 import { ENS_DEPLOYER_ROLE } from '../utils/zodiac-roles/init.js'
-import type { EnsActionArgs } from './ens.js'
+import type { DeployActionArgs } from './deploy.js'
 
-type ZodiacActionOptions = Omit<EnsActionArgs, 'roles-mod-address' | 'dry-run'>
+type ZodiacActionOptions = Pick<
+  DeployActionArgs,
+  'safe' | 'chain' | 'ens' | 'resolver-address'
+>
 
 export const zodiacAction = async ({
   rolesModAddress,
@@ -26,9 +29,7 @@ export const zodiacAction = async ({
 }) => {
   if (!rolesModAddress) throw new MissingCLIArgsError(['rolesModAddress'])
 
-  const resolverAddress =
-    options['resolver-address'] ??
-    chains[options.chain ?? 'mainnet'].contracts.publicResolver.address
+  const resolverAddress = options['resolver-address']
 
   const safe = options.safe
 

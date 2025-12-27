@@ -2,8 +2,8 @@ import { describe, it } from 'bun:test'
 import * as assert from 'node:assert'
 import { Provider } from 'ox'
 import { fromHttp } from 'ox/RpcTransport'
-import { chainToRpcUrl, prepareUpdateEnsArgs } from '../../src/utils/ens'
-import { resolveEnsName } from '../../src/utils/ens/ur'
+import { resolveEnsName } from '../../src/utils/ens/resolve-name.js'
+import { chainToRpcUrl, prepareUpdateEnsArgs } from '../../src/utils/ens.js'
 
 describe('ens utils', () => {
   describe('prepareUpdateEnsArgs', () => {

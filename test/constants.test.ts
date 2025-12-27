@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { chains } from '../src/constants'
+import { chains } from '../src/constants.js'
 
 describe('constants', () => {
   it('chains snapshot matches', () => {
@@ -12,11 +12,7 @@ describe('constants', () => {
               "url": "https://etherscan.io",
             },
           },
-          "contracts": {
-            "publicResolver": {
-              "address": "0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63",
-            },
-          },
+          "contracts": {},
           "id": 1,
           "name": "Ethereum",
         },
@@ -27,11 +23,7 @@ describe('constants', () => {
               "url": "https://sepolia.etherscan.io",
             },
           },
-          "contracts": {
-            "publicResolver": {
-              "address": "0x8FADE66B79cC9f707aB26799354482EB93a5B7dD",
-            },
-          },
+          "contracts": {},
           "id": 11155111,
           "name": "Sepolia",
         },
