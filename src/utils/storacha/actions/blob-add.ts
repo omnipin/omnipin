@@ -8,7 +8,6 @@ import type {
 } from '@storacha/capabilities/types'
 import * as UCAN from '@storacha/capabilities/ucan'
 import { SpaceDID } from '@storacha/capabilities/utils'
-import * as W3sBlobCapabilities from '@storacha/capabilities/web3.storage/blob'
 import { Delegation, Receipt } from '@ucanto/core'
 import type * as Interface from '@ucanto/interface'
 import type { Invocation } from '@ucanto/interface'
@@ -27,13 +26,9 @@ function parseBlobAddReceiptNext<
   Alg extends Interface.SigAlg,
 >(receipt: Interface.Receipt<Ok, Err, Ran, Alg>) {
   const forkInvocations = receipt.fx.fork as Invocation[]
-  const allocateTask =
-    forkInvocations.find(
-      (fork) => fork.capabilities[0].can === BlobCapabilities.allocate.can,
-    ) ??
-    forkInvocations.find(
-      (fork) => fork.capabilities[0].can === W3sBlobCapabilities.allocate.can,
-    )
+  const allocateTask = forkInvocations.find(
+    (fork) => fork.capabilities[0].can === BlobCapabilities.allocate.can,
+  )
   const concludefxs = forkInvocations.filter(
     (fork) => fork.capabilities[0].can === UCAN.conclude.can,
   )
@@ -41,12 +36,9 @@ function parseBlobAddReceiptNext<
     (fork) => fork.capabilities[0].can === HTTPCapabilities.put.can,
   )
 
-  const acceptTask = (forkInvocations.find(
+  const acceptTask = forkInvocations.find(
     (fork) => fork.capabilities[0].can === BlobCapabilities.accept.can,
-  ) ??
-    forkInvocations.find(
-      (fork) => fork.capabilities[0].can === W3sBlobCapabilities.accept.can,
-    )) as Interface.Invocation<BlobAccept> | undefined
+  ) as Interface.Invocation<BlobAccept> | undefined
 
   if (!allocateTask || !concludefxs.length || !putTask || !acceptTask) {
     throw new Error('mandatory effects not received')
