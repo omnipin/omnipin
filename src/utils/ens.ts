@@ -1,7 +1,7 @@
 import { base32 } from '@ucanto/core/link'
+import { varint } from 'multiformats'
 import { toHex } from 'ox/Bytes'
 import { namehash, normalize } from 'ox/Ens'
-import * as varint from 'varint'
 import type { ChainName } from '../types.js'
 import { referenceToCID } from './swarm.js'
 

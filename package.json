@@ -27,7 +27,7 @@
     "esbuild": "^0.27.2",
     "ipfs-unixfs": "^12.0.0",
     "ipfs-unixfs-importer": "^16.0.1",
-    "multiformats": "13.4.0",
+    "multiformats": "^13.4.2",
     "nanotar": "^0.2.0",
     "ox": "^0.11.1",
     "size-limit": "^11.2.0",
