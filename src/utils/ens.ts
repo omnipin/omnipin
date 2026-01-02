@@ -1,4 +1,4 @@
-import { base32 } from '@ucanto/core/link'
+import { base32 } from 'multiformats/bases/base32'
 import { toHex } from 'ox/Bytes'
 import { namehash, normalize } from 'ox/Ens'
 import * as varint from 'varint'

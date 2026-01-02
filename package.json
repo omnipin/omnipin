@@ -62,7 +62,7 @@
     ]
   },
   "scripts": {
-    "build": "esbuild src/cli.ts --bundle --minify-syntax --platform=node --legal-comments=none --format=esm --tree-shaking --outfile=dist/cli.js && chmod +x ./dist/cli.js",
+    "build": "bun build src/cli.ts --target=node --bundle --minify-syntax --platform=node --legal-comments=none --format=esm --tree-shaking --outfile=dist/cli.js && chmod +x ./dist/cli.js",
     "prepublishOnly": "bun run build && bun size-limit",
     "check": "biome check",
     "types": "tsc --noEmit",
