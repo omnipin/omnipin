@@ -2,8 +2,8 @@ import { CarBlockIterator } from '@ipld/car'
 import type * as CarDecoder from '@ipld/car/decoder'
 import { CarWriter } from '@ipld/car/writer'
 import * as dagCBOR from '@ipld/dag-cbor'
-import { varint } from 'multiformats'
 import type { CID } from 'multiformats/cid'
+import * as varint from 'varint'
 import type { AnyLink } from '../types.js'
 
 export async function decode(car: Blob) {

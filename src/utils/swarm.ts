@@ -1,7 +1,6 @@
-import { varint } from 'multiformats'
-
 import { create } from 'multiformats/hashes/digest'
 import { type Hex, toBytes } from 'ox/Hex'
+import * as varint from 'varint'
 
 const KECCAK_256_CODEC = 0x1b
 const SWARM_MANIFEST_CODEC = 0xfa
@@ -14,8 +13,8 @@ function encodeCID(
   const codeOffset = varint.encodingLength(version)
   const hashOffset = codeOffset + varint.encodingLength(code)
   const bytes = new Uint8Array(hashOffset + multihash.byteLength)
-  varint.encodeTo(version, bytes, 0)
-  varint.encodeTo(code, bytes, codeOffset)
+  varint.encode(version, bytes, 0)
+  varint.encode(code, bytes, codeOffset)
   bytes.set(multihash, hashOffset)
   return bytes
 }
