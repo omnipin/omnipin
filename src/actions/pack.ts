@@ -1,6 +1,6 @@
 import path from 'node:path'
-import { styleText } from 'node:util'
 import { isTTY } from '../constants.js'
+import { styleText } from '../deps.js'
 import { MissingDirectoryError } from '../errors.js'
 import { exists, fileSize, walk } from '../utils/fs.js'
 import { packCAR } from '../utils/ipfs.js'

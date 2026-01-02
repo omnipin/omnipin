@@ -1,10 +1,10 @@
-import { setTimeout } from 'node:timers/promises'
 import type { Address } from 'ox/Address'
 import { type Hex, toBigInt } from 'ox/Hex'
 import type { Provider } from 'ox/Provider'
 import * as Secp256k1 from 'ox/Secp256k1'
 import { fromRpc } from 'ox/TransactionReceipt'
 import * as TxEnvelopeEip1559 from 'ox/TxEnvelopeEip1559'
+import { setTimeout } from '../deps.js'
 import { logger } from './logger.js'
 
 export const simulateTransaction = async ({

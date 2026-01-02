@@ -1,6 +1,6 @@
-import { styleText } from 'node:util'
 import mod from 'ascii-bar'
 import { isTTY, PROVIDERS } from '../constants.js'
+import { styleText } from '../deps.js'
 import { MissingKeyError, NoProvidersError } from '../errors.js'
 import {
   findEnvVarProviderName,
