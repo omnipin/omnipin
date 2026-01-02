@@ -1,5 +1,5 @@
-import mod from 'ascii-bar'
 import { isTTY, PROVIDERS } from '../constants.js'
+import { AsciiBar } from '../deps.js'
 import { NoProvidersError } from '../errors.js'
 import {
   findEnvVarProviderName,
@@ -7,8 +7,6 @@ import {
   tokensToProviderNames,
 } from '../utils/env.js'
 import { deployMessage, logger } from '../utils/logger.js'
-
-const AsciiBar = mod.default
 
 type PinActionArgs = Partial<{
   providers: string

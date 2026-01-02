@@ -1,5 +1,5 @@
-import { CarBlockIterator } from '@ipld/car'
 import type * as CarDecoder from '@ipld/car/decoder'
+import { CarBlockIterator } from '@ipld/car/iterator'
 import { CarWriter } from '@ipld/car/writer'
 import * as dagCBOR from '@ipld/dag-cbor'
 import type { CID } from 'multiformats/cid'

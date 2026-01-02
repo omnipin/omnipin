@@ -1,5 +1,4 @@
 import type * as Ucanto from '@ucanto/interface'
-import type { Delegation } from '@ucanto/interface'
 import { StoreMemory } from './memory-store.js'
 import type { AgentMeta, DelegationMeta, SpaceMeta } from './types.js'
 
@@ -96,7 +95,10 @@ export class AgentData implements AgentDataModel {
     return raw
   }
 
-  async addDelegation(delegation: Delegation, meta: DelegationMeta = {}) {
+  async addDelegation(
+    delegation: Ucanto.Delegation,
+    meta: DelegationMeta = {},
+  ) {
     this.delegations.set(delegation.cid.toString(), {
       delegation,
       meta: meta,

@@ -1,4 +1,4 @@
-import { ShardedDAGIndex } from '@storacha/blob-index'
+import * as ShardedDAGIndex from '@storacha/blob-index/sharded-dag-index'
 import { Storefront } from '@storacha/filecoin-client'
 import * as PieceHasher from '@web3-storage/data-segment/multihash'
 import * as Piece from '@web3-storage/data-segment/piece'

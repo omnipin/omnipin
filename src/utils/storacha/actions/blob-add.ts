@@ -11,7 +11,6 @@ import { SpaceDID } from '@storacha/capabilities/utils'
 import * as Delegation from '@ucanto/core/delegation'
 import * as Receipt from '@ucanto/core/receipt'
 import type * as Interface from '@ucanto/interface'
-import type { Invocation } from '@ucanto/interface'
 import * as ed25519 from '@ucanto/principal/ed25519'
 import type { MultihashDigest } from 'multiformats'
 import { retry } from '../../retry.js'
@@ -26,7 +25,7 @@ function parseBlobAddReceiptNext<
   Ran extends Interface.Invocation<Interface.Capability<Interface.Ability>>,
   Alg extends Interface.SigAlg,
 >(receipt: Interface.Receipt<Ok, Err, Ran, Alg>) {
-  const forkInvocations = receipt.fx.fork as Invocation[]
+  const forkInvocations = receipt.fx.fork as Interface.Invocation[]
   const allocateTask = forkInvocations.find(
     (fork) => fork.capabilities[0].can === BlobCapabilities.allocate.can,
   )

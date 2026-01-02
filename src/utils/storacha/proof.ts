@@ -2,7 +2,6 @@ import type { Delegation } from '@ucanto/client'
 import { extract } from '@ucanto/core/delegation'
 import * as CAR from '@ucanto/transport/car'
 import { base64 } from 'multiformats/bases/base64'
-import { identity } from 'multiformats/hashes/identity'
 import * as Link from 'multiformats/link'
 
 /**
@@ -12,11 +11,6 @@ export const parse = async (str: string): Promise<Delegation> => {
   const cid = Link.parse(str, base64)
   if (cid.code !== CAR.codec.code) {
     throw new Error(`non CAR codec found: 0x${cid.code.toString(16)}`)
-  }
-  if (cid.multihash.code !== identity.code) {
-    throw new Error(
-      `non identity multihash: 0x${cid.multihash.code.toString(16)}`,
-    )
   }
 
   const { ok, error } = await extract(cid.multihash.digest)

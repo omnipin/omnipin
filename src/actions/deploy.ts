@@ -1,6 +1,5 @@
-import mod from 'ascii-bar'
 import { isTTY, PROVIDERS } from '../constants.js'
-import { styleText } from '../deps.js'
+import { AsciiBar, styleText } from '../deps.js'
 import { MissingKeyError, NoProvidersError } from '../errors.js'
 import {
   findEnvVarProviderName,
@@ -11,8 +10,6 @@ import { deployMessage, logger } from '../utils/logger.js'
 import { dnsLinkAction } from './dnslink.js'
 import { type EnsActionArgs, ensAction } from './ens.js'
 import { type PackActionArgs, packAction } from './pack.js'
-
-const AsciiBar = mod.default
 
 export type DeployActionArgs = Partial<{
   strict: boolean
