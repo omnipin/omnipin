@@ -1,4 +1,3 @@
-import * as ShardedDAGIndex from '@storacha/blob-index/sharded-dag-index'
 import { Storefront } from '@storacha/filecoin-client'
 import * as PieceHasher from '@web3-storage/data-segment/multihash'
 import * as Piece from '@web3-storage/data-segment/piece'
@@ -10,6 +9,7 @@ import * as CAR from './actions/car.js'
 import * as Index from './actions/index-add.js'
 import * as Upload from './actions/upload-add.js'
 import { uploadServicePrincipal } from './constants.js'
+import { ShardedDAGIndex } from './sharded-dag-index.js'
 import type { InvocationConfig, Position, SliceDigest } from './types.js'
 
 /**
@@ -65,7 +65,7 @@ export const uploadCAR = async (conf: InvocationConfig, car: Blob) => {
   }
 
   const carCid = Link.create(CAR.code, digest)
-  const index = ShardedDAGIndex.create(root)
+  const index = new ShardedDAGIndex(root)
   for (const [slice, pos] of slices) index.setSlice(digest, slice, pos)
   index.setSlice(digest, digest, [0, singleCar.size])
 
