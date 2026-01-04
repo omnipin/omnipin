@@ -24,6 +24,10 @@ export default defineConfig({
             module: true,
             dead_code: true,
             toplevel: true,
+            evaluate: true,
+            computed_props: true,
+            drop_debugger: true,
+            unused: true,
           }
         }
       }
