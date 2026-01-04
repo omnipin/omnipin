@@ -90,11 +90,6 @@ export class AsciiBar {
         }
       }
 
-      //set start value
-      if (options.start) {
-        this.current = options.start
-      }
-
       //use simple spinner on windows
       if (process.platform === 'win32') {
         this.spinner = simpleSpinner
@@ -355,9 +350,7 @@ interface ProgressbarOptions {
 //ColorCodes from https://stackoverflow.com/questions/9781218/how-to-change-node-jss-console-font-color
 const colorCodes = {
   Reset: '\x1b[0m',
-  Bright: '\x1b[1m',
   Dim: '\x1b[2m',
-  Underscore: '\x1b[4m',
   Blink: '\x1b[5m',
   Reverse: '\x1b[7m',
   Hidden: '\x1b[8m',
