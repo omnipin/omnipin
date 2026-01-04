@@ -50,7 +50,6 @@ export const pinAction = async ({
   const bar = isTTY
     ? new AsciiBar({
         total: providers.length,
-        formatString: '#spinner #bar #message',
         hideCursor: false,
         enableSpinner: true,
         width: process.stdout.columns - 30,

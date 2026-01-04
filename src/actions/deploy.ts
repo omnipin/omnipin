@@ -102,7 +102,6 @@ export const deployAction = async ({
             swarmProviders.length !== 0
               ? swarmProviders.length
               : ipfsProviders.length,
-          formatString: '#spinner #bar #message',
           hideCursor: false,
           enableSpinner: true,
           width: process.stdout.columns - 30,

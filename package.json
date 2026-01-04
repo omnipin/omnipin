@@ -11,6 +11,7 @@
     "@ipld/car": "^5.4.2",
     "@ipld/dag-cbor": "^9.2.5",
     "@ipld/dag-ucan": "^3.4.5",
+    "@rslib/core": "^0.19.1",
     "@size-limit/file": "^11.2.0",
     "@stauro/filebase-upload": "npm:@jsr/stauro__filebase-upload",
     "@storacha/blob-index": "^1.2.4",
