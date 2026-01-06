@@ -10,7 +10,7 @@ import { chains, isTTY } from '../constants.js'
 import { MissingCLIArgsError, MissingKeyError } from '../errors.js'
 import type { ChainName } from '../types.js'
 import { getExactAddress } from '../utils/address/getExactAddress.js'
-import { resolveEnsName } from '../utils/ens/ur.js'
+import { getResolverAddress, resolveEnsName } from '../utils/ens/ur.js'
 import {
   chainToRpcUrl,
   type EnsName,
@@ -111,14 +111,9 @@ export const ensAction = async ({
 
   if (options.verbose) console.log('Transaction encoded data:', data)
 
-  const resolverAddress =
-    _resolverAddress || chains[chainName].contracts.publicResolver.address
-
-  if (
-    resolverAddress === chains[chainName].contracts.publicResolver.address &&
-    !domain.endsWith('.eth')
-  )
-    throw new Error('Domain must end with .eth')
+  const resolverAddress = _resolverAddress
+    ? checksum(_resolverAddress)
+    : await getResolverAddress({ name: domain, provider })
 
   if (safeAddress) {
     logger.info(
@@ -199,7 +194,7 @@ export const ensAction = async ({
             chainName: chainName,
             address,
           })
-          const safe = safeAddress.endsWith('.eth')
+          const safe = safeAddress.includes('.')
             ? await resolveEnsName({ name: safeAddress, provider })
             : safeAddress
           const safeLink = `https://app.safe.global/transactions/queue?safe=${safe}`

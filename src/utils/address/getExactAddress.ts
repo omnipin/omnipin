@@ -13,7 +13,7 @@ export const getExactAddress = async ({
   provider: Provider
   chain: EthereumChain
 }) => {
-  if (addressOrEns.endsWith('.eth'))
+  if (addressOrEns.includes('.'))
     return await resolveEnsName({ name: addressOrEns, provider })
   return getEip3770Address({
     fullAddress: addressOrEns as Address,
