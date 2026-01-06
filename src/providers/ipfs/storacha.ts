@@ -10,6 +10,8 @@ export {
 
 const providerName = 'Storacha'
 
+const abilities = ['space/blob/add', 'space/index/add', 'upload/add'] as const
+
 export const uploadOnStoracha: UploadFunction<{ proof: string }> = async ({
   token,
   car,
@@ -20,8 +22,6 @@ export const uploadOnStoracha: UploadFunction<{ proof: string }> = async ({
   const { agent, space } = await setup({ pk: token, proof })
 
   if (!space) throw new Error('No space found')
-
-  const abilities = ['space/blob/add', 'space/index/add', 'upload/add'] as const
 
   try {
     const cid = await uploadCAR(
