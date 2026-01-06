@@ -9,7 +9,6 @@
   "devDependencies": {
     "@biomejs/biome": "^2.3.10",
     "@ipld/car": "^5.4.2",
-    "@ipld/dag-cbor": "^9.2.5",
     "@ipld/dag-ucan": "^3.4.5",
     "@rslib/core": "^0.19.1",
     "@size-limit/file": "^11.2.0",

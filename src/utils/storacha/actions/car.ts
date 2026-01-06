@@ -1,9 +1,9 @@
 import type * as CarDecoder from '@ipld/car/decoder'
 import { CarWriter } from '@ipld/car/writer'
-import * as dagCBOR from '@ipld/dag-cbor'
 import type { CID } from 'multiformats/cid'
 import * as varint from 'varint'
 import { fromIterable } from '../../ipfs/car-block-iterator.js'
+import * as dagCBOR from '../cbor.js'
 import type { AnyLink } from '../types.js'
 
 export async function decode(car: Blob) {
@@ -22,6 +22,7 @@ const NO_ROOTS_HEADER_LENGTH = 18
 export function headerEncodingLength(root?: AnyLink) {
   if (!root) return NO_ROOTS_HEADER_LENGTH
   const headerLength = dagCBOR.encode({ version: 1, roots: [root] }).length
+
   const varintLength = varint.encodingLength(headerLength)
   return varintLength + headerLength
 }

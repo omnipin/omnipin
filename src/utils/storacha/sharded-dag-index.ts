@@ -1,4 +1,3 @@
-import * as dagCBOR from '@ipld/dag-cbor'
 import { CAR, error, ok } from '@ucanto/core'
 import { base58btc } from 'multiformats/bases/base58'
 import type { Digest } from 'multiformats/hashes/digest'
@@ -6,6 +5,7 @@ import { sha256 } from 'multiformats/hashes/sha2'
 import type { MultihashDigest, UnknownLink } from 'multiformats/link'
 import * as Link from 'multiformats/link'
 import { compare } from 'uint8arrays/compare'
+import * as dagCBOR from './cbor.js'
 import type { Position, SliceDigest } from './types.js'
 
 const cache = new WeakMap<Uint8Array, string>()
