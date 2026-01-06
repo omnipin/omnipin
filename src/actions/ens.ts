@@ -73,10 +73,6 @@ export const ensAction = async ({
 
   const provider = Provider.from(transport)
 
-  const pk = process.env.OMNIPIN_PK as Hex
-
-  if (!pk) throw new MissingKeyError('PK')
-
   let contentHash = '',
     node: Hex = '0x'
   try {
@@ -98,6 +94,18 @@ export const ensAction = async ({
     return
   }
 
+  logger.info(`Getting ENS resolver`)
+
+  const resolverAddress = _resolverAddress
+    ? checksum(_resolverAddress)
+    : await getResolverAddress({ name: domain, provider })
+
+  logger.info(`Using resolver address: ${resolverAddress}`)
+
+  const pk = process.env.OMNIPIN_PK as Hex
+
+  if (!pk) throw new MissingKeyError('PK')
+
   const address = fromPublicKey(getPublicKey({ privateKey: pk }))
 
   if (options.verbose)
@@ -110,12 +118,6 @@ export const ensAction = async ({
   const data = encodeData(setContentHash, [node, `0x${contentHash}`])
 
   if (options.verbose) console.log('Transaction encoded data:', data)
-
-  const resolverAddress = _resolverAddress
-    ? checksum(_resolverAddress)
-    : await getResolverAddress({ name: domain, provider })
-
-  logger.info(`Using ENS Resolver address: ${resolverAddress}`)
 
   if (safeAddress) {
     logger.info(
