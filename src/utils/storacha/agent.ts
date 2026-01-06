@@ -1,11 +1,11 @@
-import {
-  type Ability,
-  type Capability,
-  type ConnectionView,
-  connect,
-} from '@ucanto/client'
+import { connect } from '@ucanto/client'
 import type { API } from '@ucanto/core'
-import type { EdSigner } from '@ucanto/principal/ed25519'
+import type {
+  Ability,
+  Capability,
+  ConnectionView,
+  EdSigner,
+} from '@ucanto/principal/ed25519'
 import { outbound as CAR_outbound } from '@ucanto/transport/car'
 import * as HTTP from '@ucanto/transport/http'
 import { uploadServicePrincipal, uploadServiceURL } from './constants.js'

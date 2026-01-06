@@ -1,5 +1,5 @@
-import type { Delegation } from '@ucanto/client'
 import { extract } from '@ucanto/core/delegation'
+import type { Delegation } from '@ucanto/interface'
 import * as CAR from '@ucanto/transport/car'
 import { base64 } from 'multiformats/bases/base64'
 import * as Link from 'multiformats/link'

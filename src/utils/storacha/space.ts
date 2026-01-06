@@ -1,4 +1,4 @@
-import type { Capabilities, Fact } from '@ucanto/client'
+import type { Capabilities, Fact } from '@ipld/dag-ucan'
 import { DID } from '@ucanto/core/schema'
 
 type Delegation = { facts: Fact[]; capabilities: Capabilities }
