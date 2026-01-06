@@ -1,12 +1,14 @@
 import { decodeResult, encodeData } from 'ox/AbiFunction'
-import type { Address } from 'ox/Address'
+import { type Address, checksum } from 'ox/Address'
 import { fromString, toHex } from 'ox/Bytes'
 import { labelhash } from 'ox/Ens'
 import type { Provider } from 'ox/Provider'
 import { InvalidLabelhashError } from '../../errors.js'
 import { encodeEnsAddressRecordRequest } from './addr.js'
 
-const abi = {
+const urAddress = '0xeEeEEEeE14D718C2B47D9923Deab1335E144EeEe'
+
+const resolveAbi = {
   inputs: [
     {
       name: 'name',
@@ -84,15 +86,49 @@ export const resolveEnsName = async ({
     method: 'eth_call',
     params: [
       {
-        data: encodeData(abi, [
+        data: encodeData(resolveAbi, [
           toHex(packetToBytes(name)),
           encodeEnsAddressRecordRequest(name),
         ]),
-        to: '0xeEeEEEeE14D718C2B47D9923Deab1335E144EeEe',
+        to: urAddress,
       },
       'latest',
     ],
   })
 
-  return `0x${decodeResult(abi, result)[0].slice(-40)}`
+  return checksum(`0x${decodeResult(resolveAbi, result)[0].slice(-40)}`)
+}
+
+const findResolverAbi = {
+  inputs: [{ internalType: 'bytes', name: 'name', type: 'bytes' }],
+  name: 'findResolver',
+  outputs: [
+    { internalType: 'address', name: 'resolver', type: 'address' },
+    { internalType: 'bytes32', name: 'node', type: 'bytes32' },
+    { internalType: 'uint256', name: 'resolverOffset', type: 'uint256' },
+  ],
+  stateMutability: 'view',
+  type: 'function',
+} as const
+
+export const getResolverAddress = async ({
+  provider,
+  name,
+}: {
+  provider: Provider
+  name: string
+}) => {
+  const result = await provider.request({
+    method: 'eth_call',
+    params: [
+      {
+        data: encodeData(findResolverAbi, [toHex(packetToBytes(name))]),
+        to: urAddress,
+      },
+      'latest',
+    ],
+  })
+
+  const [resolver] = decodeResult(findResolverAbi, result)
+  return checksum(resolver)
 }
