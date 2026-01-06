@@ -8,13 +8,11 @@ import { fromHttp } from 'ox/RpcTransport'
 import { getPublicKey, randomPrivateKey } from 'ox/Secp256k1'
 import { chains } from '../constants.js'
 import { MissingCLIArgsError } from '../errors.js'
+import { getExactAddress } from '../utils/address/getExactAddress.js'
 import { getResolverAddress } from '../utils/ens/ur.js'
 import { chainToRpcUrl } from '../utils/ens.js'
 import { logger } from '../utils/logger.js'
-import {
-  type EIP3770Address,
-  getEip3770Address,
-} from '../utils/safe/eip3770.js'
+import { getEip3770Address } from '../utils/safe/eip3770.js'
 import { ENS_DEPLOYER_ROLE } from '../utils/zodiac-roles/init.js'
 import type { EnsActionArgs } from './ens.js'
 
@@ -34,6 +32,7 @@ export const zodiacAction = async ({
   const _resolverAddress = options['resolver-address']
 
   const chainName = options.chain ?? 'mainnet'
+  const chain = chains[chainName]
   const transport = fromHttp(options['rpc-url'] ?? chainToRpcUrl(chainName))
   const provider = Provider.from(transport)
 
@@ -45,9 +44,15 @@ export const zodiacAction = async ({
     : // biome-ignore lint/style/noNonNullAssertion: Domain will never be undefined here based on the check above
       await getResolverAddress({ name: domain!, provider })
 
-  const safe = options.safe
+  logger.info(`Using ENS Resolver address: ${resolverAddress}`)
 
-  if (!safe) throw new MissingCLIArgsError(['safe'])
+  if (!options.safe) throw new MissingCLIArgsError(['safe'])
+
+  const safeAddress = await getExactAddress({
+    addressOrEns: options.safe,
+    provider,
+    chain,
+  })
 
   let pk: Hex = process.env.OMNIPIN_PK as Hex
 
@@ -60,11 +65,6 @@ export const zodiacAction = async ({
   }
   const roleAddress = fromPublicKey(getPublicKey({ privateKey: pk }))
 
-  const safeAddress = getEip3770Address({
-    fullAddress: options.safe as EIP3770Address,
-    chainId: chains[options.chain || 'mainnet'].id,
-  })
-
   await writeFile(
     'zodiac.json',
     JSON.stringify(
@@ -74,7 +74,7 @@ export const zodiacAction = async ({
         meta: {
           name: 'Setup Zodiac Roles',
           txBuilderVersion: '1.18.2',
-          createdFromSafeAddress: safeAddress.address,
+          createdFromSafeAddress: safeAddress,
         },
         transactions: [
           {
@@ -159,10 +159,15 @@ export const zodiacAction = async ({
 
   logger.info('Created zodiac.json in current directory')
 
+  const { prefix } = getEip3770Address({
+    fullAddress: safeAddress,
+    chainId: chain.id,
+  })
+
   logger.text(
     `Open in a browser: ${styleText(
       'underline',
-      `https://app.safe.global/apps/open?safe=${safeAddress.prefix}:${safeAddress.address}&appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder`,
+      `https://app.safe.global/apps/open?safe=${prefix}:${safeAddress}&appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder`,
     )}`,
   )
 
