@@ -115,6 +115,8 @@ export const ensAction = async ({
     ? checksum(_resolverAddress)
     : await getResolverAddress({ name: domain, provider })
 
+  logger.info(`Using ENS Resolver address: ${resolverAddress}`)
+
   if (safeAddress) {
     logger.info(
       `Preparing a transaction for Safe ${safeAddress} on ${chainName}`,

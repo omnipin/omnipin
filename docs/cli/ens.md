@@ -35,9 +35,13 @@ omnipin ens bafybeibp54tslsez36quqptgzwyda3vo66za3rraujksmsb3d5q247uht4 v1rtl.et
 
 Use a custom Ethereum RPC for transactions. By default, [Public nodes](https://ethereum-rpc.publicnode.com) are used.
 
+### `domain`
+
+The ENS domain you'll be updating the content hash of. Used to fetch the name's resolver address.
+
 ### `resolver-address`
 
-Use a custom ENS Resolver address. Public resolvers for mainnet and sepolia are set by default.
+Use a custom ENS resolver address, if a domain is not provided.
 
 ### `roles-mod-address`
 
