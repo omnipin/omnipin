@@ -1,18 +1,17 @@
 import type * as CarDecoder from '@ipld/car/decoder'
-import { CarBlockIterator } from '@ipld/car/iterator'
 import { CarWriter } from '@ipld/car/writer'
 import * as dagCBOR from '@ipld/dag-cbor'
 import type { CID } from 'multiformats/cid'
 import * as varint from 'varint'
+import { fromIterable } from '../../ipfs/car-block-iterator.js'
 import type { AnyLink } from '../types.js'
 
 export async function decode(car: Blob) {
-  const iterator = await CarBlockIterator.fromIterable(car.stream())
+  const { iterator, roots } = await fromIterable(car.stream())
   const blocks: CarDecoder.Block[] = []
   for await (const block of iterator) {
     blocks.push(block)
   }
-  const roots = (await iterator.getRoots()) as unknown as AnyLink[]
   return { blocks, roots }
 }
 
