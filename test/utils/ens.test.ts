@@ -4,6 +4,7 @@ import { Provider } from 'ox'
 import { fromHttp } from 'ox/RpcTransport'
 import { chainToRpcUrl, prepareUpdateEnsArgs } from '../../src/utils/ens'
 import { resolveEnsName } from '../../src/utils/ens/ur'
+import { getResolverAddress } from '../../src/utils/ens/ur.js'
 
 describe('ens utils', () => {
   describe('prepareUpdateEnsArgs', () => {
@@ -89,7 +90,19 @@ describe('ens utils', () => {
         name: 'safe.omnipin.eth',
       })
 
-      assert.equal(addr, '0x0fd2ca6b1a52a1153da0b31d02fd53854627d262')
+      assert.equal(addr, '0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262')
+    })
+  })
+  describe('getResolverAddress', () => {
+    it('should get the resolver address for a .eth name', async () => {
+      const provider = Provider.from(fromHttp(chainToRpcUrl('mainnet')))
+
+      const resolver = await getResolverAddress({
+        provider,
+        name: 'safe.omnipin.eth',
+      })
+
+      assert.equal(resolver, '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63')
     })
   })
 })

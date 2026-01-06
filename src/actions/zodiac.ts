@@ -1,17 +1,18 @@
 import { writeFile } from 'node:fs/promises'
 import { styleText } from 'node:util'
-import { type Address, fromPublicKey } from 'ox/Address'
+import { Provider } from 'ox'
+import { type Address, checksum, fromPublicKey } from 'ox/Address'
 import { toHex } from 'ox/Bytes'
 import type { Hex } from 'ox/Hex'
+import { fromHttp } from 'ox/RpcTransport'
 import { getPublicKey, randomPrivateKey } from 'ox/Secp256k1'
 import { chains } from '../constants.js'
 import { MissingCLIArgsError } from '../errors.js'
+import { getExactAddress } from '../utils/address/getExactAddress.js'
+import { getResolverAddress } from '../utils/ens/ur.js'
+import { chainToRpcUrl } from '../utils/ens.js'
 import { logger } from '../utils/logger.js'
-
-import {
-  type EIP3770Address,
-  getEip3770Address,
-} from '../utils/safe/eip3770.js'
+import { getEip3770Address } from '../utils/safe/eip3770.js'
 import { ENS_DEPLOYER_ROLE } from '../utils/zodiac-roles/init.js'
 import type { EnsActionArgs } from './ens.js'
 
@@ -19,20 +20,39 @@ type ZodiacActionOptions = Omit<EnsActionArgs, 'roles-mod-address' | 'dry-run'>
 
 export const zodiacAction = async ({
   rolesModAddress,
+  domain,
   options = {},
 }: {
   rolesModAddress: Address
+  domain?: string
   options?: ZodiacActionOptions
 }) => {
   if (!rolesModAddress) throw new MissingCLIArgsError(['rolesModAddress'])
 
-  const resolverAddress =
-    options['resolver-address'] ??
-    chains[options.chain ?? 'mainnet'].contracts.publicResolver.address
+  const _resolverAddress = options['resolver-address']
 
-  const safe = options.safe
+  const chainName = options.chain ?? 'mainnet'
+  const chain = chains[chainName]
+  const transport = fromHttp(options['rpc-url'] ?? chainToRpcUrl(chainName))
+  const provider = Provider.from(transport)
 
-  if (!safe) throw new MissingCLIArgsError(['safe'])
+  // The user needs to pass either a domain or a resolver address. Domain is preferred
+  if (!domain && !_resolverAddress) throw new MissingCLIArgsError(['domain'])
+
+  const resolverAddress = _resolverAddress
+    ? checksum(_resolverAddress)
+    : // biome-ignore lint/style/noNonNullAssertion: Domain will never be undefined here based on the check above
+      await getResolverAddress({ name: domain!, provider })
+
+  logger.info(`Using ENS Resolver address: ${resolverAddress}`)
+
+  if (!options.safe) throw new MissingCLIArgsError(['safe'])
+
+  const safeAddress = await getExactAddress({
+    addressOrEns: options.safe,
+    provider,
+    chain,
+  })
 
   let pk: Hex = process.env.OMNIPIN_PK as Hex
 
@@ -45,11 +65,6 @@ export const zodiacAction = async ({
   }
   const roleAddress = fromPublicKey(getPublicKey({ privateKey: pk }))
 
-  const safeAddress = getEip3770Address({
-    fullAddress: options.safe as EIP3770Address,
-    chainId: chains[options.chain || 'mainnet'].id,
-  })
-
   await writeFile(
     'zodiac.json',
     JSON.stringify(
@@ -59,7 +74,7 @@ export const zodiacAction = async ({
         meta: {
           name: 'Setup Zodiac Roles',
           txBuilderVersion: '1.18.2',
-          createdFromSafeAddress: safeAddress.address,
+          createdFromSafeAddress: safeAddress,
         },
         transactions: [
           {
@@ -144,10 +159,15 @@ export const zodiacAction = async ({
 
   logger.info('Created zodiac.json in current directory')
 
+  const { prefix } = getEip3770Address({
+    fullAddress: safeAddress,
+    chainId: chain.id,
+  })
+
   logger.text(
     `Open in a browser: ${styleText(
       'underline',
-      `https://app.safe.global/apps/open?safe=${safeAddress.prefix}:${safeAddress.address}&appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder`,
+      `https://app.safe.global/apps/open?safe=${prefix}:${safeAddress}&appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder`,
     )}`,
   )
 

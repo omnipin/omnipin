@@ -266,9 +266,21 @@ cli.command<[string]>('pin', ([cid], options) => pinAction({ cid, options }), {
 
 cli.command<[Address]>(
   'zodiac',
-  ([rolesModAddress], options) => zodiacAction({ rolesModAddress, options }),
+  ([rolesModAddress], options) =>
+    zodiacAction({
+      rolesModAddress,
+      domain: options.domain as string,
+      options,
+    }),
   {
-    options: [...onchainOptions] as const,
+    options: [
+      ...onchainOptions,
+      {
+        name: 'domain',
+        description: 'ENS domain to fetch the resolver address from',
+        type: 'string',
+      },
+    ] as const,
   },
 )
 

@@ -5,9 +5,10 @@ Generate a JSON payload for the [Safe transaction builder](https://help.safe.glo
 If `OMNIPIN_PK` is not specified, a private key will be generated on the spot.
 
 ```sh
-omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1
+omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --domain v1rtl.eth
 
-# omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --verbose
+# omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --domain v1rtl.eth --verbose
+# 🟢 Using ENS Resolver address: 0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63
 # ⚠️ `OMNIPIN_PK` environment variable not set.
 # 🟢 Generating a Secp256k1 keypair
 #    0xeb12099469558be35d53d606e1d5e69d0854c57ef6658e909325c5a0e6493415
@@ -28,16 +29,16 @@ EVM Chain to use.
 
 ### `safe`
 
-[Safe](https://safe.global) wallet address with the installed module. [EIP-3770](https://eips.ethereum.org/EIPS/eip-3770) addresses are supported. Mainnet is used by default.
-
-```sh
-omnipin ens bafybeibp54tslsez36quqptgzwyda3vo66za3rraujksmsb3d5q247uht4 v1rtl.eth --safe 0x1234567890000000000000000000000000000000
-```
+[Safe](https://safe.global) wallet address or ENS name with the installed module. [EIP-3770](https://eips.ethereum.org/EIPS/eip-3770) addresses are supported. Mainnet is used by default.
 
 ### `rpc-url`
 
 Use a custom Ethereum RPC for transactions. By default, [Public nodes](https://ethereum-rpc.publicnode.com) are used.
 
+### `domain`
+
+The ENS domain you'll be deploying the website to.
+
 ### `resolver-address`
 
-Use a custom ENS Resolver address. Public resolvers for mainnet and sepolia are set by default.
+A custom ENS Resolver address if you don't want to provide a domain. `domain` will fetch the resolver address for you.

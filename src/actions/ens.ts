@@ -10,7 +10,7 @@ import { chains, isTTY } from '../constants.js'
 import { MissingCLIArgsError, MissingKeyError } from '../errors.js'
 import type { ChainName } from '../types.js'
 import { getExactAddress } from '../utils/address/getExactAddress.js'
-import { resolveEnsName } from '../utils/ens/ur.js'
+import { getResolverAddress, resolveEnsName } from '../utils/ens/ur.js'
 import {
   chainToRpcUrl,
   type EnsName,
@@ -73,10 +73,6 @@ export const ensAction = async ({
 
   const provider = Provider.from(transport)
 
-  const pk = process.env.OMNIPIN_PK as Hex
-
-  if (!pk) throw new MissingKeyError('PK')
-
   let contentHash = '',
     node: Hex = '0x'
   try {
@@ -98,6 +94,18 @@ export const ensAction = async ({
     return
   }
 
+  logger.info(`Getting ENS resolver`)
+
+  const resolverAddress = _resolverAddress
+    ? checksum(_resolverAddress)
+    : await getResolverAddress({ name: domain, provider })
+
+  logger.info(`Using resolver address: ${resolverAddress}`)
+
+  const pk = process.env.OMNIPIN_PK as Hex
+
+  if (!pk) throw new MissingKeyError('PK')
+
   const address = fromPublicKey(getPublicKey({ privateKey: pk }))
 
   if (options.verbose)
@@ -110,15 +118,6 @@ export const ensAction = async ({
   const data = encodeData(setContentHash, [node, `0x${contentHash}`])
 
   if (options.verbose) console.log('Transaction encoded data:', data)
-
-  const resolverAddress =
-    _resolverAddress || chains[chainName].contracts.publicResolver.address
-
-  if (
-    resolverAddress === chains[chainName].contracts.publicResolver.address &&
-    !domain.endsWith('.eth')
-  )
-    throw new Error('Domain must end with .eth')
 
   if (safeAddress) {
     logger.info(
@@ -199,7 +198,7 @@ export const ensAction = async ({
             chainName: chainName,
             address,
           })
-          const safe = safeAddress.endsWith('.eth')
+          const safe = safeAddress.includes('.')
             ? await resolveEnsName({ name: safeAddress, provider })
             : safeAddress
           const safeLink = `https://app.safe.global/transactions/queue?safe=${safe}`

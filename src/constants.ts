@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Address } from 'ox/Address'
 import {
   statusOn4everland,
   uploadOn4everland,
@@ -135,11 +133,6 @@ export const CLOUDFLARE_API_URL = 'https://api.cloudflare.com/client/v4'
 export type EthereumChain = {
   id: 1 | 11_155_111
   name: 'Ethereum' | 'Sepolia'
-  contracts: {
-    publicResolver: {
-      address: Address
-    }
-  }
   blockExplorers: {
     default: {
       name: string
@@ -152,11 +145,6 @@ export const chains = {
   mainnet: {
     id: 1,
     name: 'Ethereum',
-    contracts: {
-      publicResolver: {
-        address: '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63',
-      },
-    },
     blockExplorers: {
       default: {
         name: 'Etherscan',
@@ -167,11 +155,6 @@ export const chains = {
   sepolia: {
     id: 11_155_111,
     name: 'Sepolia',
-    contracts: {
-      publicResolver: {
-        address: '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD',
-      },
-    },
     blockExplorers: {
       default: {
         name: 'Etherscan',
