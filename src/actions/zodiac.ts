@@ -1,10 +1,10 @@
 import { writeFile } from 'node:fs/promises'
-import { styleText } from 'node:util'
 import { type Address, fromPublicKey } from 'ox/Address'
 import { toHex } from 'ox/Bytes'
 import type { Hex } from 'ox/Hex'
 import { getPublicKey, randomPrivateKey } from 'ox/Secp256k1'
 import { chains } from '../constants.js'
+import { styleText } from '../deps.js'
 import { MissingCLIArgsError } from '../errors.js'
 import { logger } from '../utils/logger.js'
 

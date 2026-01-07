@@ -2,10 +2,11 @@ import { createWriteStream } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { CarWriter } from '@ipld/car/writer'
-import { MemoryBlockstore } from 'blockstore-core/memory'
 import { type FileCandidate, importer } from 'ipfs-unixfs-importer'
-import { CID } from 'multiformats/cid'
+import { base32 } from 'multiformats/bases/base32'
+import type { CID } from 'multiformats/cid'
 import { InvalidCIDError } from '../errors.js'
+import { MemoryBlockstore } from './ipfs/blockstore.js'
 
 const tmp = tmpdir()
 
@@ -81,7 +82,7 @@ export const packCAR = async (
 export const assertCID = (cid: string) => {
   if (cid.length !== 64) {
     try {
-      CID.parse(cid)
+      base32.decode(cid)
     } catch {
       throw new InvalidCIDError(cid)
     }

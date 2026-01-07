@@ -5,8 +5,6 @@ import * as Link from 'multiformats/link'
 
 export function calculatePieceCID(data: Uint8Array): PieceLink {
   const hasher = Hasher.create()
-  // We'll get slightly better performance by writing in chunks to let the
-  // hasher do its work incrementally
   const chunkSize = 2048
   for (let i = 0; i < data.length; i += chunkSize) {
     hasher.write(data.subarray(i, i + chunkSize))

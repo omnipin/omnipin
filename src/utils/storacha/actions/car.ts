@@ -1,18 +1,17 @@
-import { CarBlockIterator } from '@ipld/car'
 import type * as CarDecoder from '@ipld/car/decoder'
 import { CarWriter } from '@ipld/car/writer'
-import * as dagCBOR from '@ipld/dag-cbor'
 import type { CID } from 'multiformats/cid'
-import varint from 'varint'
+import * as varint from 'varint'
+import { fromIterable } from '../../ipfs/car-block-iterator.js'
+import * as dagCBOR from '../cbor.js'
 import type { AnyLink } from '../types.js'
 
 export async function decode(car: Blob) {
-  const iterator = await CarBlockIterator.fromIterable(car.stream())
+  const { iterator, roots } = await fromIterable(car.stream())
   const blocks: CarDecoder.Block[] = []
   for await (const block of iterator) {
     blocks.push(block)
   }
-  const roots = (await iterator.getRoots()) as unknown as AnyLink[]
   return { blocks, roots }
 }
 
@@ -23,6 +22,7 @@ const NO_ROOTS_HEADER_LENGTH = 18
 export function headerEncodingLength(root?: AnyLink) {
   if (!root) return NO_ROOTS_HEADER_LENGTH
   const headerLength = dagCBOR.encode({ version: 1, roots: [root] }).length
+
   const varintLength = varint.encodingLength(headerLength)
   return varintLength + headerLength
 }

@@ -1,7 +1,8 @@
-import { isDelegation, Receipt } from '@ucanto/core'
+import { isDelegation } from '@ucanto/core/delegation'
+import * as Receipt from '@ucanto/core/receipt'
 import type { Block, Capability, UCANLink } from '@ucanto/interface'
-import { CAR } from '@ucanto/transport'
-import type { UnknownLink } from 'multiformats'
+import * as CAR from '@ucanto/transport/car'
+import type { UnknownLink } from 'multiformats/link'
 import { retry } from '../retry.js'
 import { REQUEST_RETRIES, receiptsEndpoint } from './constants.js'
 

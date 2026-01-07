@@ -13,7 +13,7 @@ features:
   - title: Protected with Safe
     details: Multiple integrations for every security need.
   - title: Tiny size
-    details: Less than 1MB single file distribution.
+    details: Less than 1.5MB distribution.
   - title: Perfect for automation
     details: Instant install, CI/CD pipeline templates.
 ---

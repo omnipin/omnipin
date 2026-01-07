@@ -1,9 +1,9 @@
 import { describe, it } from 'bun:test'
 import assert from 'node:assert'
-import { setup } from '../../src/utils/storacha/setup'
+import { setup } from '../../src/utils/storacha/setup.js'
 
-describe('w3up utils', () => {
-  describe('setupW3Up', () => {
+describe('storacha utils', () => {
+  describe('setup', () => {
     it('throws if fails to parse a UCAN delegate private key', () => {
       assert.rejects(
         async () => {
@@ -22,7 +22,7 @@ describe('w3up utils', () => {
       assert.rejects(
         async () => {
           return await setup({
-            // randomly generated via `pnpx ucan-key ed`
+            // randomly generated via `storacha key create`
             pk: 'MgCab19pJVNmv3hPJFnciLpZIlVGsTtLWoWU/+30KpiUzgO0Bfk+h6nzqc2u0lrgbis8MJnJVNlooc+YRni3uY2ZpXxQ=',
             proof: 'proof',
           })

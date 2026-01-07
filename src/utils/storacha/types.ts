@@ -34,13 +34,15 @@ import type {
   UsageReportFailure,
   UsageReportSuccess,
 } from '@storacha/capabilities/types'
-import type { StorefrontService } from '@storacha/filecoin-client/storefront'
-import type * as Client from '@ucanto/client'
+import type { Delegation } from '@ucanto/core/delegation'
 import type {
   DID,
   Failure,
+  Link,
   MultihashDigest,
   Proof,
+  Resource,
+  ServiceMethod,
   Signer,
 } from '@ucanto/interface'
 import type { CAR } from '@ucanto/transport'
@@ -90,7 +92,7 @@ export interface SpaceMeta {
   name: string
 }
 
-export type ResourceQuery = Client.Resource | RegExp
+export type ResourceQuery = Resource | RegExp
 
 export type Position = [offset: number, length: number]
 
@@ -111,9 +113,9 @@ export interface InvocationConfig {
 
 export type SliceDigest = MultihashDigest
 
-export interface Service extends StorefrontService {
+export interface Service {
   ucan: {
-    conclude: Client.ServiceMethod<
+    conclude: ServiceMethod<
       UCANConclude,
       UCANConcludeSuccess,
       UCANConcludeFailure
@@ -121,38 +123,34 @@ export interface Service extends StorefrontService {
   }
   space: {
     blob: {
-      add: Client.ServiceMethod<
-        SpaceBlobAdd,
-        SpaceBlobAddSuccess,
-        SpaceBlobAddFailure
-      >
-      remove: Client.ServiceMethod<
+      add: ServiceMethod<SpaceBlobAdd, SpaceBlobAddSuccess, SpaceBlobAddFailure>
+      remove: ServiceMethod<
         SpaceBlobRemove,
         SpaceBlobRemoveSuccess,
         SpaceBlobRemoveFailure
       >
-      list: Client.ServiceMethod<
+      list: ServiceMethod<
         SpaceBlobList,
         SpaceBlobListSuccess,
         SpaceBlobListFailure
       >
       get: {
         0: {
-          1: Client.ServiceMethod<
+          1: ServiceMethod<
             SpaceBlobGet,
             SpaceBlobGetSuccess,
             SpaceBlobGetFailure
           >
         }
       }
-      replicate: Client.ServiceMethod<
+      replicate: ServiceMethod<
         SpaceBlobReplicate,
         SpaceBlobReplicateSuccess,
         SpaceBlobReplicateFailure
       >
     }
     index: {
-      add: Client.ServiceMethod<
+      add: ServiceMethod<
         SpaceIndexAdd,
         SpaceIndexAddSuccess,
         SpaceIndexAddFailure
@@ -160,26 +158,22 @@ export interface Service extends StorefrontService {
     }
   }
   upload: {
-    add: Client.ServiceMethod<UploadAdd, UploadAddSuccess, Failure>
-    get: Client.ServiceMethod<UploadGet, UploadGetSuccess, UploadGetFailure>
-    remove: Client.ServiceMethod<UploadRemove, UploadRemoveSuccess, Failure>
-    list: Client.ServiceMethod<UploadList, UploadListSuccess, Failure>
+    add: ServiceMethod<UploadAdd, UploadAddSuccess, Failure>
+    get: ServiceMethod<UploadGet, UploadGetSuccess, UploadGetFailure>
+    remove: ServiceMethod<UploadRemove, UploadRemoveSuccess, Failure>
+    list: ServiceMethod<UploadList, UploadListSuccess, Failure>
   }
   usage: {
-    report: Client.ServiceMethod<
-      UsageReport,
-      UsageReportSuccess,
-      UsageReportFailure
-    >
+    report: ServiceMethod<UsageReport, UsageReportSuccess, UsageReportFailure>
   }
 }
 export interface BlobAddOk {
-  site: Client.Delegation<[AssertLocation]>
+  site: Delegation<[AssertLocation]>
 }
 
 /**
  * Any IPLD link.
  */
-export type AnyLink = Client.Link<unknown, number, number, Version>
+export type AnyLink = Link<unknown, number, number, Version>
 
-export type CARLink = Client.Link<unknown, typeof CAR.codec.code>
+export type CARLink = Link<unknown, typeof CAR.codec.code>

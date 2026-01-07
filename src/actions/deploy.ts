@@ -1,6 +1,5 @@
-import { styleText } from 'node:util'
-import mod from 'ascii-bar'
 import { isTTY, PROVIDERS } from '../constants.js'
+import { AsciiBar, styleText } from '../deps.js'
 import { MissingKeyError, NoProvidersError } from '../errors.js'
 import {
   findEnvVarProviderName,
@@ -11,8 +10,6 @@ import { deployMessage, logger } from '../utils/logger.js'
 import { dnsLinkAction } from './dnslink.js'
 import { type EnsActionArgs, ensAction } from './ens.js'
 import { type PackActionArgs, packAction } from './pack.js'
-
-const AsciiBar = mod.default
 
 export type DeployActionArgs = Partial<{
   strict: boolean
@@ -105,7 +102,6 @@ export const deployAction = async ({
             swarmProviders.length !== 0
               ? swarmProviders.length
               : ipfsProviders.length,
-          formatString: '#spinner #bar #message',
           hideCursor: false,
           enableSpinner: true,
           width: process.stdout.columns - 30,

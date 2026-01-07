@@ -1,6 +1,5 @@
-import { setTimeout } from 'node:timers/promises'
-import { styleText } from 'node:util'
 import { isTTY } from '../constants.js'
+import { setTimeout, styleText } from '../deps.js'
 import { logger } from '../utils/logger.js'
 
 const gwOfflineMessage = `😞 Max retries exceeded. Gateway is ${isTTY ? styleText('bold', styleText('red', 'Offline')) : 'Offline'}.`

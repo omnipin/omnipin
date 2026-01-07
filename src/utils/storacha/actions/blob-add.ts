@@ -8,11 +8,10 @@ import type {
 } from '@storacha/capabilities/types'
 import * as UCAN from '@storacha/capabilities/ucan'
 import { SpaceDID } from '@storacha/capabilities/utils'
-import * as W3sBlobCapabilities from '@storacha/capabilities/web3.storage/blob'
-import { Delegation, Receipt } from '@ucanto/core'
+import * as Delegation from '@ucanto/core/delegation'
+import * as Receipt from '@ucanto/core/receipt'
 import type * as Interface from '@ucanto/interface'
-import type { Invocation } from '@ucanto/interface'
-import { ed25519 } from '@ucanto/principal'
+import * as ed25519 from '@ucanto/principal/ed25519'
 import type { MultihashDigest } from 'multiformats'
 import { retry } from '../../retry.js'
 import { connection } from '../agent.js'
@@ -26,14 +25,10 @@ function parseBlobAddReceiptNext<
   Ran extends Interface.Invocation<Interface.Capability<Interface.Ability>>,
   Alg extends Interface.SigAlg,
 >(receipt: Interface.Receipt<Ok, Err, Ran, Alg>) {
-  const forkInvocations = receipt.fx.fork as Invocation[]
-  const allocateTask =
-    forkInvocations.find(
-      (fork) => fork.capabilities[0].can === BlobCapabilities.allocate.can,
-    ) ??
-    forkInvocations.find(
-      (fork) => fork.capabilities[0].can === W3sBlobCapabilities.allocate.can,
-    )
+  const forkInvocations = receipt.fx.fork as Interface.Invocation[]
+  const allocateTask = forkInvocations.find(
+    (fork) => fork.capabilities[0].can === BlobCapabilities.allocate.can,
+  )
   const concludefxs = forkInvocations.filter(
     (fork) => fork.capabilities[0].can === UCAN.conclude.can,
   )
@@ -41,12 +36,9 @@ function parseBlobAddReceiptNext<
     (fork) => fork.capabilities[0].can === HTTPCapabilities.put.can,
   )
 
-  const acceptTask = (forkInvocations.find(
+  const acceptTask = forkInvocations.find(
     (fork) => fork.capabilities[0].can === BlobCapabilities.accept.can,
-  ) ??
-    forkInvocations.find(
-      (fork) => fork.capabilities[0].can === W3sBlobCapabilities.accept.can,
-    )) as Interface.Invocation<BlobAccept> | undefined
+  ) as Interface.Invocation<BlobAccept> | undefined
 
   if (!allocateTask || !concludefxs.length || !putTask || !acceptTask) {
     throw new Error('mandatory effects not received')
