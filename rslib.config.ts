@@ -28,6 +28,12 @@ export default defineConfig({
             computed_props: true,
             drop_debugger: true,
             unused: true,
+            side_effects: true,
+            arrows: true,
+            ecma: '2022',
+            keep_fargs: false,
+            keep_fnames: false,
+            pure_getters: true,
           }
         }
       }
