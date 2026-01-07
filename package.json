@@ -34,7 +34,7 @@
     "vitepress": "^1.6.4"
   },
   "bin": {
-    "omnipin": "dist/cli.js"
+    "omnipin": "dist/index.js"
   },
   "description": "🌸 Self-custodial decentralized deployments",
   "engineStrict": true,
@@ -58,7 +58,7 @@
     ]
   },
   "scripts": {
-    "build": "bun build src/cli.ts --target=node --bundle --minify-syntax --platform=node --legal-comments=none --format=esm --tree-shaking --outfile=dist/cli.js && chmod +x ./dist/cli.js",
+    "build": "rslib",
     "prepublishOnly": "bun run build && bun size-limit",
     "check": "biome check",
     "types": "tsc --noEmit",
