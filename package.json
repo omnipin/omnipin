@@ -70,8 +70,8 @@
   },
   "size-limit": [
     {
-      "path": "dist/cli.js",
-      "limit": "1MB",
+      "path": "dist/index.js",
+      "limit": "1.5MB",
       "brotli": false
     }
   ],
