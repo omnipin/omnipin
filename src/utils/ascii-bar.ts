@@ -8,63 +8,63 @@ export class AsciiBar {
   /**
    * Format of the displayed progressbar
    */
-  public formatString = '#spinner #bar #message'
+  formatString = '#spinner #bar #message'
 
   /**
    * Number of steps to finish progress
    */
-  public total = 100
+  total = 100
 
   /**
    * Startdate to calculate elapsed time (in milliseconds)
    */
-  public startDate = Date.now()
+  startDate = Date.now()
 
   /**
    * Which timespan to use for timing calculation - If you are unsure allways use false here!
    */
-  public lastUpdateForTiming = false
+  lastUpdateForTiming = false
 
   /**
    * Width of the progress bar (only the #bar part)
    */
-  public width = 20
+  width = 20
 
   /**
    * Symbol for the done progress in the #bar part
    */
-  public doneSymbol = '>'
+  doneSymbol = '>'
 
   /**
    * Symbol for the undone progress in the #bar part
    */
-  public undoneSymbol = '-'
+  undoneSymbol = '-'
 
   /**
    * Wether to print to configured stream or not
    */
-  public print = true
+  print = true
 
   /**
    * A spinner object describing how the spinner looks like
    * Change this for another spinner
    */
-  public spinner = defaultSpinner
+  spinner = defaultSpinner
 
   /**
    * The message displayed at the #message placeholder
    */
-  public message = ''
+  message = ''
 
   /**
    * wether to call progressbar's stop() function automatically if the progress reaches 100%
    */
-  public autoStop = true
+  autoStop = true
 
   /**
    * wether to hide the terminal's cursor while displaying the progress bar
    */
-  public hideCursor = false
+  hideCursor = false
 
   private elapsed = 0
   private lastUpdate = Date.now()
@@ -76,17 +76,12 @@ export class AsciiBar {
   private currentSpinnerSymbol = ''
   private current = 0
 
-  constructor(options?: string | ProgressbarOptions) {
+  constructor(options?: ProgressbarOptions) {
     if (options) {
-      //if only a string was provided, use this as formatString
-      if (typeof options === 'string') {
-        options = { formatString: options }
-      }
-
       //set other options
       for (const opt in options) {
-        if (this[opt] !== undefined) {
-          this[opt] = options[opt]
+        if (this[opt as keyof this] !== undefined) {
+          this[opt] = options[opt as keyof ProgressbarOptions]
         }
       }
 
@@ -109,7 +104,7 @@ export class AsciiBar {
    * Creates the progressbar string with all configured settings
    * @returns a string representating the progressbar
    */
-  public renderLine(): string {
+  renderLine(): string {
     const plusCount = Math.round((this.current / this.total) * this.width)
     const minusCount = this.width - plusCount
     let plusString = ''
@@ -146,7 +141,7 @@ export class AsciiBar {
   /**
    * Render the progressbar and print it to output stream
    */
-  public printLine(): void {
+  printLine(): void {
     if (!this.print) {
       return
     }
@@ -231,7 +226,7 @@ export class AsciiBar {
    * This function will be triggered automatically if the progressbar reaches 100% (if not disabled)
    * @param withInfo wether to auto-update the progressbar's spinner and message after stopping
    */
-  public stop(withInfo = true) {
+  stop(withInfo = true) {
     //Stop the spinner
     if (this.spinnerTimeout) {
       clearTimeout(this.spinnerTimeout)
