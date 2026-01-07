@@ -1,4 +1,4 @@
-import { setTimeout } from 'node:timers/promises'
+import { setTimeout } from '../../deps.js'
 
 type Payload = {
   txStatus: 'confirmed' | 'pending'

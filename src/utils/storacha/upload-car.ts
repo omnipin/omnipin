@@ -1,5 +1,3 @@
-import { ShardedDAGIndex } from '@storacha/blob-index'
-import { Storefront } from '@storacha/filecoin-client'
 import * as PieceHasher from '@web3-storage/data-segment/multihash'
 import * as Piece from '@web3-storage/data-segment/piece'
 import * as raw from 'multiformats/codecs/raw'
@@ -9,7 +7,8 @@ import * as BlobAdd from './actions/blob-add.js'
 import * as CAR from './actions/car.js'
 import * as Index from './actions/index-add.js'
 import * as Upload from './actions/upload-add.js'
-import { uploadServicePrincipal } from './constants.js'
+import { filecoinOffer } from './filecoin-offer.js'
+import { ShardedDAGIndex } from './sharded-dag-index.js'
 import type { InvocationConfig, Position, SliceDigest } from './types.js'
 
 /**
@@ -46,15 +45,9 @@ export const uploadCAR = async (conf: InvocationConfig, car: Blob) => {
   const multihashDigest = PieceHasher.digest(bytes)
   const piece = Piece.fromDigest(multihashDigest).link
   const content = Link.create(raw.code, digest)
-  const offer = await Storefront.filecoinOffer(
-    {
-      ...conf,
-      audience: uploadServicePrincipal,
-    },
-    content,
-    piece,
-    {},
-  )
+
+  const offer = await filecoinOffer(conf, piece, content)
+
   if (offer.out?.error) {
     throw new Error(
       'failed to offer piece for aggregation into filecoin deal',
@@ -65,7 +58,7 @@ export const uploadCAR = async (conf: InvocationConfig, car: Blob) => {
   }
 
   const carCid = Link.create(CAR.code, digest)
-  const index = ShardedDAGIndex.create(root)
+  const index = new ShardedDAGIndex(root)
   for (const [slice, pos] of slices) index.setSlice(digest, slice, pos)
   index.setSlice(digest, digest, [0, singleCar.size])
 

@@ -1,4 +1,4 @@
-import { styleText } from 'node:util'
+import { styleText } from '../deps.js'
 import type { PinStatus } from '../types.js'
 
 export const pinStatus = (provider: string, status: PinStatus): void => {

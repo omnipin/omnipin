@@ -26,8 +26,8 @@ jobs:
         run: bun test:report
         env:
           OMNIPIN_LIGHTHOUSE_TOKEN: ${{ secrets.OMNIPIN_OMNIPIN_TOKEN }}
-          OMNIPIN_STORACHA_PROOF: ${{ secrets.OMNIPIN_OMNIPIN_PROOF }}
-          OMNIPIN_STORACHA_TOKEN: ${{ secrets.OMNIPIN_OMNIPIN_TOKEN }}
+          OMNIPIN_STORACHA_PROOF: ${{ secrets.OMNIPIN_STORACHA_PROOF }}
+          OMNIPIN_STORACHA_TOKEN: ${{ secrets.OMNIPIN_STORACHA_TOKEN }}
       - name: Coveralls
         uses: coverallsapp/github-action@v2
         with:

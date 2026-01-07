@@ -1,18 +1,16 @@
-import {
-  type Ability,
-  type Capability,
-  type ConnectionView,
-  connect,
-  type Delegation,
-} from '@ucanto/client'
+import { connect } from '@ucanto/client'
 import type { API } from '@ucanto/core'
+import type {
+  Ability,
+  Capability,
+  ConnectionView,
+  EdSigner,
+} from '@ucanto/principal/ed25519'
 import { outbound as CAR_outbound } from '@ucanto/transport/car'
 import * as HTTP from '@ucanto/transport/http'
-import type { AgentData } from './agent-data.js'
 import { uploadServicePrincipal, uploadServiceURL } from './constants.js'
 import { canDelegateCapability, isExpired, isTooEarly } from './delegations.js'
-import { fromDelegation } from './space.js'
-import type { DelegationMeta, ResourceQuery, Service } from './types.js'
+import type { ResourceQuery, Service } from './types.js'
 
 interface CapabilityQuery {
   can: Ability
@@ -29,6 +27,11 @@ export const connection: ConnectionView<Service> = connect({
   }),
 })
 
+type AgentData = {
+  delegations: Map<string, { delegation: API.Delegation }>
+  principal: EdSigner
+}
+
 export class Agent {
   #data: AgentData
   connection: ConnectionView<Service>
@@ -42,50 +45,36 @@ export class Agent {
     return this.#data.principal
   }
 
-  #delegations(caps: CapabilityQuery[]) {
-    const _caps = new Set(caps)
-    const values: { delegation: API.Delegation; meta: DelegationMeta }[] = []
-    for (const [, value] of this.#data.delegations) {
-      if (!isExpired(value.delegation) && !isTooEarly(value.delegation)) {
-        // check if we need to filter for caps
-        if (Array.isArray(caps) && caps.length > 0) {
-          for (const cap of _caps) {
-            if (canDelegateCapability(value.delegation, cap as Capability)) {
-              values.push(value)
-            }
-          }
-        } else {
-          values.push(value)
-        }
-      }
-    }
-    return values
-  }
-
   proofs(caps: CapabilityQuery[]) {
     const authorizations: Map<
       string,
       API.Delegation<API.Capabilities>
     > = new Map()
-    for (const { delegation } of this.#delegations(caps)) {
+
+    const _caps = new Set(caps)
+    const delegations: API.Delegation[] = []
+
+    for (const [, { delegation }] of this.#data.delegations) {
+      if (!isExpired(delegation) && !isTooEarly(delegation)) {
+        // check if we need to filter for caps
+        if (Array.isArray(caps) && caps.length > 0) {
+          for (const cap of _caps) {
+            if (canDelegateCapability(delegation, cap as Capability)) {
+              delegations.push(delegation)
+            }
+          }
+        } else {
+          delegations.push(delegation)
+        }
+      }
+    }
+
+    for (const delegation of delegations) {
       if (delegation.audience.did() === this.issuer.did()) {
         authorizations.set(delegation.cid.toString(), delegation)
       }
     }
 
     return [...authorizations.values()]
-  }
-
-  async importSpaceFromDelegation(delegation: Delegation) {
-    const space = fromDelegation(delegation)
-
-    this.#data.spaces.set(space.did(), {
-      ...space.meta,
-      name: space.meta.name || '',
-    })
-
-    await this.#data.addDelegation(delegation)
-
-    return space
   }
 }

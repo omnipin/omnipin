@@ -1,4 +1,4 @@
-import { CID } from 'multiformats/cid'
+import { base32 } from 'multiformats/bases/base32'
 import { toHex } from 'ox/Bytes'
 import { namehash, normalize } from 'ox/Ens'
 import * as varint from 'varint'
@@ -37,11 +37,11 @@ export const prepareUpdateEnsArgs = ({
   switch (codec) {
     case 'ipfs':
       code = IFPS_CODEC
-      bytes = CID.parse(cid).toV1().bytes
+      bytes = base32.decode(cid)
       break
     case 'swarm':
       code = SWARM_CODEC
-      bytes = referenceToCID(`0x${cid}`).bytes
+      bytes = referenceToCID(`0x${cid}`)
       break
   }
 

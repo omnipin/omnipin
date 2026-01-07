@@ -1,44 +1,42 @@
 {
   "name": "omnipin",
-  "version": "1.7.2",
+  "version": "1.8.0",
   "author": "v1rtl <hi@v1rtl.site>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/omnipin/omnipin.git"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.5",
+    "@biomejs/biome": "^2.3.10",
     "@ipld/car": "^5.4.2",
-    "@ipld/dag-cbor": "^9.2.5",
     "@ipld/dag-ucan": "^3.4.5",
+    "@rslib/core": "^0.19.1",
     "@size-limit/file": "^11.2.0",
     "@stauro/filebase-upload": "npm:@jsr/stauro__filebase-upload",
-    "@storacha/blob-index": "^1.2.4",
-    "@storacha/filecoin-client": "^1.0.15",
-    "@types/bun": "^1.2.20",
+    "@storacha/capabilities": "^1.12.0",
+    "@types/bun": "^1.3.5",
     "@types/varint": "^6.0.3",
     "@ucanto/client": "^9.0.2",
     "@ucanto/core": "^10.4.6",
     "@ucanto/principal": "^9.0.3",
     "@ucanto/transport": "^9.2.1",
     "@web3-storage/data-segment": "^5.3.0",
-    "ascii-bar": "^1.0.3",
-    "blockstore-core": "^6",
+    "cborg": "^4.3.2",
     "esbuild": "^0.27.2",
     "ipfs-unixfs": "^12.0.0",
     "ipfs-unixfs-importer": "^16.0.1",
-    "multiformats": "^13.4.0",
+    "multiformats": "13.4.2",
     "nanotar": "^0.2.0",
-    "ox": "^0.10.5",
+    "ox": "^0.11.3",
     "size-limit": "^11.2.0",
     "spektr": "^0.2.0",
-    "tinyglobby": "^0.2.14",
-    "typescript": "^5.9.2",
+    "tinyglobby": "^0.2.15",
+    "typescript": "^5.9.3",
     "varint": "^6.0.0",
     "vitepress": "^1.6.4"
   },
   "bin": {
-    "omnipin": "dist/cli.js"
+    "omnipin": "dist/index.js"
   },
   "description": "🌸 Self-custodial decentralized deployments",
   "engineStrict": true,
@@ -56,14 +54,16 @@
     "cli"
   ],
   "license": "MIT",
+  "overrides": {
+    "@multiformats/murmur3": "npm:@omnipin/multiformats-murmur3"
+  },
   "release": {
     "branches": [
       "main"
     ]
   },
   "scripts": {
-    "build": "bun build src/cli.ts --outfile dist/out.js --target node --bundle",
-    "postbuild": "esbuild dist/out.js --format=esm --tree-shaking --outfile=dist/cli.js && rm dist/out.js && chmod +x ./dist/cli.js",
+    "build": "rslib",
     "prepublishOnly": "bun run build && bun size-limit",
     "check": "biome check",
     "types": "tsc --noEmit",
@@ -71,8 +71,8 @@
   },
   "size-limit": [
     {
-      "path": "dist/cli.js",
-      "limit": "1MB",
+      "path": "dist/index.js",
+      "limit": "1.5MB",
       "brotli": false
     }
   ],

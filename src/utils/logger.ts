@@ -1,5 +1,5 @@
-import { styleText } from 'node:util'
 import { isTTY } from '../constants.js'
+import { styleText } from '../deps.js'
 import type { SupportedMethods } from '../types.js'
 
 const responseStatus = (status: number) => {

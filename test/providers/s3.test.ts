@@ -20,6 +20,7 @@ describe('s3', () => {
       apiUrl: 'https://example.com',
       providerName: 'S3',
       verbose: false,
+      size: 0,
     })
     expect(res.status).toEqual(success.status)
   })
@@ -38,6 +39,7 @@ describe('s3', () => {
         apiUrl: 'https://example.com',
         providerName: 'S3',
         verbose: false,
+        size: 0,
       }),
     ).rejects.toThrow(DeployError)
   })

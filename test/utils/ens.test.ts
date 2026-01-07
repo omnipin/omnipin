@@ -63,7 +63,7 @@ describe('ens utils', () => {
         {
           name: 'Error',
           message:
-            'To parse non base32, base36 or base58btc encoded CID multibase decoder must be provided',
+            'Unable to decode multibase string "111", base32 decoder only supports inputs prefixed with b',
         },
       )
     })

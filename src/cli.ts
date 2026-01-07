@@ -221,6 +221,12 @@ cli.command<[string]>(
         type: 'string',
       },
       {
+        name: 'only-hash',
+        description: 'Only output CIDv1 to stdout',
+        type: 'boolean',
+        short: 'h',
+      },
+      {
         name: 'verbose',
         description: 'More verbose logs',
         type: 'boolean',
