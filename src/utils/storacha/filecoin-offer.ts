@@ -1,4 +1,5 @@
 import * as Storefront from '@storacha/capabilities/filecoin/storefront'
+import type { ConnectionView } from '@ucanto/client'
 import type { PieceLink } from '@web3-storage/data-segment'
 import type { Link } from 'multiformats'
 import { connection } from './agent.js'
@@ -10,15 +11,18 @@ export const filecoinOffer = async (
   piece: PieceLink,
   content: Link,
 ) => {
-  return Storefront.filecoinOffer
-    .invoke({
-      ...conf,
-      audience: uploadServicePrincipal,
-      nb: {
-        content,
-        piece,
-      },
-      expiration: Infinity,
-    })
-    .execute(connection)
+  return (
+    Storefront.filecoinOffer
+      .invoke({
+        ...conf,
+        audience: uploadServicePrincipal,
+        nb: {
+          content,
+          piece,
+        },
+        expiration: Infinity,
+      })
+      // biome-ignore lint/suspicious/noExplicitAny: type as `any` because can't find a proper type
+      .execute(connection as ConnectionView<any>)
+  )
 }
