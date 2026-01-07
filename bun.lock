@@ -11,6 +11,7 @@
         "@rslib/core": "^0.19.1",
         "@size-limit/file": "^11.2.0",
         "@stauro/filebase-upload": "npm:@jsr/stauro__filebase-upload",
+        "@storacha/capabilities": "^1.12.0",
         "@types/bun": "^1.3.5",
         "@types/varint": "^6.0.3",
         "@ucanto/client": "^9.0.2",
@@ -336,6 +337,8 @@
 
     "@stauro/filebase-upload": ["@jsr/stauro__filebase-upload@1.1.0", "https://npm.jsr.io/~/11/@jsr/stauro__filebase-upload/1.1.0.tgz", { "dependencies": { "@smithy/types": "^4.11.0" } }, "sha512-sL/X/ojlbg83pv3RmyKGfRyZ16RAFnDVXuOK1iNNrKyaqcvb0iqKk3E5TYrXvls2305RNUxq+xpzc0vz0+QQ2g=="],
 
+    "@storacha/capabilities": ["@storacha/capabilities@1.12.0", "", { "dependencies": { "@ucanto/core": "^10.4.5", "@ucanto/interface": "^11.0.1", "@ucanto/principal": "^9.0.3", "@ucanto/transport": "^9.2.1", "@ucanto/validator": "^10.0.1", "@web3-storage/data-segment": "^5.2.0", "multiformats": "^13.3.6" } }, "sha512-d4YTllc9eoe/aZU8OCMszJgSnNHsXWpUNHRVlU+u3BDVCTqN6SZHEqR7HhYpr9IDC+pOz/f6nOj5iICiH3t77g=="],
+
     "@swc/helpers": ["@swc/helpers@0.5.18", "", { "dependencies": { "tslib": "^2.8.0" } }, "sha512-TXTnIcNJQEKwThMMqBXsZ4VGAza6bvN4pa41Rkqoio6QBKMvo+5lexeTMScGCIxtzgQJzElcvIltani+adC5PQ=="],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.10.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg=="],
@@ -371,6 +374,8 @@
     "@ucanto/principal": ["@ucanto/principal@9.0.3", "", { "dependencies": { "@ipld/dag-ucan": "^3.4.5", "@noble/curves": "^1.2.0", "@noble/ed25519": "^1.7.3", "@noble/hashes": "^1.3.2", "@ucanto/interface": "^11.0.1", "multiformats": "^13.3.1", "one-webcrypto": "^1.0.3" } }, "sha512-MFLvckOpQA46VSeLWyB7xCysL+ub5vnbCEtHbWhNE3qkzeo14v4wSThd60odPhxj83QXrzbveiebp0gcaEvXJg=="],
 
     "@ucanto/transport": ["@ucanto/transport@9.2.1", "", { "dependencies": { "@ucanto/core": "^10.4.5", "@ucanto/interface": "^11.0.1" } }, "sha512-/Dhr+2vjpGO5GTKsSl8XcPQFtFdZvIA9Yk/yzzY9DHFsdI+tXrUjLWYwXcidx8EIdx5Xd9oitF4wodIZuiW8GQ=="],
+
+    "@ucanto/validator": ["@ucanto/validator@10.0.1", "", { "dependencies": { "@ipld/car": "^5.4.0", "@ipld/dag-cbor": "^9.2.2", "@ucanto/core": "^10.4.5", "@ucanto/interface": "^11.0.1", "multiformats": "^13.3.1" } }, "sha512-J1/2NAfvs55CxDEuHKMTjoLgoVrFqBbZqErYwL7TDx8Pu2V9sv7rc2wZS5dRxcM1VCEzHXY3SWeLOJuH8VgKrw=="],
 
     "@ungap/structured-clone": ["@ungap/structured-clone@1.3.0", "", {}, "sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g=="],
 
