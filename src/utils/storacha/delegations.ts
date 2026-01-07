@@ -24,8 +24,10 @@ const allows = (...delegations: Ucanto.Delegation[]) => {
   const allow: Ucanto.Allows = {}
   for (const delegation of delegations) {
     for (const { with: uri, can, nb } of delegation.capabilities) {
-      const resource = allow[uri] || (allow[uri] = {})
-      const abilities = resource[can] || (resource[can] = [])
+      if (!allow[uri]) allow[uri] = {}
+      const resource = allow[uri]
+      if (!resource[can]) resource[can] = []
+      const abilities = resource[can]
       abilities.push(nb as Record<string, unknown>)
     }
   }

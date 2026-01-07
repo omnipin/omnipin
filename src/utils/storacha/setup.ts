@@ -1,7 +1,6 @@
 import { Signer } from '@ucanto/principal/ed25519'
 import { Agent } from './agent.js'
 import type { AgentDataExport } from './agent-data.js'
-import { StoreMemory } from './memory-store.js'
 import * as Proof from './proof.js'
 import { fromDelegation, type SharedSpace } from './space.js'
 
@@ -14,7 +13,6 @@ export async function setup({
 }): Promise<{ agent: Agent; space: SharedSpace }> {
   const principal = Signer.parse(pk)
 
-  const store = new StoreMemory<AgentDataExport>()
   const agentData = {
     meta: { name: 'agent', type: 'device' },
     principal,
@@ -48,8 +46,6 @@ export async function setup({
         })),
       })
     }
-
-    await store.save(raw)
 
     return { agent, space }
   } catch (e) {

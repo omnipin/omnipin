@@ -20,31 +20,14 @@ function cidEncoder(obj: CID) {
   ]
 }
 
-function numberEncoder(num: number) {
-  return null
-}
-
-function mapEncoder(map: Map<unknown, unknown>) {
-  return null
-}
-
 const _encodeOptions = {
   float64: true,
   typeEncoders: {
-    Map: mapEncoder,
     Object: cidEncoder,
-    number: numberEncoder,
   },
 }
 
 export const code = 0x71
-
-export const encodeOptions = {
-  ..._encodeOptions,
-  typeEncoders: {
-    ..._encodeOptions.typeEncoders,
-  },
-}
 
 export const encode = <T>(node: unknown): ByteView<T> =>
   cborg.encode(node, _encodeOptions)
