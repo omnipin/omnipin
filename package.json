@@ -20,10 +20,11 @@
     "@ucanto/principal": "^9.0.3",
     "@ucanto/transport": "^9.2.1",
     "@web3-storage/data-segment": "^5.3.0",
+    "cborg": "^4.3.2",
     "esbuild": "^0.27.2",
     "ipfs-unixfs": "^12.0.0",
     "ipfs-unixfs-importer": "^16.0.1",
-    "multiformats": "^13.4.2",
+    "multiformats": "13.4.2",
     "nanotar": "^0.2.0",
     "ox": "^0.11.3",
     "size-limit": "^11.2.0",
@@ -32,9 +33,6 @@
     "typescript": "^5.9.3",
     "varint": "^6.0.0",
     "vitepress": "^1.6.4"
-  },
-  "overrides": {
-    "@multiformats/murmur3": "npm:@omnipin/multiformats-murmur3"
   },
   "bin": {
     "omnipin": "dist/index.js"
@@ -55,6 +53,9 @@
     "cli"
   ],
   "license": "MIT",
+  "overrides": {
+    "@multiformats/murmur3": "npm:@omnipin/multiformats-murmur3"
+  },
   "release": {
     "branches": [
       "main"
@@ -74,8 +75,5 @@
       "brotli": false
     }
   ],
-  "type": "module",
-  "dependencies": {
-    "cborg": "^4.3.2"
-  }
+  "type": "module"
 }
