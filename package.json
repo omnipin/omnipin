@@ -33,6 +33,9 @@
     "varint": "^6.0.0",
     "vitepress": "^1.6.4"
   },
+  "overrides": {
+    "@multiformats/murmur3": "npm:@omnipin/multiformats-murmur3"
+  },
   "bin": {
     "omnipin": "dist/index.js"
   },
