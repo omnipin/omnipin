@@ -34,6 +34,9 @@ export default defineConfig({
             keep_fargs: false,
             keep_fnames: false,
             pure_getters: true,
+            reduce_funcs: true,
+            hoist_funs: true,
+            hoist_props: true,
           }
         }
       }
