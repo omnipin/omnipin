@@ -11,6 +11,7 @@
       "docs/**/*.{md,ts,tsx,mts,css}",
       "src/**/*.ts",
       "test/**/*.ts",
+      "rslib.config.ts",
       "scripts/*.ts",
       "biome.json"
     ]

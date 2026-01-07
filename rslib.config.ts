@@ -1,4 +1,4 @@
-import { defineConfig } from '@rslib/core';
+import { defineConfig } from '@rslib/core'
 
 export default defineConfig({
   lib: [
@@ -7,8 +7,8 @@ export default defineConfig({
       bundle: true,
       autoExternal: false,
       experiments: {
-        advancedEsm: true
-      }
+        advancedEsm: true,
+      },
     },
   ],
   output: {
@@ -37,14 +37,14 @@ export default defineConfig({
             reduce_funcs: true,
             hoist_funs: true,
             hoist_props: true,
-          }
-        }
-      }
-    }
+          },
+        },
+      },
+    },
   },
   source: {
     entry: {
       index: './src/cli.ts',
     },
   },
-});
+})
