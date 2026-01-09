@@ -135,7 +135,6 @@ export const CLOUDFLARE_API_URL = 'https://api.cloudflare.com/client/v4'
 export type EthereumChain = {
   id: 1 | 11_155_111
   name: 'Ethereum' | 'Sepolia'
-  contracts: Record<string, Address>
   blockExplorers: {
     default: {
       name: string
@@ -148,7 +147,6 @@ export const chains = {
   mainnet: {
     id: 1,
     name: 'Ethereum',
-    contracts: {},
     blockExplorers: {
       default: {
         name: 'Etherscan',
@@ -159,7 +157,6 @@ export const chains = {
   sepolia: {
     id: 11_155_111,
     name: 'Sepolia',
-    contracts: {},
     blockExplorers: {
       default: {
         name: 'Etherscan',
