@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Address } from 'ox/Address'
 import {
   statusOn4everland,
   uploadOn4everland,
