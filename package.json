@@ -55,7 +55,7 @@
   ],
   "license": "MIT",
   "overrides": {
-    "@multiformats/murmur3": "npm:@omnipin/multiformats-murmur3"
+    "@multiformats/murmur3": "npm:@omnipin/multiformats-murmur3@2.2.0"
   },
   "release": {
     "branches": [
