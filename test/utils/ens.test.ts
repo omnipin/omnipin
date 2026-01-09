@@ -91,5 +91,15 @@ describe('ens utils', () => {
 
       assert.equal(addr, '0x0fd2ca6b1a52a1153da0b31d02fd53854627d262')
     })
+    it('should work on sepolia', async () => {
+      const provider = Provider.from(fromHttp(chainToRpcUrl('sepolia')))
+
+      const addr = await resolveEnsName({
+        provider,
+        name: 'gregskril.eth',
+      })
+
+      assert.equal(addr, '0x179a862703a4adfb29896552df9e307980d19285')
+    })
   })
 })
