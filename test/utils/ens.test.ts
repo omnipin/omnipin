@@ -2,6 +2,7 @@ import { describe, it } from 'bun:test'
 import * as assert from 'node:assert'
 import { Provider } from 'ox'
 import { fromHttp } from 'ox/RpcTransport'
+import { getEnsResolver } from '../../src/utils/ens/get-resolver.js'
 import { resolveEnsName } from '../../src/utils/ens/resolve-name.js'
 import { chainToRpcUrl, prepareUpdateEnsArgs } from '../../src/utils/ens.js'
 
@@ -80,26 +81,40 @@ describe('ens utils', () => {
       )
     })
   })
-  describe('resolveEnsName', () => {
-    it('should resolve .eth names', async () => {
-      const provider = Provider.from(fromHttp(chainToRpcUrl('mainnet')))
+  describe('Universal Resolver', () => {
+    describe('resolveEnsName', () => {
+      it('should resolve .eth names', async () => {
+        const provider = Provider.from(fromHttp(chainToRpcUrl('mainnet')))
 
-      const addr = await resolveEnsName({
-        provider,
-        name: 'safe.omnipin.eth',
+        const addr = await resolveEnsName({
+          provider,
+          name: 'safe.omnipin.eth',
+        })
+
+        assert.equal(addr, '0x0fd2ca6b1a52a1153da0b31d02fd53854627d262')
       })
+      it('should work on sepolia', async () => {
+        const provider = Provider.from(fromHttp(chainToRpcUrl('sepolia')))
 
-      assert.equal(addr, '0x0fd2ca6b1a52a1153da0b31d02fd53854627d262')
+        const addr = await resolveEnsName({
+          provider,
+          name: 'gregskril.eth',
+        })
+
+        assert.equal(addr, '0x179a862703a4adfb29896552df9e307980d19285')
+      })
     })
-    it('should work on sepolia', async () => {
-      const provider = Provider.from(fromHttp(chainToRpcUrl('sepolia')))
+    describe('getEnsResolver', () => {
+      it('should return a resolver address for a name', async () => {
+        const provider = Provider.from(fromHttp(chainToRpcUrl('mainnet')))
 
-      const addr = await resolveEnsName({
-        provider,
-        name: 'gregskril.eth',
+        const addr = await getEnsResolver({
+          provider,
+          name: 'omnipin.eth',
+        })
+
+        assert.equal(addr, '0x231b0ee14048e9dccd1d247744d114a4eb5e8e63')
       })
-
-      assert.equal(addr, '0x179a862703a4adfb29896552df9e307980d19285')
     })
   })
 })
