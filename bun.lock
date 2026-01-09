@@ -36,7 +36,7 @@
     },
   },
   "overrides": {
-    "@multiformats/murmur3": "npm:@omnipin/multiformats-murmur3",
+    "@multiformats/murmur3": "npm:@omnipin/multiformats-murmur3@2.2.0",
   },
   "packages": {
     "@adraffy/ens-normalize": ["@adraffy/ens-normalize@1.11.1", "", {}, "sha512-nhCBV3quEgesuf7c7KYfperqSS14T8bYuvJ8PcLJp6znkZpFc0AuW4qBtr8eKVyPPe/8RSr7sglCWPU5eaxwKQ=="],
@@ -217,7 +217,7 @@
 
     "@module-federation/webpack-bundler-runtime": ["@module-federation/webpack-bundler-runtime@0.22.0", "", { "dependencies": { "@module-federation/runtime": "0.22.0", "@module-federation/sdk": "0.22.0" } }, "sha512-aM8gCqXu+/4wBmJtVeMeeMN5guw3chf+2i6HajKtQv7SJfxV/f4IyNQJUeUQu9HfiAZHjqtMV5Lvq/Lvh8LdyA=="],
 
-    "@multiformats/murmur3": ["@omnipin/multiformats-murmur3@2.1.8", "", { "dependencies": { "multiformats": "^13.0.0" } }, "sha512-lSOoleGKyIEztB307AOlFDFksWUeFwTkTSL6Q161GZzSO1cn7pdmW77NLjERyrUNRGGurNQbc7tFUwOAXo8Uow=="],
+    "@multiformats/murmur3": ["@omnipin/multiformats-murmur3@2.2.0", "", { "dependencies": { "multiformats": "^13.0.0" } }, "sha512-Ydm/1G+TPbP/pTE6xZVq1iknZY9HAvm/i0MuKG8+zCty0kcfYfKSYBnGKK9fu1cUVBWh5xmVWfUt+Sq1YQjr1w=="],
 
     "@napi-rs/wasm-runtime": ["@napi-rs/wasm-runtime@1.0.7", "", { "dependencies": { "@emnapi/core": "^1.5.0", "@emnapi/runtime": "^1.5.0", "@tybys/wasm-util": "^0.10.1" } }, "sha512-SeDnOO0Tk7Okiq6DbXmmBODgOAb9dp9gjlphokTUxmt8U3liIP1ZsozBahH69j/RJv+Rfs6IwUKHTgQYJ/HBAw=="],
 

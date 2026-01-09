@@ -1,7 +1,7 @@
 import type { Address } from 'ox/Address'
 import type { Provider } from 'ox/Provider'
 import type { EthereumChain } from '../../constants.js'
-import { resolveEnsName } from '../ens/ur.js'
+import { resolveEnsName } from '../ens/resolve-name.js'
 import { getEip3770Address } from '../safe/eip3770.js'
 
 export const getExactAddress = async ({

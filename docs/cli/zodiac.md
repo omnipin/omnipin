@@ -4,8 +4,10 @@ Generate a JSON payload for the [Safe transaction builder](https://help.safe.glo
 
 If `OMNIPIN_PK` is not specified, a private key will be generated on the spot.
 
+The first argument is a module's address and a second argument is ENS resolver address.
+
 ```sh
-omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1
+omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63
 
 # omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --verbose
 # ⚠️ `OMNIPIN_PK` environment variable not set.
@@ -30,14 +32,6 @@ EVM Chain to use.
 
 [Safe](https://safe.global) wallet address with the installed module. [EIP-3770](https://eips.ethereum.org/EIPS/eip-3770) addresses are supported. Mainnet is used by default.
 
-```sh
-omnipin ens bafybeibp54tslsez36quqptgzwyda3vo66za3rraujksmsb3d5q247uht4 v1rtl.eth --safe 0x1234567890000000000000000000000000000000
-```
-
 ### `rpc-url`
 
 Use a custom Ethereum RPC for transactions. By default, [Public nodes](https://ethereum-rpc.publicnode.com) are used.
-
-### `resolver-address`
-
-Use a custom ENS Resolver address. Public resolvers for mainnet and sepolia are set by default.

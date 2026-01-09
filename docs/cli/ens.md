@@ -35,10 +35,6 @@ omnipin ens bafybeibp54tslsez36quqptgzwyda3vo66za3rraujksmsb3d5q247uht4 v1rtl.et
 
 Use a custom Ethereum RPC for transactions. By default, [Public nodes](https://ethereum-rpc.publicnode.com) are used.
 
-### `resolver-address`
-
-Use a custom ENS Resolver address. Public resolvers for mainnet and sepolia are set by default.
-
 ### `roles-mod-address`
 
 Zodiac Roles Module address. Requires `safe` option to be provided.

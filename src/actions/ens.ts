@@ -10,7 +10,8 @@ import { styleText } from '../deps.js'
 import { MissingCLIArgsError, MissingKeyError } from '../errors.js'
 import type { ChainName } from '../types.js'
 import { getExactAddress } from '../utils/address/getExactAddress.js'
-import { resolveEnsName } from '../utils/ens/ur.js'
+import { getEnsResolver } from '../utils/ens/get-resolver.js'
+import { resolveEnsName } from '../utils/ens/resolve-name.js'
 import {
   chainToRpcUrl,
   type EnsName,
@@ -41,7 +42,6 @@ export type EnsActionArgs = Partial<{
   chain: ChainName
   safe: Address | EIP3770Address | EnsName
   'rpc-url': string
-  'resolver-address': Address
   verbose: boolean
   'dry-run': boolean
   'roles-mod-address': Address
@@ -60,7 +60,6 @@ export const ensAction = async ({
     chain: chainName = 'mainnet',
     safe: safeAddress,
     'rpc-url': rpcUrl,
-    'resolver-address': _resolverAddress,
     'roles-mod-address': rolesModAddress,
     'dry-run': dryRun,
   } = options
@@ -111,14 +110,9 @@ export const ensAction = async ({
 
   if (options.verbose) console.log('Transaction encoded data:', data)
 
-  const resolverAddress =
-    _resolverAddress || chains[chainName].contracts.publicResolver.address
+  if (!domain.endsWith('.eth')) throw new Error('Domain must end with .eth')
 
-  if (
-    resolverAddress === chains[chainName].contracts.publicResolver.address &&
-    !domain.endsWith('.eth')
-  )
-    throw new Error('Domain must end with .eth')
+  const resolverAddress = await getEnsResolver({ provider, name: domain })
 
   if (safeAddress) {
     logger.info(
