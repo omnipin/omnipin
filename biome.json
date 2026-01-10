@@ -13,7 +13,8 @@
       "test/**/*.ts",
       "rslib.config.ts",
       "scripts/*.ts",
-      "biome.json"
+      "biome.json",
+      "bun.lock"
     ]
   },
   "formatter": {
