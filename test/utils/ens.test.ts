@@ -113,7 +113,7 @@ describe('ens utils', () => {
           name: 'omnipin.eth',
         })
 
-        assert.equal(addr, '0x231b0ee14048e9dccd1d247744d114a4eb5e8e63')
+        assert.equal(addr, '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63')
       })
     })
   })
