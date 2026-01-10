@@ -1,5 +1,5 @@
 import { decodeResult, encodeData } from 'ox/AbiFunction'
-import type { Address } from 'ox/Address'
+import { type Address, checksum } from 'ox/Address'
 import { toHex } from 'ox/Bytes'
 import type { Provider } from 'ox/Provider'
 import { packetToBytes } from './utils.js'
@@ -54,5 +54,5 @@ export const getEnsResolver = async ({
 
   const [resolverAddress] = decodeResult(abi, result)
 
-  return resolverAddress
+  return checksum(resolverAddress)
 }
