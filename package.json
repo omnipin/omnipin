@@ -73,7 +73,7 @@
   "size-limit": [
     {
       "path": "dist/index.js",
-      "limit": "1.5MB",
+      "limit": "1MB",
       "brotli": false
     }
   ],
