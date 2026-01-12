@@ -3,6 +3,7 @@ import type { Address } from 'ox/Address'
 import type { Hex } from 'ox/Hex'
 import type { Provider } from 'ox/Provider'
 import type { FilecoinChain } from './filecoin/constants.js'
+import { SIMULATION_GAS_LIMIT } from './tx.js'
 
 const abi = {
   inputs: [
@@ -56,6 +57,7 @@ export const multicall = async ({
       {
         data: encodeData(abi, [calls]),
         to: chain.contracts.multicall3.address,
+        gas: SIMULATION_GAS_LIMIT,
       },
       'latest',
     ],

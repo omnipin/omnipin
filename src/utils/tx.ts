@@ -7,6 +7,39 @@ import * as TxEnvelopeEip1559 from 'ox/TxEnvelopeEip1559'
 import { setTimeout } from '../deps.js'
 import { logger } from './logger.js'
 
+// Gas ceiling for RPC simulations (30M) - needed for Helios compatibility
+export const SIMULATION_GAS_LIMIT = 30_000_000n
+
+export const estimateGas = async ({
+  provider,
+  to,
+  data,
+  from,
+  value = '0x0',
+}: {
+  provider: Provider
+  to: Address
+  data: Hex
+  from: Address
+  value?: Hex
+}): Promise<bigint> => {
+  return toBigInt(
+    await provider.request({
+      method: 'eth_estimateGas',
+      params: [
+        {
+          from,
+          to,
+          data,
+          value,
+          gas: SIMULATION_GAS_LIMIT,
+        },
+        'latest',
+      ],
+    }),
+  )
+}
+
 export const simulateTransaction = async ({
   provider,
   to,
@@ -25,6 +58,7 @@ export const simulateTransaction = async ({
         to,
         data,
         from,
+        gas: SIMULATION_GAS_LIMIT,
       },
       'latest',
     ],
@@ -51,20 +85,7 @@ export const sendTransaction = async ({
     params: ['0x5', 'latest', [10, 50, 90]],
   })
 
-  const estimatedGas = toBigInt(
-    await provider.request({
-      method: 'eth_estimateGas',
-      params: [
-        {
-          from,
-          to,
-          data,
-          value: '0x0',
-        },
-        'latest',
-      ],
-    }),
-  )
+  const estimatedGas = await estimateGas({ provider, from, to, data })
 
   logger.info(`Estimated gas: ${estimatedGas}`)
 
