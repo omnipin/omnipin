@@ -1,5 +1,5 @@
 import type { Address } from 'ox/Address'
-import { type Hex, fromNumber, toBigInt } from 'ox/Hex'
+import { type Hex, toBigInt } from 'ox/Hex'
 import type { Provider } from 'ox/Provider'
 import * as Secp256k1 from 'ox/Secp256k1'
 import { fromRpc } from 'ox/TransactionReceipt'
@@ -8,7 +8,7 @@ import { setTimeout } from '../deps.js'
 import { logger } from './logger.js'
 
 // Gas ceiling for RPC simulations (30M) - needed for Helios compatibility
-const SIMULATION_GAS_LIMIT = fromNumber(30_000_000)
+export const SIMULATION_GAS_LIMIT = 30_000_000n
 
 export const estimateGas = async ({
   provider,
