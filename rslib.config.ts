@@ -11,6 +11,9 @@ export default defineConfig({
       },
     },
   ],
+  resolve: {
+    dedupe: ['multiformats', 'varint', 'multiformats/cid'],
+  },
   output: {
     target: 'node',
     legalComments: 'none',
