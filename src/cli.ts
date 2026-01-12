@@ -91,12 +91,6 @@ cli.command(
         type: 'string',
       },
       {
-        name: 'verbose',
-        description: 'More verbose logs',
-        type: 'boolean',
-        short: 'v',
-      },
-      {
         name: 'dnslink',
         description: 'Update DNSLink',
         type: 'string',
