@@ -56,9 +56,13 @@ export const packCAR = async (
 
   for await (const { cid, bytes } of blockstore.getAll()) {
     try {
+      const chunks: Uint8Array[] = []
+      for await (const chunk of bytes) {
+        chunks.push(chunk)
+      }
       await writer.put({
         cid,
-        bytes: concatBytes(await Array.fromAsync(bytes)),
+        bytes: concatBytes(chunks),
       })
     } catch (error) {
       console.warn(`Failed to add block ${cid.toString()} to CAR:`, error)
