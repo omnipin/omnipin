@@ -6,11 +6,7 @@ import { randomInt, setTimeout } from '../../deps.js'
 import { DeployError, MissingKeyError } from '../../errors.js'
 import type { UploadFunction } from '../../types.js'
 import { calculatePieceCID } from '../../utils/filecoin/calculatePieceCID.js'
-import {
-  filecoinCalibration,
-  filecoinMainnet,
-  filProvider,
-} from '../../utils/filecoin/constants.js'
+import { chains, filProvider } from '../../utils/filecoin/constants.js'
 import { createDataSet } from '../../utils/filecoin/createDataSet.js'
 import { getClientDataSets } from '../../utils/filecoin/getClientDatasets.js'
 import { getProviderIdByAddress } from '../../utils/filecoin/getProviderIdByAddress.js'
@@ -30,7 +26,7 @@ export const uploadToFilecoin: UploadFunction<{
   providerAddress?: Address
   providerURL?: string
   pieceCid: string
-  filecoinChain: 'mainnet' | 'calibration'
+  filecoinChain: keyof typeof chains
   token: Hex
 }> = async ({
   providerAddress,
@@ -53,8 +49,7 @@ export const uploadToFilecoin: UploadFunction<{
 
   logger.info(`Payer address: ${address}`)
 
-  const chain =
-    filecoinChain === 'mainnet' ? filecoinMainnet : filecoinCalibration
+  const chain = chains[filecoinChain]
   const chainId = chain.id
 
   logger.info(`Filecoin chain: ${chain.name}`)
