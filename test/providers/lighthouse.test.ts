@@ -1,12 +1,15 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: asserting env tokens */
 import { describe, expect, it } from 'bun:test'
-import { uploadOnLighthouse } from '../../src/providers/ipfs/lighthouse.js'
+
+import { PROVIDERS } from '../../src/constants.js'
 import { walk } from '../../src/utils/fs.js'
 import { packCAR } from '../../src/utils/ipfs.js'
 
+const { upload: uploadOnLighthouse } = PROVIDERS.LIGHTHOUSE_TOKEN
+
 describe('Lighthouse', () => {
   describe('upload', () => {
-    it.skip(
+    it(
       'uploads a CAR file',
       async () => {
         const token = Bun.env.OMNIPIN_LIGHTHOUSE_TOKEN
@@ -32,7 +35,7 @@ describe('Lighthouse', () => {
   })
 
   describe('pin', () => {
-    it.skip('should pin a CID on Lighthouse successfully', async () => {
+    it('should pin a CID on Lighthouse successfully', async () => {
       const token = Bun.env.OMNIPIN_LIGHTHOUSE_TOKEN
 
       if (!token) throw new Error('Missing Lighthouse token')
@@ -49,6 +52,7 @@ describe('Lighthouse', () => {
       })
 
       expect(result.cid).toEqual(cid)
+      expect(result.status).toEqual('queued')
     })
   })
 })
