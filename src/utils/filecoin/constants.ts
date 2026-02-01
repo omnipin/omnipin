@@ -50,7 +50,7 @@ export const filecoinMainnet = {
       address: '0xf55dDbf63F1b55c3F1D4FA7e339a68AB7b64A5eB',
     },
     storageView: {
-      address: '0x9e4e6699d8F67dFc883d6b0A7344Bd56F7E80B46',
+      address: '0x638a4986332bF9B889E5D7435B966C5ecdE077Fa',
     },
   },
   blockExplorer: 'https://filecoin.blockscout.com',
@@ -76,7 +76,7 @@ export const filecoinCalibration = {
       address: '0x839e5c9988e4e9977d40708d0094103c0839Ac9D',
     },
     storageView: {
-      address: '0xA5D87b04086B1d591026cCE10255351B5AA4689B',
+      address: '0x53d235D474585EC102ccaB7e0cdcE951dD00f716',
     },
   },
   blockExplorer: 'https://filecoin-testnet.blockscout.com',
