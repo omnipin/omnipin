@@ -118,3 +118,34 @@ Zodiac Roles Module address. Requires `safe` option to be provided.
 ```sh
 omnipin deploy --roles-mod-address 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --safe 0x1234567890000000000000000000000000000000 omnipin.eth
 ```
+
+### `progress-bar`
+
+Default: `false`
+
+Render a progress bar during content upload.
+
+```sh
+omnipin deploy --progress-bar
+```
+
+### `filecoin-chain`
+
+- Default: `mainnet`
+- Options: `mainnet`, `calibration`
+
+Filecoin network to use for Filecoin provider deployments.
+
+```sh
+omnipin deploy --filecoin-chain calibration
+```
+
+### `dry-run`
+
+Default: `false`
+
+Simulate the ENS transaction without actually sending it. Useful for testing. Requires `--ens` option to be defined.
+
+```sh
+omnipin deploy --ens v1rtl.eth --dry-run
+```
