@@ -42,3 +42,17 @@ Zodiac Roles Module address. Requires `safe` option to be provided.
 ```sh
 omnipin ens --roles-mod-address 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --safe 0x1234567890000000000000000000000000000000 omnipin.eth bafybeibp54tslsez36quqptgzwyda3vo66za3rraujksmsb3d5q247uht4
 ```
+
+### `verbose`
+
+More verbose logs.
+
+### `dry-run`
+
+Default: `false`
+
+Simulate the transaction without actually sending it. Useful for testing.
+
+```sh
+omnipin ens bafybeibp54tslsez36quqptgzwyda3vo66za3rraujksmsb3d5q247uht4 v1rtl.eth --dry-run
+```

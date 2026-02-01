@@ -18,6 +18,17 @@ Name of the distribution directory, excluding the file extension (it's always `.
 
 Custom directory to store the distribution file at before deployment. By default, OS temporary directory is used.
 
+### `only-hash`
+
+Default: `false`
+
+Only output CIDv1 to stdout without any additional logging. Useful for scripts.
+
+```sh
+omnipin pack --only-hash
+# bafybeialuzuiih2kg4g22crdt2oswzvj4ygirtk52v6kwb6v4muuuumnri
+```
+
 ### `verbose`
 
 More verbose logs.

@@ -35,3 +35,7 @@ EVM Chain to use.
 ### `rpc-url`
 
 Use a custom Ethereum RPC for transactions. By default, [Public nodes](https://ethereum-rpc.publicnode.com) are used.
+
+### `verbose`
+
+More verbose logs.
