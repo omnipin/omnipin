@@ -12,7 +12,7 @@ import {
   uploadOnFilebase,
 } from './providers/ipfs/filebase.js'
 import { uploadToFilecoin } from './providers/ipfs/filecoin.js'
-import { pinOnLighthouse } from './providers/ipfs/lighthouse.js'
+import { uploadOnLighthouse } from './providers/ipfs/lighthouse.js'
 import { statusOnPinata, uploadOnPinata } from './providers/ipfs/pinata.js'
 import { pinOnQuicknode } from './providers/ipfs/quicknode.js'
 import { uploadToSimplePage } from './providers/ipfs/simplepage.js'
@@ -83,8 +83,8 @@ export const PROVIDERS: Record<
   },
   LIGHTHOUSE_TOKEN: {
     name: 'Lighthouse',
-    upload: pinOnLighthouse,
-    supported: 'pin',
+    upload: uploadOnLighthouse,
+    supported: 'both',
     protocol: 'ipfs',
   },
   SWARMY_TOKEN: {
