@@ -2,9 +2,14 @@
 
 Generate a JSON payload for the [Safe transaction builder](https://help.safe.global/en/articles/234052-transaction-builder) that configures a [Zodiac Roles module](https://roles.gnosisguild.org) with a restricted ENS updater role. The role's key is `ENS_DEPLOYER`. The role can only execute `setContentHash` on a specified ENS resolver address.
 
-If `OMNIPIN_PK` is not specified, a private key will be generated on the spot.
+```sh
+omnipin zodiac <roles-mod-address> <resolver-address>
+```
 
-The first argument is a module's address and a second argument is ENS resolver address.
+- `<roles-mod-address>` - Zodiac Roles Module contract address
+- `<resolver-address>` - ENS resolver contract address (the role will only be able to call `setContentHash` on this address)
+
+If `OMNIPIN_PK` is not specified, a private key will be generated on the spot.
 
 ```sh
 omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63
