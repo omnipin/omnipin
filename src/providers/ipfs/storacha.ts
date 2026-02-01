@@ -10,7 +10,12 @@ export {
 
 const providerName = 'Storacha'
 
-const abilities = ['space/blob/add', 'space/index/add', 'upload/add'] as const
+const abilities = [
+  'space/blob/add',
+  'space/index/add',
+  'upload/add',
+  'filecoin/offer',
+] as const
 
 export const uploadOnStoracha: UploadFunction<{ proof: string }> = async ({
   token,
