@@ -7,21 +7,21 @@
     "url": "git+https://github.com/omnipin/omnipin.git"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.11",
+    "@biomejs/biome": "^2.3.13",
     "@ipld/car": "^5.4.2",
     "@ipld/dag-ucan": "^3.4.5",
-    "@rslib/core": "^0.19.1",
+    "@rslib/core": "^0.19.4",
     "@size-limit/file": "^11.2.0",
     "@stauro/filebase-upload": "npm:@jsr/stauro__filebase-upload",
     "@storacha/capabilities": "^1.12.0",
-    "@types/bun": "^1.3.5",
+    "@types/bun": "^1.3.8",
     "@types/varint": "^6.0.3",
     "@ucanto/client": "^9.0.2",
     "@ucanto/core": "^10.4.6",
     "@ucanto/principal": "^9.0.3",
     "@ucanto/transport": "^9.2.1",
     "@web3-storage/data-segment": "^5.3.0",
-    "cborg": "^4.3.2",
+    "cborg": "^4.5.8",
     "esbuild": "^0.27.2",
     "ipfs-unixfs": "^12.0.0",
     "ipfs-unixfs-importer": "^16.0.2",
@@ -55,7 +55,6 @@
   ],
   "license": "MIT",
   "overrides": {
-    "@multiformats/murmur3": "npm:@omnipin/multiformats-murmur3@2.2.0",
     "multiformats": "13.4.2"
   },
   "release": {
