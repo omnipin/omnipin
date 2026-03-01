@@ -1,15 +1,15 @@
 import { describe, it } from 'bun:test'
 import assert from 'node:assert'
 import { encodeResult } from 'ox/AbiFunction'
-import { checksum, type Address } from 'ox/Address'
+import { type Address, checksum } from 'ox/Address'
 import type { Provider } from 'ox/Provider'
 import {
   abi as findResolverAbi,
   getEnsResolver,
 } from '../../src/utils/ens/get-resolver.js'
 import {
-  abi as universalResolverResolveAbi,
   resolveEnsName,
+  abi as universalResolverResolveAbi,
 } from '../../src/utils/ens/resolve-name.js'
 import { OperationType } from '../../src/utils/safe/types.js'
 import { prepareSafeTransactionData } from '../../src/utils/safe.js'

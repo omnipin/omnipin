@@ -1,5 +1,5 @@
 import type { Address } from 'ox/Address'
-import { type Hex, fromNumber, toBigInt } from 'ox/Hex'
+import { fromNumber, type Hex, toBigInt } from 'ox/Hex'
 import type { Provider } from 'ox/Provider'
 import * as Secp256k1 from 'ox/Secp256k1'
 import { fromRpc } from 'ox/TransactionReceipt'
