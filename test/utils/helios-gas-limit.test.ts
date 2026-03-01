@@ -7,24 +7,13 @@ import {
   abi as findResolverAbi,
   getEnsResolver,
 } from '../../src/utils/ens/get-resolver.js'
-import { resolveEnsName } from '../../src/utils/ens/resolve-name.js'
+import {
+  abi as universalResolverResolveAbi,
+  resolveEnsName,
+} from '../../src/utils/ens/resolve-name.js'
 import { OperationType } from '../../src/utils/safe/types.js'
 import { prepareSafeTransactionData } from '../../src/utils/safe.js'
 import { SIMULATION_GAS_LIMIT } from '../../src/utils/tx.js'
-
-const universalResolverResolveAbi = {
-  inputs: [
-    { name: 'name', type: 'bytes' },
-    { name: 'data', type: 'bytes' },
-  ],
-  name: 'resolve',
-  outputs: [
-    { name: 'data', type: 'bytes' },
-    { name: 'resolver', type: 'address' },
-  ],
-  stateMutability: 'view',
-  type: 'function',
-} as const
 
 describe('Helios-compatible eth_call gas limit', () => {
   it('uses a Helios-compatible simulation gas cap', () => {

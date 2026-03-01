@@ -6,7 +6,7 @@ import { SIMULATION_GAS_LIMIT } from '../tx.js'
 import { encodeEnsAddressRecordRequest } from './addr.js'
 import { packetToBytes } from './utils.js'
 
-const abi = {
+export const abi = {
   inputs: [
     {
       name: 'name',
