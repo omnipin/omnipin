@@ -11,6 +11,7 @@ import type { ChainName } from '../types.js'
 import { getTransactionHash } from './safe/constants.js'
 import { type EIP3770Address, getEip3770Address } from './safe/eip3770.js'
 import type { SafeTransactionData } from './safe/types.js'
+import { SIMULATION_GAS_LIMIT } from './tx.js'
 
 export const chainToSafeApiUrl = (chainName: ChainName) =>
   `https://safe-transaction-${chainName}.safe.global`
@@ -51,6 +52,7 @@ export const prepareSafeTransactionData = async ({
           zeroAddress,
           txData.nonce,
         ]),
+        gas: SIMULATION_GAS_LIMIT,
       },
       'latest',
     ],

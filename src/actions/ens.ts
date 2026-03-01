@@ -32,6 +32,7 @@ import {
   prepareSafeTransactionData,
 } from '../utils/safe.js'
 import {
+  SIMULATION_GAS_LIMIT,
   sendTransaction,
   simulateTransaction,
   waitForTransaction,
@@ -131,6 +132,7 @@ export const ensAction = async ({
           {
             to: safe,
             data: encodeData(getNonce),
+            gas: SIMULATION_GAS_LIMIT,
           },
           'latest',
         ],
