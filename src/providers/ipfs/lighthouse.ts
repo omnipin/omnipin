@@ -33,7 +33,7 @@ export const uploadOnLighthouse: UploadFunction = async ({
     const json = await res.json()
 
     if (!res.ok) {
-      const message = json.error?.message || json.message || 'Unknown error'
+      const message = json.error?.message || json.error || json.message || json.details || 'Unknown error'
       throw new DeployError(providerName, message)
     }
 
@@ -54,7 +54,10 @@ export const uploadOnLighthouse: UploadFunction = async ({
 
   const json = await res.json()
 
-  if (!res.ok) throw new DeployError(providerName, json.error.message)
+  if (!res.ok) {
+    const message = json.error?.message || json.error || json.message || json.details || 'Unknown error'
+    throw new DeployError(providerName, message)
+  }
 
   return { cid, status: 'queued' }
 }
