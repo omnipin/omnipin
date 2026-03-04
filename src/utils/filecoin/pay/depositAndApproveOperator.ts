@@ -2,6 +2,7 @@ import { encodeData } from 'ox/AbiFunction'
 import type { Address } from 'ox/Address'
 import { fromNumber, type Hex } from 'ox/Hex'
 import { InternalError } from 'ox/RpcResponse'
+import * as Signature from 'ox/Signature'
 import { maxUint256 } from 'ox/Solidity'
 import * as Value from 'ox/Value'
 import { logger } from '../../logger.js'
@@ -55,7 +56,7 @@ export const depositAndApproveOperator = async ({
       `Not enough USDfc to deposit (need: ${Value.format(amount - balance, 18).slice(0, 5)})`,
     )
 
-  const { r, s } = await signErc20Permit({
+  const { r, s, yParity } = await signErc20Permit({
     privateKey,
     address,
     amount,
@@ -71,7 +72,7 @@ export const depositAndApproveOperator = async ({
     address,
     amount,
     deadline,
-    27,
+    yParity !== undefined ? Signature.yParityToV(yParity) : 27,
     fromNumber(r, { size: 32 }),
     fromNumber(s, { size: 32 }),
     chain.contracts.storage.address,
