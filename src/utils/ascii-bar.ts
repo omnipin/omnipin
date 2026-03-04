@@ -4,6 +4,27 @@ MIT License
 Copyright (c) 2020 superjojo140
 */
 
+export const defaultSpinner: Spinner = {
+  interval: 120,
+  frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'],
+}
+
+export const simpleSpinner: Spinner = {
+  interval: 120,
+  frames: ['-', '\\', '|', '/'],
+}
+
+interface Spinner {
+  /**
+   * The interval between frames in milliseconds
+   */
+  interval: number
+  /**
+   * The frames to display
+   */
+  frames: string[]
+}
+
 export class AsciiBar {
   /**
    * Format of the displayed progressbar
@@ -354,33 +375,4 @@ const colorCodes = {
 
   HideCursor: '\x1B[?25l',
   ShowCursor: '\x1B[?25h',
-}
-
-export const defaultSpinner: Spinner = {
-  interval: 120,
-  frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'],
-}
-
-export const simpleSpinner: Spinner = {
-  interval: 120,
-  frames: ['-', '\\', '|', '/'],
-}
-
-interface Spinner {
-  /**
-   * Number of milliseconds to update to the next spinner frame
-   */
-  interval: number
-
-  /**
-   * Array of the spinner "frames"
-   * A frame means one char
-   */
-  frames: string[]
-
-  /**
-   * Used in runtime to store currently displayed frame
-   * @default 0
-   */
-  currentFrame?: number
 }
