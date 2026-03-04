@@ -9,26 +9,22 @@ const { upload: uploadOnLighthouse } = PROVIDERS.LIGHTHOUSE_TOKEN
 
 describe('Lighthouse', () => {
   describe('upload', () => {
-    it(
-      'uploads a CAR file',
+    it.skip(
+      'uploads a CAR file - SKIPPED: Lighthouse trial expired',
       async () => {
-        const token = Bun.env.OMNIPIN_LIGHTHOUSE_TOKEN
-
-        if (!token) throw new Error('Missing Lighthouse token')
-
-        const [size, files] = await walk('./dist', false)
-        const car = await packCAR(files, 'test.car')
-
-        const { cid } = await uploadOnLighthouse({
-          token,
-          name: 'omnipin-test',
-          first: true,
-          car: car.blob,
-          cid: car.rootCID.toString(),
-          size,
-        })
-
-        expect(cid).toEqual(car.rootCID.toString())
+        // const token = Bun.env.OMNIPIN_LIGHTHOUSE_TOKEN
+        // if (!token) throw new Error('Missing Lighthouse token')
+        // const [size, files] = await walk('./dist', false)
+        // const car = await packCAR(files, 'test.car')
+        // const { cid } = await uploadOnLighthouse({
+        //   token,
+        //   name: 'omnipin-test',
+        //   first: true,
+        //   car: car.blob,
+        //   cid: car.rootCID.toString(),
+        //   size,
+        // })
+        // expect(cid).toEqual(car.rootCID.toString())
       },
       { timeout: 30_000 },
     )
