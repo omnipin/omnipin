@@ -5,6 +5,7 @@ import * as Provider from 'ox/Provider'
 import { fromHttp } from 'ox/RpcTransport'
 import { getPublicKey } from 'ox/Secp256k1'
 import { toHex } from 'ox/Signature'
+import { pluginRegistry } from '../cli.js'
 import { chains, isTTY } from '../constants.js'
 import { styleText } from '../deps.js'
 import { MissingCLIArgsError, MissingKeyError } from '../errors.js'
@@ -56,6 +57,15 @@ export const ensAction = async ({
   domain: string
   options: EnsActionArgs
 }) => {
+  // Run before hooks
+  const beforeCtx = await pluginRegistry.runBefore('ens', {
+    cid,
+    domain,
+    options,
+  })
+  cid = beforeCtx.cid
+  domain = beforeCtx.domain
+  options = beforeCtx.options
   const {
     chain: chainName = 'mainnet',
     safe: safeAddress,
@@ -67,6 +77,9 @@ export const ensAction = async ({
   assertCID(cid)
   if (!domain) throw new MissingCLIArgsError(['domain'])
   const chain = chains[chainName]
+
+  let txHash: string | undefined
+  let safeTxHash: string | undefined
 
   const transport = fromHttp(rpcUrl ?? chainToRpcUrl(chainName))
 
@@ -217,7 +230,7 @@ export const ensAction = async ({
     })
 
     if (!dryRun) {
-      const hash = await sendTransaction({
+      txHash = await sendTransaction({
         privateKey: pk,
         provider,
         chainId: chain.id,
@@ -227,11 +240,11 @@ export const ensAction = async ({
       })
 
       logger.info(
-        `Transaction pending: ${chain.blockExplorers.default.url}/tx/${hash}`,
+        `Transaction pending: ${chain.blockExplorers.default.url}/tx/${txHash}`,
       )
 
       try {
-        await waitForTransaction(provider, hash)
+        await waitForTransaction(provider, txHash as `0x${string}`)
       } catch (e) {
         return logger.error(e)
       }
@@ -243,4 +256,12 @@ export const ensAction = async ({
       )
     }
   }
+
+  // Run after hooks
+  const result = {
+    domain,
+    txHash: txHash,
+    safeTxHash: safeAddress ? safeTxHash : undefined,
+  }
+  await pluginRegistry.runAfter('ens', { ...beforeCtx, ...result })
 }

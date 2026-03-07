@@ -1,3 +1,4 @@
+import { pluginRegistry } from '../cli.js'
 import { isTTY, PROVIDERS } from '../constants.js'
 import { AsciiBar } from '../deps.js'
 import { NoProvidersError } from '../errors.js'
@@ -21,6 +22,11 @@ export const pinAction = async ({
   options: PinActionArgs
   cid: string
 }) => {
+  // Run before hooks
+  const beforeCtx = await pluginRegistry.runBefore('pin', { cid, options })
+  cid = beforeCtx.cid
+  options = beforeCtx.options
+
   logger.info(`Pinning ${cid}`)
 
   const apiTokens = parseTokensFromEnv()
@@ -57,6 +63,11 @@ export const pinAction = async ({
     : undefined
 
   const errors: Error[] = []
+  let result: {
+    cid: string
+    succeeded: string[]
+    failed: Array<{ provider: string; error: Error }>
+  }
 
   for (const provider of providers) {
     const envVar = findEnvVarProviderName(provider.name)!
@@ -85,11 +96,28 @@ export const pinAction = async ({
     errors.forEach((e) => {
       logger.error(e)
     })
-    return
+    result = {
+      cid,
+      succeeded: [],
+      failed: errors.map((e) => ({ provider: 'unknown', error: e })),
+    }
   } else if (errors.length) {
     logger.warn('There were some problems with pinning')
     errors.forEach((e) => {
       logger.error(e)
     })
-  } else logger.success('Pinned across all providers')
+    result = {
+      cid,
+      succeeded: providers
+        .filter((p) => !errors.some((e) => e.message.includes(p.name)))
+        .map((p) => p.name),
+      failed: errors.map((e) => ({ provider: 'unknown', error: e })),
+    }
+  } else {
+    logger.success('Pinned across all providers')
+    result = { cid, succeeded: providers.map((p) => p.name), failed: [] }
+  }
+
+  // Run after hooks
+  await pluginRegistry.runAfter('pin', { ...beforeCtx, ...result })
 }
