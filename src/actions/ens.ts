@@ -5,10 +5,10 @@ import * as Provider from 'ox/Provider'
 import { fromHttp } from 'ox/RpcTransport'
 import { getPublicKey } from 'ox/Secp256k1'
 import { toHex } from 'ox/Signature'
-import { pluginRegistry } from '../cli.js'
 import { chains, isTTY } from '../constants.js'
 import { styleText } from '../deps.js'
 import { MissingCLIArgsError, MissingKeyError } from '../errors.js'
+import { pluginRegistry } from '../plugin-runtime.js'
 import type { ChainName } from '../types.js'
 import { getExactAddress } from '../utils/address/getExactAddress.js'
 import { getEnsResolver } from '../utils/ens/get-resolver.js'
@@ -38,6 +38,8 @@ import {
   waitForTransaction,
 } from '../utils/tx.js'
 import { execTransactionWithRole } from '../utils/zodiac-roles/exec.js'
+
+type Hash = Hex
 
 export type EnsActionArgs = Partial<{
   chain: ChainName
@@ -79,7 +81,7 @@ export const ensAction = async ({
   const chain = chains[chainName]
 
   let txHash: string | undefined
-  let safeTxHash: string | undefined
+  let safeTxHash: Hash | undefined
 
   const transport = fromHttp(rpcUrl ?? chainToRpcUrl(chainName))
 
@@ -177,12 +179,13 @@ export const ensAction = async ({
         explorerUrl: chain.blockExplorers.default.url,
       })
     } else {
-      const { safeTxHash } = await prepareSafeTransactionData({
+      const preparedSafeTx = await prepareSafeTransactionData({
         txData,
         safeAddress: from,
         chainId: chain.id,
         provider,
       })
+      safeTxHash = preparedSafeTx.safeTxHash
 
       logger.info(`Signing a Safe transaction with a hash ${safeTxHash}`)
 

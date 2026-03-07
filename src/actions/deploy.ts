@@ -1,4 +1,3 @@
-import { pluginRegistry } from '../cli.js'
 import { isTTY, PROVIDERS } from '../constants.js'
 import { AsciiBar, styleText } from '../deps.js'
 import { MissingKeyError, NoProvidersError } from '../errors.js'
@@ -7,6 +6,7 @@ import {
   parseTokensFromEnv,
   tokensToProviderNames,
 } from '../index.js'
+import { pluginRegistry } from '../plugin-runtime.js'
 import { deployMessage, logger } from '../utils/logger.js'
 import { dnsLinkAction } from './dnslink.js'
 import { type EnsActionArgs, ensAction } from './ens.js'

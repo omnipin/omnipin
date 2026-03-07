@@ -1,7 +1,7 @@
-import { pluginRegistry } from '../cli.js'
 import { isTTY, PROVIDERS } from '../constants.js'
 import { AsciiBar } from '../deps.js'
 import { NoProvidersError } from '../errors.js'
+import { pluginRegistry } from '../plugin-runtime.js'
 import {
   findEnvVarProviderName,
   parseTokensFromEnv,

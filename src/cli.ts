@@ -13,12 +13,9 @@ import { statusAction } from './actions/status.js'
 import { zodiacAction } from './actions/zodiac.js'
 import { isTTY } from './constants.js'
 import { loadPlugin } from './plugin-loader.js'
-import { PluginRegistry } from './plugin-registry.js'
+import { pluginRegistry } from './plugin-runtime.js'
 
 const cli = new CLI({ name: 'omnipin', plugins: isTTY ? [colorPlugin] : [] })
-
-// Global plugin registry
-export const pluginRegistry = new PluginRegistry()
 
 const onchainOptions = [
   {
