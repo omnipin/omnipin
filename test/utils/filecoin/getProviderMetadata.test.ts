@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
-import { filecoinMainnet } from '../../../src/utils/filecoin/constants'
-import { getProviderMetadata } from '../../../src/utils/filecoin/getProviderMetadata'
+import { filecoinMainnet } from '../../../src/utils/filecoin/constants.js'
+import { getProviderMetadata } from '../../../src/utils/filecoin/getProviderMetadata.js'
 
 describe('getProviderMetadata', () => {
   it('should return a random provider ID from a list of approved SPs', async () => {

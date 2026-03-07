@@ -6,6 +6,7 @@ import { walk } from '../../src/utils/fs.js'
 import { packCAR } from '../../src/utils/ipfs.js'
 
 const { upload: uploadOnLighthouse } = PROVIDERS.LIGHTHOUSE_TOKEN
+const hasLighthouseToken = Boolean(Bun.env.OMNIPIN_LIGHTHOUSE_TOKEN)
 
 describe('Lighthouse', () => {
   describe('upload', () => {
@@ -31,24 +32,26 @@ describe('Lighthouse', () => {
   })
 
   describe('pin', () => {
-    it('should pin a CID on Lighthouse successfully', async () => {
-      const token = Bun.env.OMNIPIN_LIGHTHOUSE_TOKEN
+    ;(hasLighthouseToken ? it : it.skip)(
+      'should pin a CID on Lighthouse successfully',
+      async () => {
+        const token = Bun.env.OMNIPIN_LIGHTHOUSE_TOKEN!
 
-      if (!token) throw new Error('Missing Lighthouse token')
+        const cid =
+          'bafybeibvc3eg46ysr4k6vvuvpykarmk3eq2b3zdbdvaxahjwi47k3rnaom'
 
-      const cid = 'bafybeibvc3eg46ysr4k6vvuvpykarmk3eq2b3zdbdvaxahjwi47k3rnaom'
+        const result = await uploadOnLighthouse({
+          token,
+          cid,
+          name: 'Omnipin test',
+          first: false,
+          car: new Blob(),
+          size: 0,
+        })
 
-      const result = await uploadOnLighthouse({
-        token,
-        cid,
-        name: 'Omnipin test',
-        first: false,
-        car: new Blob(),
-        size: 0,
-      })
-
-      expect(result.cid).toEqual(cid)
-      expect(result.status).toEqual('queued')
-    })
+        expect(result.cid).toEqual(cid)
+        expect(result.status).toEqual('queued')
+      },
+    )
   })
 })

@@ -5,6 +5,10 @@ import { uploadOnStoracha } from '../../src/providers/ipfs/storacha.js'
 import { walk } from '../../src/utils/fs.js'
 import { packCAR } from '../../src/utils/ipfs.js'
 
+const hasStorachaEnv = Boolean(
+  process.env.OMNIPIN_STORACHA_PROOF && process.env.OMNIPIN_STORACHA_TOKEN,
+)
+
 describe('Storacha provider', () => {
   describe('upload', () => {
     it('should throw if STORACHA_PROOF is missing', () => {
@@ -13,15 +17,18 @@ describe('Storacha provider', () => {
         new MissingKeyError('STORACHA_PROOF'),
       )
     })
-    it(
+    ;(hasStorachaEnv ? it : it.skip)(
       'uploads a file',
       async () => {
+        const proof = process.env.OMNIPIN_STORACHA_PROOF!
+        const token = process.env.OMNIPIN_STORACHA_TOKEN!
+
         const [size, files] = await walk('./dist', false)
         const car = await packCAR(files, 'test.car')
 
         const { cid } = await uploadOnStoracha({
-          proof: process.env.OMNIPIN_STORACHA_PROOF!,
-          token: process.env.OMNIPIN_STORACHA_TOKEN!,
+          proof,
+          token,
           name: 'test',
           first: true,
           car: car.blob,

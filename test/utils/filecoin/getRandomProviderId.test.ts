@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
-import { filecoinMainnet } from '../../../src/utils/filecoin/constants'
-import { getRandomProviderId } from '../../../src/utils/filecoin/getRandomProviderId'
+import { filecoinMainnet } from '../../../src/utils/filecoin/constants.js'
+import { getRandomProviderId } from '../../../src/utils/filecoin/getRandomProviderId.js'
 
 describe('getRandomProviderId', () => {
   it('should return a random provider ID from a list of approved SPs', async () => {

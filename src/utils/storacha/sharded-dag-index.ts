@@ -64,7 +64,7 @@ export const archive = async (model: ShardedDAGIndex) => {
   }
 }
 
-class DigestMap<Key extends MultihashDigest, Value> implements Map<Key, Value> {
+class DigestMap<Key extends MultihashDigest, Value> {
   #data: Map<string, [Key, Value]>
 
   constructor(entries?: Array<[Key, Value]>) {
@@ -92,7 +92,7 @@ class DigestMap<Key extends MultihashDigest, Value> implements Map<Key, Value> {
     return this
   }
 
-  [Symbol.iterator]() {
+  [Symbol.iterator](): IterableIterator<[Key, Value]> {
     return this.entries()
   }
 
@@ -107,7 +107,10 @@ export class ShardedDAGIndex {
 
   constructor(content: UnknownLink) {
     this.#content = content
-    this.#shards = new DigestMap<Digest<number, number>, Position>()
+    this.#shards = new DigestMap<
+      Digest<number, number>,
+      DigestMap<SliceDigest, Position>
+    >()
   }
 
   get content() {
@@ -121,7 +124,7 @@ export class ShardedDAGIndex {
   setSlice(shard: Digest<number, number>, slice: SliceDigest, pos: Position) {
     let index = this.#shards.get(shard)
     if (!index) {
-      index = new DigestMap()
+      index = new DigestMap<SliceDigest, Position>()
       this.#shards.set(shard, index)
     }
     index.set(slice, pos)

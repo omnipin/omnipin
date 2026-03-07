@@ -26,6 +26,7 @@ export const uploadOnFilebase: UploadFunction<{ bucketName: string }> = async ({
       verbose,
       name,
       car,
+      size: car.size,
       token,
     })
 

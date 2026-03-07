@@ -23,6 +23,7 @@ interface Spinner {
    * The frames to display
    */
   frames: string[]
+  currentFrame?: number
 }
 
 export class AsciiBar {
@@ -91,7 +92,7 @@ export class AsciiBar {
   private lastUpdate = Date.now()
 
   private overallTime = 0
-  private stream = process.stdout
+  private stream: NodeJS.WriteStream = process.stdout
   private spinnerTimeout
   private enableSpinner = false
   private currentSpinnerSymbol = ''
@@ -99,12 +100,23 @@ export class AsciiBar {
 
   constructor(options?: ProgressbarOptions) {
     if (options) {
-      //set other options
-      for (const opt in options) {
-        if (this[opt as keyof this] !== undefined) {
-          this[opt] = options[opt as keyof ProgressbarOptions]
-        }
-      }
+      if (options.formatString !== undefined)
+        this.formatString = options.formatString
+      if (options.total !== undefined) this.total = options.total
+      if (options.startDate !== undefined) this.startDate = options.startDate
+      if (options.stream !== undefined) this.stream = options.stream
+      if (options.width !== undefined) this.width = options.width
+      if (options.doneSymbol !== undefined) this.doneSymbol = options.doneSymbol
+      if (options.undoneSymbol !== undefined)
+        this.undoneSymbol = options.undoneSymbol
+      if (options.print !== undefined) this.print = options.print
+      if (options.start !== undefined) this.current = options.start
+      if (options.enableSpinner !== undefined)
+        this.enableSpinner = options.enableSpinner
+      if (options.lastUpdateForTiming !== undefined)
+        this.lastUpdateForTiming = options.lastUpdateForTiming
+      if (options.autoStop !== undefined) this.autoStop = options.autoStop
+      if (options.hideCursor !== undefined) this.hideCursor = options.hideCursor
 
       //use simple spinner on windows
       if (process.platform === 'win32') {
@@ -300,7 +312,7 @@ interface ProgressbarOptions {
    * Stream to print the progressbar
    * @default process.stdout
    */
-  stream?: NodeJS.ReadWriteStream
+  stream?: NodeJS.WriteStream
 
   /**
    * Width of the progress bar (only the #bar part)
@@ -367,6 +379,7 @@ interface ProgressbarOptions {
 const colorCodes = {
   Reset: '\x1b[0m',
   Dim: '\x1b[2m',
+  Bright: '\x1b[1m',
   Blink: '\x1b[5m',
   Reverse: '\x1b[7m',
   Hidden: '\x1b[8m',
