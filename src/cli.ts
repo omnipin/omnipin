@@ -20,15 +20,6 @@ const cli = new CLI({ name: 'omnipin', plugins: isTTY ? [colorPlugin] : [] })
 // Global plugin registry
 export const pluginRegistry = new PluginRegistry()
 
-const _globalCliOptions = [
-  {
-    name: 'plugins',
-    description:
-      'Comma-separated list of plugins to load (npm packages or local files)',
-    type: 'string',
-  },
-] as const
-
 const onchainOptions = [
   {
     name: 'chain',
