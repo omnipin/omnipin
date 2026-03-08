@@ -238,13 +238,7 @@ export async function add(
   return { site }
 }
 
-/** Returns the ability used by an invocation. */
-export const ability = SpaceBlobCapabilities.add.can
-
-/**
- * Returns required input to the invocation.
- */
-export const input = (digest: MultihashDigest, size: number) => ({
+const input = (digest: MultihashDigest, size: number) => ({
   blob: {
     digest: digest.bytes,
     size,

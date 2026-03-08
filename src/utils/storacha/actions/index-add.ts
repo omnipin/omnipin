@@ -39,5 +39,3 @@ export async function add(
   }
   return result.out.ok
 }
-/** Returns the ability used by an invocation. */
-export const ability = IndexCapabilities.add.can

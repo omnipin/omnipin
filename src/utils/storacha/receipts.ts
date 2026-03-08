@@ -59,7 +59,7 @@ export async function poll<C extends Capability>(taskCid: UCANLink<[C]>) {
 /**
  * Get a receipt for an executed task by its CID.
  */
-export async function get<C extends Capability>(taskCid: UCANLink<[C]>) {
+async function get<C extends Capability>(taskCid: UCANLink<[C]>) {
   const endpoint = receiptsEndpoint
 
   // Fetch receipt from endpoint
