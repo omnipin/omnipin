@@ -2,6 +2,7 @@ import { decodeResult, encodeData } from 'ox/AbiFunction'
 import { type Address, checksum } from 'ox/Address'
 import { toHex } from 'ox/Bytes'
 import type { Provider } from 'ox/Provider'
+import { SIMULATION_GAS_LIMIT } from '../tx.js'
 import { packetToBytes } from './utils.js'
 
 export const abi = {
@@ -47,6 +48,7 @@ export const getEnsResolver = async ({
       {
         data: encodeData(abi, [toHex(packetToBytes(name))]),
         to: '0xeEeEEEeE14D718C2B47D9923Deab1335E144EeEe',
+        gas: SIMULATION_GAS_LIMIT,
       },
       'latest',
     ],

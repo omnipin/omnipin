@@ -7,8 +7,8 @@ import * as TxEnvelopeEip1559 from 'ox/TxEnvelopeEip1559'
 import { setTimeout } from '../deps.js'
 import { logger } from './logger.js'
 
-// Gas ceiling for RPC simulations (30M) - needed for Helios compatibility
-export const SIMULATION_GAS_LIMIT = 30_000_000n
+// Helios enforces the EIP-7825 tx gas cap (2^24 = 16,777,216) for eth_call validation.
+export const SIMULATION_GAS_LIMIT = fromNumber(16_777_216)
 
 export const estimateGas = async ({
   provider,
