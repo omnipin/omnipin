@@ -50,29 +50,27 @@ export class Agent {
       string,
       API.Delegation<API.Capabilities>
     > = new Map()
-
-    const _caps = new Set(caps)
-    const delegations: API.Delegation[] = []
+    const shouldFilterByCaps = caps.length > 0
 
     for (const [, { delegation }] of this.#data.delegations) {
-      if (!isExpired(delegation) && !isTooEarly(delegation)) {
-        // check if we need to filter for caps
-        if (Array.isArray(caps) && caps.length > 0) {
-          for (const cap of _caps) {
-            if (canDelegateCapability(delegation, cap as Capability)) {
-              delegations.push(delegation)
-            }
-          }
-        } else {
-          delegations.push(delegation)
-        }
+      if (isExpired(delegation) || isTooEarly(delegation)) {
+        continue
       }
-    }
 
-    for (const delegation of delegations) {
-      if (delegation.audience.did() === this.issuer.did()) {
-        authorizations.set(delegation.cid.toString(), delegation)
+      if (delegation.audience.did() !== this.issuer.did()) {
+        continue
       }
+
+      if (
+        shouldFilterByCaps &&
+        !caps.some((cap) =>
+          canDelegateCapability(delegation, cap as Capability),
+        )
+      ) {
+        continue
+      }
+
+      authorizations.set(delegation.cid.toString(), delegation)
     }
 
     return [...authorizations.values()]

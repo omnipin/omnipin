@@ -17,6 +17,9 @@ const abilities = [
   'filecoin/offer',
 ] as const
 
+const getProofRequests = <T extends `did:key:${string}`>(withResource: T) =>
+  abilities.map((can) => ({ can, with: withResource }))
+
 export const uploadOnStoracha: UploadFunction<{ proof: string }> = async ({
   token,
   car,
@@ -29,13 +32,12 @@ export const uploadOnStoracha: UploadFunction<{ proof: string }> = async ({
   if (!space) throw new Error('No space found')
 
   try {
+    const spaceDid = space.did()
     const cid = await uploadCAR(
       {
         issuer: agent.issuer,
-        proofs: agent.proofs(
-          abilities.map((can) => ({ can, with: space.did() })),
-        ),
-        with: space.did(),
+        proofs: agent.proofs(getProofRequests(spaceDid)),
+        with: spaceDid,
       },
       car,
     )
