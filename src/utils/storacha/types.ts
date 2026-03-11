@@ -46,51 +46,6 @@ import type {
   Signer,
 } from '@ucanto/interface'
 import type { CAR } from '@ucanto/transport'
-import type { Version } from 'multiformats'
-
-/**
- * Agent metadata used to describe an agent ("audience")
- * with a more human and UI friendly data
- */
-export interface AgentMeta {
-  name: string
-  description?: string
-  url?: URL
-  image?: URL
-  type: 'device' | 'app' | 'service'
-}
-
-/**
- * Delegation metadata
- */
-export interface DelegationMeta {
-  /**
-   * Audience metadata to be easier to build UIs with human readable data
-   * Normally used with delegations issued to third parties or other devices.
-   */
-  audience?: AgentMeta
-}
-
-export interface Driver<T> {
-  /**
-   * Persist data to the driver's backend
-   */
-  save: (data: T) => Promise<void>
-  /**
-   * Loads data from the driver's backend
-   */
-  load: () => Promise<T | undefined>
-}
-
-/**
- * Space metadata
- */
-export interface SpaceMeta {
-  /**
-   * Human readable name for the space
-   */
-  name: string
-}
 
 export type ResourceQuery = Resource | RegExp
 
@@ -167,13 +122,4 @@ export interface Service {
     report: ServiceMethod<UsageReport, UsageReportSuccess, UsageReportFailure>
   }
 }
-export interface BlobAddOk {
-  site: Delegation<[AssertLocation]>
-}
-
-/**
- * Any IPLD link.
- */
-export type AnyLink = Link<unknown, number, number, Version>
-
 export type CARLink = Link<unknown, typeof CAR.codec.code>

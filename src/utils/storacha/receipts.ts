@@ -2,63 +2,17 @@ import { isDelegation } from '@ucanto/core/delegation'
 import * as Receipt from '@ucanto/core/receipt'
 import type { Block, Capability, UCANLink } from '@ucanto/interface'
 import * as CAR from '@ucanto/transport/car'
-import type { UnknownLink } from 'multiformats/link'
-import { retry } from '../retry.js'
-import { REQUEST_RETRIES, receiptsEndpoint } from './constants.js'
+import { receiptsEndpoint } from './constants.js'
 
-class ReceiptNotFound extends Error {
-  name = 'ReceiptNotFound' as const
-  taskCid: UnknownLink
-
-  constructor(taskCid: UnknownLink) {
-    super()
-    this.taskCid = taskCid
-  }
-
-  get reason() {
-    return `receipt not found for task ${this.taskCid} in the indexed workflow`
-  }
-}
-
-class ReceiptMissing extends Error {
-  name = 'ReceiptMissing' as const
-  taskCid: UnknownLink
-
-  constructor(taskCid: UnknownLink) {
-    super()
-    this.taskCid = taskCid
-  }
-
-  get reason() {
-    return `receipt missing for task ${this.taskCid}`
-  }
-}
+const WAIT_MS = 3000
 
 export async function poll<C extends Capability>(taskCid: UCANLink<[C]>) {
-  return await retry(
-    async () => {
-      const res = await get(taskCid)
-      if (res.error) {
-        if (res.error.name === 'ReceiptNotFound') {
-          throw res.error
-        } else {
-          throw new DOMException(
-            `failed to fetch receipt for task: ${taskCid}`,
-            'AbortError',
-          )
-        }
-      }
-      return res.ok
-    },
-    {
-      onFailedAttempt: console.warn,
-      retries: REQUEST_RETRIES,
-    },
-  )
+  await new Promise((r) => setTimeout(r, WAIT_MS))
+  const res = await get(taskCid)
+  if (res.error) throw res.error
+  return res.ok
 }
-/**
- * Get a receipt for an executed task by its CID.
- */
+
 export async function get<C extends Capability>(taskCid: UCANLink<[C]>) {
   const endpoint = receiptsEndpoint
 
@@ -68,7 +22,7 @@ export async function get<C extends Capability>(taskCid: UCANLink<[C]>) {
   /* c8 ignore start */
   if (workflowResponse.status === 404) {
     return {
-      error: new ReceiptNotFound(taskCid),
+      error: new DOMException('Receipt not found', 'NotFoundError'),
     }
   }
   /* c8 ignore stop */
@@ -107,7 +61,10 @@ export async function get<C extends Capability>(taskCid: UCANLink<[C]>) {
       }
     }
     return {
-      error: new ReceiptMissing(taskCid),
+      error: new DOMException(
+        `failed to fetch receipt for task: ${taskCid}`,
+        'AbortError',
+      ),
     }
   }
   return {

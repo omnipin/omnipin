@@ -74,14 +74,6 @@ class DigestMap<Key extends MultihashDigest, Value> {
     }
   }
 
-  get [Symbol.toStringTag]() {
-    return 'DigestMap'
-  }
-
-  clear() {
-    this.#data.clear()
-  }
-
   get(key: Key): Value | undefined {
     const data = this.#data.get(toBase58String(key))
     if (data) return data[1]
