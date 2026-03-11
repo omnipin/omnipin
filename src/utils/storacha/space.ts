@@ -6,17 +6,12 @@ type Delegation = { facts: Fact[]; capabilities: Capabilities }
 type SharedSpaceModel = {
   id: `did:key:${string}`
   delegation: Delegation
-  meta: { name?: string }
 }
 
 export class SharedSpace {
   model: SharedSpaceModel
   constructor(model: SharedSpaceModel) {
     this.model = model
-  }
-
-  get meta() {
-    return this.model.meta
   }
 
   did() {
@@ -36,11 +31,8 @@ export const fromDelegation = ({
     )
   }
 
-  const meta: { name?: string } = facts[0]?.space ?? {}
-
   return new SharedSpace({
     id: result.ok,
     delegation: { facts, capabilities },
-    meta,
   })
 }
