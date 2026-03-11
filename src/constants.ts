@@ -2,6 +2,7 @@ import {
   statusOn4everland,
   uploadOn4everland,
 } from './providers/ipfs/4everland.js'
+import { pinOnAioz } from './providers/ipfs/aioz.js'
 import { pinToAleph } from './providers/ipfs/aleph.js'
 import {
   pinOnBlockfrost,
@@ -122,6 +123,12 @@ export const PROVIDERS: Record<
     name: 'Filecoin',
     upload: uploadToFilecoin,
     supported: 'both',
+    protocol: 'ipfs',
+  },
+  AIOZ_TOKEN: {
+    name: 'AIOZ',
+    upload: pinOnAioz,
+    supported: 'pin',
     protocol: 'ipfs',
   },
 }
