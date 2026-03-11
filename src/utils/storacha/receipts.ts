@@ -14,10 +14,6 @@ class ReceiptNotFound extends Error {
     super()
     this.taskCid = taskCid
   }
-
-  get reason() {
-    return `receipt not found for task ${this.taskCid} in the indexed workflow`
-  }
 }
 
 class ReceiptMissing extends Error {
@@ -27,10 +23,6 @@ class ReceiptMissing extends Error {
   constructor(taskCid: UnknownLink) {
     super()
     this.taskCid = taskCid
-  }
-
-  get reason() {
-    return `receipt missing for task ${this.taskCid}`
   }
 }
 
