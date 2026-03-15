@@ -141,17 +141,26 @@ export const waitForTransaction = async (provider: Provider, hash: Hex) => {
   const maxAttempts = 10
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const rawReceipt = await provider.request({
-      method: 'eth_getTransactionReceipt',
-      params: [hash],
-    })
+    try {
+      const rawReceipt = await provider.request({
+        method: 'eth_getTransactionReceipt',
+        params: [hash],
+      })
 
-    if (rawReceipt) {
-      if (rawReceipt.status === '0x0')
-        throw new Error(`Transaction ${hash} reverted`)
+      if (rawReceipt) {
+        if (rawReceipt.status === '0x0')
+          throw new Error(`Transaction ${hash} reverted`)
 
-      const chainId = await provider.request({ method: 'eth_chainId' })
-      return fromRpc({ ...rawReceipt, chainId })
+        const chainId = await provider.request({ method: 'eth_chainId' })
+        return fromRpc({ ...rawReceipt, chainId })
+      }
+    } catch (error) {
+      const err = error as { code?: number; message?: string }
+      if (err.code === -32603 || err.message?.includes('receipt not found')) {
+        // Receipt not found yet, continue to retry
+      } else {
+        throw error
+      }
     }
 
     // exponential backoff (1s → 2s → 4s → ... → max 30s)
