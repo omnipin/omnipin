@@ -12,7 +12,7 @@ export async function decode(car: Blob) {
   for await (const block of iterator) {
     blocks.push(block)
   }
-  return { blocks, roots }
+  return { blocks, roots: roots as AnyLink[] }
 }
 
 export const code = 0x0202
