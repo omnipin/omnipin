@@ -17,12 +17,7 @@ import type { InvocationConfig, Position, SliceDigest } from './types.js'
  */
 export const uploadCAR = async (conf: InvocationConfig, car: Blob) => {
   const { blocks, roots } = await CAR.decode(car)
-  const root = roots[0] as unknown as import('multiformats/link').Link<
-    unknown,
-    number,
-    number,
-    1
-  >
+  const root = roots[0]
 
   const slices: Map<SliceDigest, Position> = new Map()
   let currentLength = 0
