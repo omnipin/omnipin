@@ -57,7 +57,7 @@ export const multicall = async ({
       {
         data: encodeData(abi, [calls]),
         to: chain.contracts.multicall3.address,
-        gas: fromNumber(SIMULATION_GAS_LIMIT),
+        gas: SIMULATION_GAS_LIMIT,
       },
       'latest',
     ],
