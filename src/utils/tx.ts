@@ -32,7 +32,7 @@ export const estimateGas = async ({
           to,
           data,
           value,
-          gas: fromNumber(SIMULATION_GAS_LIMIT),
+          gas: SIMULATION_GAS_LIMIT,
         },
         'latest',
       ],
@@ -58,7 +58,7 @@ export const simulateTransaction = async ({
         to,
         data,
         from,
-        gas: fromNumber(SIMULATION_GAS_LIMIT),
+        gas: SIMULATION_GAS_LIMIT,
       },
       'latest',
     ],
@@ -80,11 +80,6 @@ export const sendTransaction = async ({
   data: Hex
   from: Address
 }) => {
-  const feeHistory = await provider.request({
-    method: 'eth_feeHistory',
-    params: ['0x5', 'latest', [10, 50, 90]],
-  })
-
   const estimatedGas = await estimateGas({ provider, from, to, data })
 
   logger.info(`Estimated gas: ${estimatedGas}`)
@@ -96,11 +91,24 @@ export const sendTransaction = async ({
     }),
   )
 
-  // Extract base fee and priority fee from feeHistory as needed
-  const baseFeePerGas = BigInt(feeHistory.baseFeePerGas.slice(-1)[0])
-  if (!feeHistory.reward) throw new Error('No reward in feeHistory')
-  const priorityFeePerGas = BigInt(feeHistory.reward.slice(-1)[0][1]) // 50th percentile
-  const maxPriorityFeePerGas = priorityFeePerGas
+  // Get current base fee from latest block
+  const block = await provider.request({
+    method: 'eth_getBlockByNumber',
+    params: ['latest', false],
+  })
+
+  if (!block) throw new Error('Failed to fetch latest block')
+
+  const baseFeePerGas = toBigInt(block.baseFeePerGas || '0x0')
+
+  // Get suggested priority fee from RPC
+  const maxPriorityFeePerGas = toBigInt(
+    await provider.request({
+      method: 'eth_maxPriorityFeePerGas',
+    }),
+  )
+
+  // Set max fee as 2x base fee + priority fee (standard practice)
   const maxFeePerGas = baseFeePerGas * 2n + maxPriorityFeePerGas
 
   const envelope = TxEnvelopeEip1559.from({
@@ -133,17 +141,26 @@ export const waitForTransaction = async (provider: Provider, hash: Hex) => {
   const maxAttempts = 10
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const rawReceipt = await provider.request({
-      method: 'eth_getTransactionReceipt',
-      params: [hash],
-    })
+    try {
+      const rawReceipt = await provider.request({
+        method: 'eth_getTransactionReceipt',
+        params: [hash],
+      })
 
-    if (rawReceipt) {
-      if (rawReceipt.status === '0x0')
-        throw new Error(`Transaction ${hash} reverted`)
+      if (rawReceipt) {
+        if (rawReceipt.status === '0x0')
+          throw new Error(`Transaction ${hash} reverted`)
 
-      const chainId = await provider.request({ method: 'eth_chainId' })
-      return fromRpc({ ...rawReceipt, chainId })
+        const chainId = await provider.request({ method: 'eth_chainId' })
+        return fromRpc({ ...rawReceipt, chainId })
+      }
+    } catch (error) {
+      const err = error as { code?: number; message?: string }
+      if (err.code === -32603 || err.message?.includes('receipt not found')) {
+        // Receipt not found yet, continue to retry
+      } else {
+        throw error
+      }
     }
 
     // exponential backoff (1s → 2s → 4s → ... → max 30s)

@@ -1,10 +1,9 @@
 import type * as CarDecoder from '@ipld/car/decoder'
 import { CarWriter } from '@ipld/car/writer'
-import type { CID } from 'multiformats/cid'
+import type { CID, UnknownLink } from 'multiformats/cid'
 import * as varint from 'varint'
 import { fromIterable } from '../../ipfs/car-block-iterator.js'
 import * as dagCBOR from '../cbor.js'
-import type { AnyLink } from '../types.js'
 
 export async function decode(car: Blob) {
   const { iterator, roots } = await fromIterable(car.stream())
@@ -19,7 +18,7 @@ export const code = 0x0202
 /** Byte length of a CBOR encoded CAR header with zero roots. */
 const NO_ROOTS_HEADER_LENGTH = 18
 
-export function headerEncodingLength(root?: AnyLink) {
+export function headerEncodingLength(root?: UnknownLink) {
   if (!root) return NO_ROOTS_HEADER_LENGTH
   const headerLength = dagCBOR.encode({ version: 1, roots: [root] }).length
 
@@ -35,7 +34,7 @@ export function blockHeaderEncodingLength(block: CarDecoder.Block) {
 
 export async function encode(
   blocks: Iterable<CarDecoder.Block> | AsyncIterable<CarDecoder.Block>,
-  root?: AnyLink,
+  root?: UnknownLink,
 ) {
   const { writer, out } = CarWriter.create(root as CID)
   let error: Error | undefined
