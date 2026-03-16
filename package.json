@@ -22,8 +22,6 @@
     "@ucanto/transport": "^9.2.1",
     "@web3-storage/data-segment": "^5.3.0",
     "cborg": "^4.5.8",
-    "esbuild": "^0.27.4",
-    "ipfs-unixfs": "^12.0.0",
     "ipfs-unixfs-importer": "^16.1.4",
     "multiformats": "13.4.2",
     "nanotar": "^0.3.0",
