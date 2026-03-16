@@ -123,4 +123,3 @@ export interface Service {
   }
 }
 export type CARLink = Link<unknown, typeof CAR.codec.code>
-export type AnyLink = Link
