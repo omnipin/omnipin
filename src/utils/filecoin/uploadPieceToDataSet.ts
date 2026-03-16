@@ -146,6 +146,28 @@ export const uploadPieceToDataSet = async ({
       if (errorHex.includes('0x57b1cc25')) {
         throw new Error('Insufficient funds')
       }
+      if (errorHex.includes('0x211a40c0')) {
+        const cause = decode(
+          {
+            type: 'error',
+            inputs: [
+              {
+                name: 'dataSetId',
+                internalType: 'uint256',
+                type: 'uint256',
+              },
+            ],
+            name: 'DataSetPaymentAlreadyTerminated',
+          } as const,
+          errorHex,
+        )
+        throw new Error(
+          `Dataset payment already terminated. Create a new dataset to continue.`,
+          {
+            cause,
+          },
+        )
+      }
       throw new Error('SP execution reverted during dataset creation', {
         cause: text,
       })

@@ -13,6 +13,7 @@ import {
 } from '../../utils/filecoin/constants.js'
 import { createDataSet } from '../../utils/filecoin/createDataSet.js'
 import { getClientDataSets } from '../../utils/filecoin/getClientDatasets.js'
+import { getDataSet } from '../../utils/filecoin/getDataSet.js'
 import { getProviderIdByAddress } from '../../utils/filecoin/getProviderIdByAddress.js'
 import { getProviderMetadata } from '../../utils/filecoin/getProviderMetadata.js'
 import { getProviderPayee } from '../../utils/filecoin/getProviderPayee.js'
@@ -107,8 +108,25 @@ export const uploadToFilecoin: UploadFunction<{
     (set) => set.providerId === providerId,
   )
 
-  if (providerDataSets.length === 0) {
-    if (verbose) logger.info('No dataset found. Creating.')
+  let shouldCreateNewDataset = providerDataSets.length === 0
+
+  if (!shouldCreateNewDataset) {
+    const existingDataSet = await getDataSet({
+      dataSetId: providerDataSets[0].dataSetId,
+      chain,
+    })
+    if (existingDataSet.pdpEndEpoch !== 0n) {
+      logger.warn(
+        `Dataset ${providerDataSets[0].dataSetId} payment has ended. Creating a new dataset.`,
+      )
+      shouldCreateNewDataset = true
+    }
+  }
+
+  if (shouldCreateNewDataset) {
+    if (verbose && providerDataSets.length > 0)
+      logger.info('No valid dataset found. Creating.')
+    else if (verbose) logger.info('No dataset found. Creating.')
     const {
       clientDataSetId: clientId,
       hash,
@@ -128,9 +146,9 @@ export const uploadToFilecoin: UploadFunction<{
     logger.info(`Pending transaction: ${chain.blockExplorer}/tx/${hash}`)
     await waitForTransaction(filProvider[chainId], hash)
 
-    await waitForDatasetReady(statusUrl)
-
-    logger.success('Data set registered')
+    const { dataSetId: spDataSetId } = await waitForDatasetReady(statusUrl)
+    datasetId = BigInt(spDataSetId)
+    clientDataSetId = clientId
     logger.info('Waiting for 5 seconds to ensure everything is in sync')
     await setTimeout(5000)
   } else {
