@@ -16,6 +16,7 @@ import { getClientDataSets } from '../../utils/filecoin/getClientDatasets.js'
 import { getProviderIdByAddress } from '../../utils/filecoin/getProviderIdByAddress.js'
 import { getProviderMetadata } from '../../utils/filecoin/getProviderMetadata.js'
 import { getProviderPayee } from '../../utils/filecoin/getProviderPayee.js'
+import { getRail } from '../../utils/filecoin/getRail.js'
 import { getRandomProviderId } from '../../utils/filecoin/getRandomProviderId.js'
 import { getUSDfcBalance } from '../../utils/filecoin/getUSDfcBalance.js'
 import { getServicePrice } from '../../utils/filecoin/pay/getServicePrice.js'
@@ -91,6 +92,31 @@ export const uploadToFilecoin: UploadFunction<{
     providerAddress = address
   }
 
+  const validateProviderURL = async (
+    url: string,
+    id: bigint,
+    attempt = 0,
+  ): Promise<{ url: string; id: bigint }> => {
+    try {
+      await fetch(url, { method: 'HEAD' })
+      return { url, id }
+    } catch (_e) {
+      if (attempt >= 5) throw new Error(`No reachable SP found`)
+      logger.warn(`SP URL ${url} not reachable, trying another provider...`)
+      const newProviderId = await getRandomProviderId({ chain })
+      const { serviceURL, address } = await getProviderMetadata({
+        chain,
+        providerId: newProviderId,
+      })
+      providerAddress = address
+      return validateProviderURL(serviceURL, newProviderId, attempt + 1)
+    }
+  }
+
+  const validated = await validateProviderURL(providerURL, providerId)
+  providerURL = validated.url
+  providerId = validated.id
+
   const payee = await getProviderPayee({ id: providerId, chain })
 
   if (verbose) logger.info(`Filecoin SP Payee: ${payee}`)
@@ -105,8 +131,31 @@ export const uploadToFilecoin: UploadFunction<{
     (set) => set.providerId === providerId,
   )
 
-  if (providerDataSets.length === 0) {
-    if (verbose) logger.info('No dataset found. Creating.')
+  const findActiveDataset = async () => {
+    for (const ds of providerDataSets) {
+      try {
+        const rail = await getRail({ railId: ds.pdpRailId, chain })
+        if (rail.endEpoch === 0n) {
+          return ds
+        }
+        logger.info(
+          `Dataset ${ds.dataSetId} is terminated (endEpoch: ${rail.endEpoch}), checking next...`,
+        )
+      } catch {
+        // If we can't fetch rail info, we can't verify if it's active or not
+        // Don't return it - just continue to the next dataset
+        logger.warn(
+          `Could not fetch rail info for dataset ${ds.dataSetId}, skipping`,
+        )
+      }
+    }
+    return null
+  }
+
+  const activeDataset = await findActiveDataset()
+
+  if (!activeDataset) {
+    if (verbose) logger.info('No active dataset found. Creating new.')
     const {
       clientDataSetId: clientId,
       hash,
@@ -129,11 +178,24 @@ export const uploadToFilecoin: UploadFunction<{
     await waitForDatasetReady(statusUrl)
 
     logger.success('Data set registered')
+
+    const newDataSets = await getClientDataSets({ address, chain })
+    const newDataset = newDataSets.find((ds) => ds.clientDataSetId === clientId)
+    if (!newDataset) {
+      throw new DeployError(
+        providerName,
+        'Failed to find newly created dataset',
+      )
+    }
+    datasetId = newDataset.dataSetId
+    clientDataSetId = clientId
+
+    logger.info(`SP Dataset ID: ${datasetId}`)
     logger.info('Waiting for 5 seconds to ensure everything is in sync')
     await setTimeout(5000)
   } else {
-    logger.info(`Using existing dataset: ${providerDataSets[0].dataSetId}`)
-    datasetId = providerDataSets[0].dataSetId
+    logger.info(`Using active dataset: ${activeDataset.dataSetId}`)
+    datasetId = activeDataset.dataSetId
   }
 
   // Buffer CAR bytes once and derive Piece CID
@@ -219,16 +281,83 @@ export const uploadToFilecoin: UploadFunction<{
   }
   logger.success('Piece found')
 
-  const { hash, statusUrl } = await uploadPieceToDataSet({
-    pieceCid: calculatedCid,
-    providerURL,
-    verbose,
-    datasetId,
-    privateKey,
-    nonce: BigInt(randomInt(10 ** 8)),
-    clientDataSetId,
-    chain,
-  })
+  const tryUploadPiece = async (): Promise<{
+    hash: Hex
+    statusUrl: string
+  }> => {
+    try {
+      return await uploadPieceToDataSet({
+        pieceCid: calculatedCid,
+        providerURL,
+        verbose,
+        datasetId,
+        privateKey,
+        nonce: BigInt(randomInt(10 ** 8)),
+        clientDataSetId,
+        chain,
+      })
+    } catch (e) {
+      const error = e as Error
+      const cause = error.cause as string | undefined
+
+      if (
+        cause?.includes('0x211a40c0') ||
+        error.message.includes('DataSetPaymentAlreadyTerminated')
+      ) {
+        logger.warn('Dataset payment terminated. Creating new dataset...')
+        const {
+          clientDataSetId: newClientId,
+          hash,
+          statusUrl,
+        } = await createDataSet({
+          privateKey,
+          payee,
+          providerURL,
+          address,
+          chain,
+          perMonth,
+        })
+
+        logger.info(`Pending data set creation: ${statusUrl}`)
+        logger.info(`Pending transaction: ${chain.blockExplorer}/tx/${hash}`)
+        await waitForTransaction(filProvider[chainId], hash)
+
+        await waitForDatasetReady(statusUrl)
+
+        logger.success('New data set registered')
+
+        const newDataSets = await getClientDataSets({ address, chain })
+        const newDataset = newDataSets.find(
+          (ds) => ds.clientDataSetId === newClientId,
+        )
+        if (!newDataset) {
+          throw new DeployError(
+            providerName,
+            'Failed to find newly created dataset',
+          )
+        }
+        const newDatasetId = newDataset.dataSetId
+        logger.info(`SP Dataset ID: ${newDatasetId}`)
+        logger.info('Waiting for 5 seconds to ensure everything is in sync')
+        await setTimeout(5000)
+
+        return uploadPieceToDataSet({
+          pieceCid: calculatedCid,
+          providerURL,
+          verbose,
+          datasetId: newDatasetId, // SP's dataset ID
+          privateKey,
+          nonce: BigInt(randomInt(10 ** 8)),
+          clientDataSetId: newClientId, // Client's dataset ID
+          chain,
+        })
+      }
+
+      throw e
+    }
+  }
+
+  const { hash, statusUrl } = await tryUploadPiece()
   logger.info(`Pending piece upload: ${statusUrl}`)
   logger.info(`Pending transaction: ${chain.blockExplorer}/tx/${hash}`)
   await waitForTransaction(filProvider[chainId], hash)
