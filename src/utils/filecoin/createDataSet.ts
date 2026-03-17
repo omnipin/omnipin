@@ -13,6 +13,7 @@ import { waitForTransaction } from '../tx.js'
 import { type FilecoinChain, filProvider } from './constants.js'
 import { depositAndApproveOperator } from './pay/depositAndApproveOperator.js'
 import { getAccountInfo } from './pay/getAccountInfo.js'
+import { getErc20WithPermitData } from './pay/getErc20WithPermitData.js'
 
 const abi = ['address', 'uint256', 'string[]', 'string[]', 'bytes'] as const
 
@@ -20,8 +21,6 @@ const metadata = [{ key: 'withIPFSIndexing', value: '' }] as const
 
 const keys = metadata.map((item) => item.key)
 const values = metadata.map((item) => item.value)
-
-const priceBuffer = Value.from('0.5', 18)
 
 /**
  * Create a data set on an SP, and deposit to Filecoin Pay if balanace is 0
@@ -45,16 +44,35 @@ export const createDataSet = async ({
   perMonth: bigint
 }) => {
   const provider = filProvider[chain.id]
-  const [funds] = await getAccountInfo({ address: payer, chain })
+  const [accountInfo, lockupCurrent] = await getAccountInfo({
+    address: payer,
+    chain,
+  })
+  const [walletBalance] = await getErc20WithPermitData({
+    address: payer,
+    chain,
+  })
+
+  const funds = accountInfo
 
   logger.info(`Deposited funds: ${Value.format(funds, 18)}`)
+  logger.info(`Lockup current: ${Value.format(lockupCurrent, 18)}`)
 
-  if (funds <= perMonth + priceBuffer) {
-    const depositAmount = perMonth - funds + priceBuffer // $0.5 buffer to avoid "Insufficient funds" errors
+  const minLockup = perMonth
+  const needed = minLockup + perMonth
+  if (funds <= minLockup) {
+    const depositAmount = needed - funds
     logger.warn('Not enough USDfc deposited to Filecoin Pay')
     logger.info(
       `Depositing ${Value.format(depositAmount, 18)} USDfc to Filecoin Pay`,
     )
+
+    if (walletBalance < depositAmount) {
+      throw new DeployError(
+        'Filecoin',
+        `Insufficient USDfc in wallet. Have: ${Value.format(walletBalance, 18)}, need: ${Value.format(depositAmount, 18)}`,
+      )
+    }
 
     const hash = await depositAndApproveOperator({
       privateKey,
