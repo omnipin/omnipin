@@ -43,8 +43,6 @@ export const uploadToFilecoin: UploadFunction<{
   filecoinChain = 'mainnet',
   size,
 }) => {
-  if (!providerURL && providerAddress)
-    throw new MissingKeyError('FILECOIN_SP_URL')
   if (!providerAddress && providerURL)
     throw new MissingKeyError('FILECOIN_SP_ADDRESS')
 
