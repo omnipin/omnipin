@@ -1,6 +1,6 @@
 import { isTTY, PROVIDERS } from '../constants.js'
 import { AsciiBar, styleText } from '../deps.js'
-import { MissingKeyError, NoProvidersError } from '../errors.js'
+import { NoProvidersError } from '../errors.js'
 import {
   findEnvVarProviderName,
   parseTokensFromEnv,
@@ -149,9 +149,6 @@ export const deployAction = async ({
       const providerURL = apiTokens.get('FILECOIN_SP_URL'),
         providerAddress = apiTokens.get('FILECOIN_SP_ADDRESS'),
         pieceCid = apiTokens.get('FILECOIN_PIECE_CID')
-
-      if (filecoinChain && !providerURL)
-        throw new MissingKeyError('FILECOIN_SP_URL')
 
       try {
         await provider.upload({
