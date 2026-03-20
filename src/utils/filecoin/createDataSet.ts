@@ -6,7 +6,7 @@ import { sign } from 'ox/Secp256k1'
 import { toHex } from 'ox/Signature'
 import { getSignPayload } from 'ox/TypedData'
 import * as Value from 'ox/Value'
-import { randomInt } from '../../deps.js'
+import { randomInt, setTimeout } from '../../deps.js'
 import { DeployError } from '../../errors.js'
 import { logger } from '../logger.js'
 import { waitForTransaction } from '../tx.js'
@@ -24,10 +24,13 @@ const values = metadata.map((item) => item.value)
 const priceBuffer = Value.from('0.5', 18)
 
 /**
- * Create a data set on an SP, and deposit to Filecoin Pay if balanace is 0
- * @returns client data set id
+ * Create a data set on an SP and add the first piece atomically,
+ * depositing to Filecoin Pay if balance is insufficient.
+ * @returns client data set id, server dataset id, hash, and status URL
  */
 export const createDataSet = async ({
+  pieceCid,
+  subPieceCids,
   providerURL,
   privateKey,
   payee,
@@ -36,6 +39,8 @@ export const createDataSet = async ({
   chain,
   perMonth,
 }: {
+  pieceCid: string
+  subPieceCids: string[]
   payee: Address
   providerURL: string
   privateKey: Hex
@@ -113,15 +118,27 @@ export const createDataSet = async ({
     values,
     signature,
   ])
-  const res = await fetch(new URL('/pdp/data-sets', providerURL), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    redirect: 'follow',
-    body: JSON.stringify({
-      recordKeeper,
-      extraData,
-    }),
-  })
+
+  const pieces = [
+    {
+      pieceCid,
+      subPieces: subPieceCids.map((c) => ({ subPieceCid: c })),
+    },
+  ]
+
+  const res = await fetch(
+    new URL('/pdp/data-sets/create-and-add', providerURL),
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      redirect: 'follow',
+      body: JSON.stringify({
+        recordKeeper,
+        pieces,
+        extraData,
+      }),
+    },
+  )
   if (verbose) logger.request('POST', res.url, res.status)
 
   const text = await res.text()
@@ -168,9 +185,49 @@ export const createDataSet = async ({
     throw new DeployError('Filecoin', 'Failed to locate transaction hash')
   }
 
+  const statusUrl = new URL(location, providerURL).toString()
+
+  logger.info(
+    `Waiting for on-chain confirmation: ${chain.blockExplorer}/tx/${hash}`,
+  )
+  await waitForTransaction(provider, hash as Hex)
+  logger.success('On-chain transaction confirmed')
+
+  // Poll for dataset creation status to get the server-side dataset ID
+  let datasetId: bigint | undefined
+  while (true) {
+    const statusRes = await fetch(statusUrl, { redirect: 'follow' })
+    const statusJson = (await statusRes.json().catch(() => null)) as {
+      txStatus: string
+      dataSetCreated: boolean
+      dataSetId?: number
+    } | null
+
+    if (!statusJson || !statusJson.txStatus) {
+      throw new Error('Invalid dataset status response')
+    }
+
+    if (statusJson.dataSetCreated && statusJson.dataSetId != null) {
+      datasetId = BigInt(statusJson.dataSetId)
+      break
+    }
+
+    if (!statusJson.dataSetCreated) {
+      await setTimeout(3000)
+      continue
+    }
+
+    throw new Error(
+      `Dataset creation failed: txStatus="${statusJson.txStatus}"`,
+    )
+  }
+
+  logger.info(`Dataset registered: ${datasetId}`)
+
   return {
     clientDataSetId,
+    datasetId,
     hash: hash as Hex,
-    statusUrl: new URL(location, providerURL).toString(),
+    statusUrl,
   }
 }

@@ -20,7 +20,6 @@ import { getRandomProviderId } from '../../utils/filecoin/getRandomProviderId.js
 import { getUSDfcBalance } from '../../utils/filecoin/getUSDfcBalance.js'
 import { getServicePrice } from '../../utils/filecoin/pay/getServicePrice.js'
 import { uploadPieceToDataSet } from '../../utils/filecoin/uploadPieceToDataSet.js'
-import { waitForDatasetReady } from '../../utils/filecoin/waitForDataSetCreation.js'
 import { logger } from '../../utils/logger.js'
 import { waitForTransaction } from '../../utils/tx.js'
 
@@ -101,43 +100,6 @@ export const uploadToFilecoin: UploadFunction<{
 
   logger.info(`Price for storage: ${Value.format(perMonth, 18)} USDfc/month`)
 
-  let datasetId: bigint
-  let clientDataSetId: bigint | undefined
-  const providerDataSets = dataSets.filter(
-    (set) => set.providerId === providerId,
-  )
-
-  if (providerDataSets.length === 0) {
-    if (verbose) logger.info('No dataset found. Creating.')
-    const {
-      clientDataSetId: clientId,
-      hash,
-      statusUrl,
-    } = await createDataSet({
-      privateKey,
-      payee,
-      providerURL,
-      address,
-      chain,
-      perMonth,
-    })
-
-    datasetId = clientId
-    clientDataSetId = clientId
-    logger.info(`Pending data set creation: ${statusUrl}`)
-    logger.info(`Pending transaction: ${chain.blockExplorer}/tx/${hash}`)
-    await waitForTransaction(filProvider[chainId], hash)
-
-    await waitForDatasetReady(statusUrl)
-
-    logger.success('Data set registered')
-    logger.info('Waiting for 5 seconds to ensure everything is in sync')
-    await setTimeout(5000)
-  } else {
-    logger.info(`Using existing dataset: ${providerDataSets[0].dataSetId}`)
-    datasetId = providerDataSets[0].dataSetId
-  }
-
   // Buffer CAR bytes once and derive Piece CID
   const carBytes = new Uint8Array(await car.arrayBuffer())
   const calculatedCid = calculatePieceCID(carBytes)
@@ -151,6 +113,7 @@ export const uploadToFilecoin: UploadFunction<{
     )
   const resolvedPieceCid = pieceCid || expectedPieceCid
 
+  // Upload piece bytes to SP
   if (!pieceCid) {
     logger.info(`Piece CID: ${resolvedPieceCid}`)
 
@@ -207,7 +170,9 @@ export const uploadToFilecoin: UploadFunction<{
     logger.info(`Piece CID: ${resolvedPieceCid}`)
   }
 
+  // Verify piece is available via PDP API
   logger.info('Attempting to retrieve the piece from PDP API')
+  let pieceVerified = false
   for (let i = 0; i < 30; i++) {
     const res = await fetch(
       new URL(`/pdp/piece?pieceCid=${resolvedPieceCid}`, providerURL),
@@ -215,25 +180,69 @@ export const uploadToFilecoin: UploadFunction<{
     if (verbose) logger.request('GET', res.url, res.status)
 
     if (res.ok) {
+      pieceVerified = true
       break
     }
-    await setTimeout(1000)
+    await setTimeout(2000)
+  }
+  if (!pieceVerified) {
+    throw new DeployError(providerName, 'Piece not found after 30s')
   }
   logger.success('Piece found')
 
-  const { hash, statusUrl } = await uploadPieceToDataSet({
-    pieceCid: calculatedCid,
-    providerURL,
-    verbose,
-    datasetId,
-    privateKey,
-    nonce: BigInt(randomInt(10 ** 8)),
-    clientDataSetId,
-    chain,
-  })
-  logger.info(`Pending piece upload: ${statusUrl}`)
-  logger.info(`Pending transaction: ${chain.blockExplorer}/tx/${hash}`)
-  await waitForTransaction(filProvider[chainId], hash)
+  // Add piece to a dataset
+  // Filter to datasets for this SP, excluding terminated ones (pdpEndEpoch > 0)
+  const providerDataSets = dataSets.filter(
+    (set) => set.providerId === providerId && set.pdpEndEpoch === 0n,
+  )
+
+  // Check if datasets exist but are all terminated
+  const terminatedDataSets = dataSets.filter(
+    (set) => set.providerId === providerId && set.pdpEndEpoch > 0n,
+  )
+
+  if (providerDataSets.length === 0) {
+    if (terminatedDataSets.length > 0) {
+      throw new DeployError(
+        providerName,
+        `All datasets (${terminatedDataSets.length}) for this SP have expired. Create a new dataset.`,
+      )
+    }
+    // Create dataset and add piece atomically (avoids race condition)
+    if (verbose) logger.info('No dataset found. Creating and adding piece.')
+    const { datasetId, hash } = await createDataSet({
+      pieceCid: resolvedPieceCid,
+      subPieceCids: [resolvedPieceCid],
+      privateKey,
+      payee,
+      providerURL,
+      address,
+      chain,
+      perMonth,
+    })
+
+    logger.success(`Data set registered: ${datasetId}`)
+    logger.info(`Transaction: ${chain.blockExplorer}/tx/${hash}`)
+    logger.info('Waiting for 5 seconds to ensure everything is in sync')
+    await setTimeout(5000)
+  } else {
+    // Add piece to existing dataset
+    const datasetId = providerDataSets[0].dataSetId
+    logger.info(`Using existing dataset: ${datasetId}`)
+
+    const { hash, statusUrl } = await uploadPieceToDataSet({
+      pieceCid: calculatedCid,
+      providerURL,
+      verbose,
+      datasetId,
+      privateKey,
+      nonce: BigInt(randomInt(10 ** 8)),
+      chain,
+    })
+    logger.info(`Pending piece upload: ${statusUrl}`)
+    logger.info(`Pending transaction: ${chain.blockExplorer}/tx/${hash}`)
+    await waitForTransaction(filProvider[chainId], hash)
+  }
 
   return { cid }
 }

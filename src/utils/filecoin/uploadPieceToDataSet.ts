@@ -6,6 +6,7 @@ import type { Hex } from 'ox/Hex'
 import { sign } from 'ox/Secp256k1'
 import * as Signature from 'ox/Signature'
 import { getSignPayload } from 'ox/TypedData'
+import { setTimeout } from '../../deps.js'
 import { DeployError } from '../../errors.js'
 import { logger } from '../logger.js'
 import type { FilecoinChain } from './constants.js'
@@ -99,24 +100,75 @@ export const uploadPieceToDataSet = async ({
     signature,
   ])
 
-  const res = await fetch(
-    new URL(`/pdp/data-sets/${datasetId}/pieces`, providerURL),
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        pieces: [pieceCid].map((piece) => ({
-          pieceCid: piece.toString(),
-          subPieces: [{ subPieceCid: piece.toString() }],
-        })),
-        extraData,
-      }),
-    },
-  )
+  const requestUrl = new URL(`/pdp/data-sets/${datasetId}/pieces`, providerURL)
+  const requestBody = JSON.stringify({
+    pieces: [pieceCid].map((piece) => ({
+      pieceCid: piece.toString(),
+      subPieces: [{ subPieceCid: piece.toString() }],
+    })),
+    extraData,
+  })
 
-  if (verbose) logger.request('POST', res.url, res.status)
-  const text = await res.text()
-  if (!res.ok) {
+  // Retry transient 400 errors — the SP may not have indexed the piece in
+  // pdp_piecerefs yet (PDPNotifyTask runs async every ~1s).  After the piece
+  // is moved from pdp_piece_uploads to pdp_piecerefs the request will succeed.
+  // Also retry network errors (connection reset from server crash).
+  const maxAttempts = 20
+  let lastText = ''
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    let res: Response
+    try {
+      res = await fetch(requestUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: requestBody,
+      })
+    } catch (err) {
+      if (attempt < maxAttempts) {
+        logger.warn(
+          `Add-piece network error, retrying in ${attempt}s (attempt ${attempt}/${maxAttempts}): ${(err as Error).message}`,
+        )
+        await setTimeout(attempt * 1000)
+        continue
+      }
+      throw err
+    }
+
+    if (verbose) logger.request('POST', res.url, res.status)
+    const text = await res.text()
+
+    if (res.ok) {
+      const location = res.headers.get('Location')
+      const hash = location?.split('/').pop()
+      if (!location || !hash || !hash.startsWith('0x')) {
+        throw new DeployError('Filecoin', 'Failed to locate transaction hash')
+      }
+
+      return {
+        hash: hash as Hex,
+        statusUrl: new URL(location, providerURL).toString(),
+      }
+    }
+
+    lastText = text
+
+    // Permanent contract errors — fail immediately
+    if (text.includes('DataSetPaymentAlreadyTerminated')) {
+      throw new Error(
+        `Dataset ${datasetId} payment has expired. Create a new dataset.`,
+      )
+    }
+
+    // Transient: piece not yet indexed in pdp_piecerefs (PDPNotifyTask runs async ~1s)
+    if (res.status === 400 && attempt < maxAttempts) {
+      logger.warn(
+        `Add-piece returned ${res.status}, retrying in ${attempt}s (attempt ${attempt}/${maxAttempts})${text ? `: ${text.slice(0, 200)}` : ''}`,
+      )
+      await setTimeout(attempt * 1000)
+      continue
+    }
+
+    // Non-retriable or final attempt — fall through to error parsing below
     if (text.includes('recordKeeper address not allowed for public service')) {
       throw new Error('The SP does not support registering data sets')
     }
@@ -146,21 +198,10 @@ export const uploadPieceToDataSet = async ({
       if (errorHex.includes('0x57b1cc25')) {
         throw new Error('Insufficient funds')
       }
-      throw new Error('SP execution reverted during dataset creation', {
-        cause: text,
-      })
+      throw new Error(`SP execution reverted: ${text.slice(0, 300)}`)
     }
-    throw new Error('Failed to upload to a data set', { cause: text })
+    throw new Error(`Failed to upload to a data set: ${text.slice(0, 300)}`)
   }
 
-  const location = res.headers.get('Location')
-  const hash = location?.split('/').pop()
-  if (!location || !hash || !hash.startsWith('0x')) {
-    throw new DeployError('Filecoin', 'Failed to locate transaction hash')
-  }
-
-  return {
-    hash: hash as Hex,
-    statusUrl: new URL(location, providerURL).toString(),
-  }
+  throw new Error(`Failed to upload to a data set: ${lastText.slice(0, 300)}`)
 }
