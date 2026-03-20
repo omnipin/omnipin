@@ -68,9 +68,12 @@ export const uploadToFilecoin: UploadFunction<{
 
   let providerId: bigint
 
-  if (dataSets.length > 0) {
+  // Only consider active datasets (not terminated) when picking provider
+  const activeDataSets = dataSets.filter((ds) => ds.pdpEndEpoch === 0n)
+
+  if (activeDataSets.length > 0) {
     // biome-ignore lint/style/noNonNullAssertion: if there is more than one data set it must be defined
-    const lastProvider = dataSets.at(-1)!
+    const lastProvider = activeDataSets.at(-1)!
     providerId = lastProvider.providerId
   } else if (providerAddress) {
     providerId = await getProviderIdByAddress({
