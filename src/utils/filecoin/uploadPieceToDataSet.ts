@@ -152,13 +152,6 @@ export const uploadPieceToDataSet = async ({
 
     lastText = text
 
-    // Permanent contract errors — fail immediately
-    if (text.includes('DataSetPaymentAlreadyTerminated')) {
-      throw new Error(
-        `Dataset ${datasetId} payment has expired. Create a new dataset.`,
-      )
-    }
-
     // Transient: piece not yet indexed in pdp_piecerefs (PDPNotifyTask runs async ~1s)
     if (res.status === 400 && attempt < maxAttempts) {
       logger.warn(
