@@ -183,7 +183,7 @@ export const uploadToFilecoin: UploadFunction<{
       pieceVerified = true
       break
     }
-    await setTimeout(2000)
+    await setTimeout(5000)
   }
   if (!pieceVerified) {
     throw new DeployError(providerName, 'Piece not found after 30s')
