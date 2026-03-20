@@ -201,18 +201,7 @@ export const uploadToFilecoin: UploadFunction<{
     (set) => set.providerId === providerId && set.pdpEndEpoch === 0n,
   )
 
-  // Check if datasets exist but are all terminated
-  const terminatedDataSets = dataSets.filter(
-    (set) => set.providerId === providerId && set.pdpEndEpoch > 0n,
-  )
-
   if (providerDataSets.length === 0 || filecoinForceNewDataset) {
-    if (terminatedDataSets.length > 0 && !filecoinForceNewDataset) {
-      throw new DeployError(
-        providerName,
-        `All datasets (${terminatedDataSets.length}) for this SP have expired. Create a new dataset.`,
-      )
-    }
     // Create dataset and add piece atomically (avoids race condition)
     if (verbose || filecoinForceNewDataset) logger.info('Creating new dataset.')
     const { datasetId, hash } = await createDataSet({
