@@ -30,6 +30,7 @@ export const uploadToFilecoin: UploadFunction<{
   providerURL?: string
   pieceCid: string
   filecoinChain: 'mainnet' | 'calibration'
+  filecoinForceNewDataset?: boolean
   token: Hex
 }> = async ({
   providerAddress,
@@ -40,6 +41,7 @@ export const uploadToFilecoin: UploadFunction<{
   verbose,
   pieceCid,
   filecoinChain = 'mainnet',
+  filecoinForceNewDataset,
   size,
 }) => {
   if (!providerURL && providerAddress)
@@ -71,7 +73,7 @@ export const uploadToFilecoin: UploadFunction<{
   // Only consider active datasets (not terminated) when picking provider
   const activeDataSets = dataSets.filter((ds) => ds.pdpEndEpoch === 0n)
 
-  if (activeDataSets.length > 0) {
+  if (activeDataSets.length > 0 && !filecoinForceNewDataset) {
     // biome-ignore lint/style/noNonNullAssertion: if there is more than one data set it must be defined
     const lastProvider = activeDataSets.at(-1)!
     providerId = lastProvider.providerId
@@ -204,15 +206,15 @@ export const uploadToFilecoin: UploadFunction<{
     (set) => set.providerId === providerId && set.pdpEndEpoch > 0n,
   )
 
-  if (providerDataSets.length === 0) {
-    if (terminatedDataSets.length > 0) {
+  if (providerDataSets.length === 0 || filecoinForceNewDataset) {
+    if (terminatedDataSets.length > 0 && !filecoinForceNewDataset) {
       throw new DeployError(
         providerName,
         `All datasets (${terminatedDataSets.length}) for this SP have expired. Create a new dataset.`,
       )
     }
     // Create dataset and add piece atomically (avoids race condition)
-    if (verbose) logger.info('No dataset found. Creating and adding piece.')
+    if (verbose || filecoinForceNewDataset) logger.info('Creating new dataset.')
     const { datasetId, hash } = await createDataSet({
       pieceCid: resolvedPieceCid,
       subPieceCids: [resolvedPieceCid],

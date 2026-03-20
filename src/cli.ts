@@ -105,6 +105,11 @@ cli.command(
         description: 'Filecoin network',
         type: 'string',
       },
+      {
+        name: 'filecoin-force-new-dataset',
+        description: 'Create a new dataset instead of using an existing one',
+        type: 'boolean',
+      },
       ...ensOptions,
     ] as const,
   },

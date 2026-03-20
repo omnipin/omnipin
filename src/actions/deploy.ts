@@ -18,6 +18,7 @@ export type DeployActionArgs = Partial<{
   dnslink: string
   'progress-bar': boolean
   'filecoin-chain': 'mainnet' | 'calibration'
+  'filecoin-force-new-dataset': boolean
 }> &
   PackActionArgs &
   EnsActionArgs
@@ -40,6 +41,7 @@ export const deployAction = async ({
     dnslink,
     'progress-bar': progressBar,
     'filecoin-chain': filecoinChain,
+    'filecoin-force-new-dataset': filecoinForceNewDataset,
     ...opts
   } = options
 
@@ -168,6 +170,7 @@ export const deployAction = async ({
           providerAddress,
           pieceCid,
           filecoinChain,
+          filecoinForceNewDataset,
         })
       } catch (e) {
         if (strict) throw e
