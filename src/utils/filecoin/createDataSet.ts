@@ -176,7 +176,7 @@ export const createDataSet = async ({
         cause: text,
       })
     }
-    throw new Error('Failed to create a dataset', { cause: text })
+    throw new Error(`Failed to create a dataset: ${text}`)
   }
 
   const location = res.headers.get('Location')
