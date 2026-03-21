@@ -151,22 +151,52 @@ export const uploadToFilecoin: UploadFunction<{
 
       logger.info(`Upload UUID: ${uploadUuid}`)
 
-      res = await fetch(
-        new URL(`/pdp/piece/upload/${uploadUuid}`, providerURL),
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/octet-stream',
-            'Content-Length': carBytes.length.toString(),
-          },
-          body: carBytes,
-        },
-      )
+      let uploadSuccess = false
+      for (let attempt = 1; attempt <= 5; attempt++) {
+        try {
+          res = await fetch(
+            new URL(`/pdp/piece/upload/${uploadUuid}`, providerURL),
+            {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/octet-stream',
+                'Content-Length': carBytes.length.toString(),
+              },
+              body: carBytes,
+            },
+          )
+        } catch (err) {
+          if (attempt < 5) {
+            logger.warn(
+              `Upload failed (attempt ${attempt}/5): ${(err as Error).message}. Retrying...`,
+            )
+            await setTimeout(attempt * 2000)
+            continue
+          }
+          throw err
+        }
 
-      if (verbose) logger.request('PUT', res.url, res.status)
+        if (verbose) logger.request('PUT', res.url, res.status)
 
-      if (res.status !== 204) {
+        if (res.status === 204) {
+          uploadSuccess = true
+          break
+        }
+
+        if (attempt < 5) {
+          const text = await res.text()
+          logger.warn(
+            `Upload failed with ${res.status} (attempt ${attempt}/5): ${text.slice(0, 200)}. Retrying...`,
+          )
+          await setTimeout(attempt * 2000)
+          continue
+        }
+
         throw new DeployError(providerName, await res.text())
+      }
+
+      if (!uploadSuccess) {
+        throw new DeployError(providerName, 'Upload failed after 5 attempts')
       }
 
       logger.success('Uploaded piece to the SP')
