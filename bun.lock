@@ -8,7 +8,7 @@
         "@biomejs/biome": "^2.4.7",
         "@ipld/car": "^5.4.2",
         "@ipld/dag-ucan": "^3.4.5",
-        "@omnipin/foc": "npm:@jsr/omnipin__foc@0.0.5",
+        "@omnipin/foc": "npm:@jsr/omnipin__foc@0.0.6",
         "@rslib/core": "^0.20.0",
         "@size-limit/file": "^12.0.1",
         "@stauro/filebase-upload": "npm:@jsr/stauro__filebase-upload",
@@ -226,7 +226,7 @@
 
     "@noble/hashes": ["@noble/hashes@1.8.0", "", {}, "sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A=="],
 
-    "@omnipin/foc": ["@jsr/omnipin__foc@0.0.5", "https://npm.jsr.io/~/11/@jsr/omnipin__foc/0.0.5.tgz", { "dependencies": { "@jsr/noble__hashes": "^2.0.1", "multiformats": "^13.4.2", "ox": "^0.14.8", "varint": "^6.0.0" } }, "sha512-hA95LNDkmC2NGvoWRqtmeQuTQ5sAEqrn+fvUtGoZllfauKiztVJFcmQyxXeE6QYZJLjOPD2q+Rk5+769le7NEw=="],
+    "@omnipin/foc": ["@jsr/omnipin__foc@0.0.6", "https://npm.jsr.io/~/11/@jsr/omnipin__foc/0.0.6.tgz", { "dependencies": { "@jsr/noble__hashes": "^2.0.1", "multiformats": "^13.4.2", "ox": "^0.14.8", "varint": "^6.0.0" } }, "sha512-0zO0hnlBWrcm1DXmMZt+NhCysIQAs4OJmJwxxV/tn4lk4OmSd6IV+0lhNO08RwRqP3tBmfjWsOkIKh5rpJWlFQ=="],
 
     "@rollup/rollup-android-arm-eabi": ["@rollup/rollup-android-arm-eabi@4.57.1", "", { "os": "android", "cpu": "arm" }, "sha512-A6ehUVSiSaaliTxai040ZpZ2zTevHYbvu/lDoeAteHI8QnaosIzm4qwtezfRg1jOYaUmnzLX1AOD6Z+UJjtifg=="],
 

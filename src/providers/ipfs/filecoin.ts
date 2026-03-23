@@ -32,6 +32,31 @@ import { waitForTransaction } from '../../utils/tx.js'
 
 const providerName = 'Filecoin'
 
+async function findPiece(
+  providerURL: string,
+  pieceCid: string,
+  options: { retries?: number; pollInterval?: number; verbose?: boolean } = {},
+): Promise<void> {
+  const { retries = 5, pollInterval = 3000, verbose = false } = options
+
+  for (let i = 0; i < retries; i++) {
+    const res = await fetch(
+      new URL(`/pdp/piece?pieceCid=${pieceCid}`, providerURL),
+    )
+    if (verbose) logger.request('GET', res.url, res.status)
+
+    if (res.ok) {
+      return
+    }
+    await setTimeout(pollInterval)
+  }
+
+  throw new DeployError(
+    providerName,
+    'Piece not found on provider after retries',
+  )
+}
+
 export const uploadToFilecoin: UploadFunction<{
   providerAddress?: Address
   providerURL?: string
@@ -73,7 +98,7 @@ export const uploadToFilecoin: UploadFunction<{
 
   const providerId = await pickProvider({
     chain,
-    providerAddress,
+    ...(providerAddress ? { providerAddress } : { address }),
   })
 
   if (verbose) logger.info(`Filecoin SP ID: ${providerId}`)
@@ -111,7 +136,6 @@ export const uploadToFilecoin: UploadFunction<{
   if (providerActiveDataSets.length === 0 || filecoinForceNewDataset) {
     logger.info('Creating new data set')
 
-    // Upload piece first
     if (verbose) logger.info('Uploading piece to provider')
     await uploadPiece({
       providerURL,
@@ -119,7 +143,9 @@ export const uploadToFilecoin: UploadFunction<{
       bytes: carBytes,
     })
 
-    // Create payload for dataset creation
+    logger.info('Waiting for piece to be stored at provider')
+    await findPiece(providerURL, pieceCid.toString(), { verbose })
+
     const payload = createDataSetPayload({
       chain,
       payee,
@@ -127,7 +153,6 @@ export const uploadToFilecoin: UploadFunction<{
       privateKey,
     })
 
-    // Create dataset and add piece
     const { hash } = await createDataSetAndAddPiece({
       pieceCid: pieceCid.toString(),
       subPieceCids: [pieceCid.toString()],
@@ -138,7 +163,6 @@ export const uploadToFilecoin: UploadFunction<{
 
     if (verbose) logger.info(`Transaction hash: ${hash}`)
 
-    // Wait for transaction
     const provider = filProvider[chain.id]
     await waitForTransaction(provider, hash)
   } else {
@@ -148,7 +172,6 @@ export const uploadToFilecoin: UploadFunction<{
 
     if (verbose) logger.info(`Data set ID: ${dataset.dataSetId}`)
 
-    // Upload piece first
     if (verbose) logger.info('Uploading piece to provider')
     await uploadPiece({
       providerURL,
@@ -156,7 +179,9 @@ export const uploadToFilecoin: UploadFunction<{
       bytes: carBytes,
     })
 
-    // Create payload for adding pieces
+    logger.info('Waiting for piece to be stored at provider')
+    await findPiece(providerURL, pieceCid.toString(), { verbose })
+
     const nonce = BigInt(randomInt(10 ** 8))
     const extraData = await createUploadPiecesPayload({
       pieceCid,
@@ -167,7 +192,6 @@ export const uploadToFilecoin: UploadFunction<{
       chain,
     })
 
-    // Upload piece to existing dataset
     const { hash } = await uploadPieceToDataSet({
       datasetId: Number(dataset.dataSetId),
       pieceCid,
@@ -177,25 +201,13 @@ export const uploadToFilecoin: UploadFunction<{
 
     if (verbose) logger.info(`Transaction hash: ${hash}`)
 
-    // Wait for transaction
     const provider = filProvider[chain.id]
     await waitForTransaction(provider, hash)
   }
-  logger.success('Uploaded piece to the SP')
+  logger.success('Piece registered on chain')
 
-  logger.info('Attempting to retrieve the piece from PDP API')
-
-  for (let i = 0; i < 5; i++) {
-    const res = await fetch(
-      new URL(`/pdp/piece?pieceCid=${pieceCid.toString()}`, providerURL),
-    )
-    if (verbose) logger.request('GET', res.url, res.status)
-
-    if (res.ok) {
-      break
-    }
-    await setTimeout(3000)
-  }
+  logger.info('Verifying piece is accessible on PDP API')
+  await findPiece(providerURL, pieceCid.toString(), { verbose })
   logger.success('Piece found')
 
   return { cid }
