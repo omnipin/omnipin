@@ -1,3 +1,25 @@
+import {
+  createDataSetPayload,
+  createUploadPiecesPayload,
+  getClientDataSets,
+} from '@omnipin/foc/data-set'
+import { getServicePrice, getUSDfcBalance } from '@omnipin/foc/fil-pay'
+import {
+  createDataSetAndAddPiece,
+  uploadPiece,
+  uploadPieceToDataSet,
+} from '@omnipin/foc/pdp-api'
+import {
+  getProviderMetadata,
+  getProviderPayee,
+  pickProvider,
+} from '@omnipin/foc/sp-registry'
+import {
+  calculatePieceCID,
+  filecoinCalibration,
+  filecoinMainnet,
+  filProvider,
+} from '@omnipin/foc/utils'
 import { type Address, fromPublicKey } from 'ox/Address'
 import type { Hex } from 'ox/Hex'
 import { getPublicKey } from 'ox/Secp256k1'
@@ -5,21 +27,6 @@ import * as Value from 'ox/Value'
 import { randomInt, setTimeout } from '../../deps.js'
 import { DeployError, MissingKeyError } from '../../errors.js'
 import type { UploadFunction } from '../../types.js'
-import { calculatePieceCID } from '../../utils/filecoin/calculatePieceCID.js'
-import {
-  filecoinCalibration,
-  filecoinMainnet,
-  filProvider,
-} from '../../utils/filecoin/constants.js'
-import { createDataSet } from '../../utils/filecoin/createDataSet.js'
-import { getClientDataSets } from '../../utils/filecoin/getClientDatasets.js'
-import { getProviderIdByAddress } from '../../utils/filecoin/getProviderIdByAddress.js'
-import { getProviderMetadata } from '../../utils/filecoin/getProviderMetadata.js'
-import { getProviderPayee } from '../../utils/filecoin/getProviderPayee.js'
-import { getRandomProviderId } from '../../utils/filecoin/getRandomProviderId.js'
-import { getUSDfcBalance } from '../../utils/filecoin/getUSDfcBalance.js'
-import { getServicePrice } from '../../utils/filecoin/pay/getServicePrice.js'
-import { uploadPieceToDataSet } from '../../utils/filecoin/uploadPieceToDataSet.js'
 import { logger } from '../../utils/logger.js'
 import { waitForTransaction } from '../../utils/tx.js'
 
@@ -28,7 +35,6 @@ const providerName = 'Filecoin'
 export const uploadToFilecoin: UploadFunction<{
   providerAddress?: Address
   providerURL?: string
-  pieceCid: string
   filecoinChain: 'mainnet' | 'calibration'
   filecoinForceNewDataset?: boolean
   token: Hex
@@ -39,7 +45,6 @@ export const uploadToFilecoin: UploadFunction<{
   car,
   token: privateKey,
   verbose,
-  pieceCid,
   filecoinChain = 'mainnet',
   filecoinForceNewDataset,
   size,
@@ -56,7 +61,6 @@ export const uploadToFilecoin: UploadFunction<{
 
   const chain =
     filecoinChain === 'mainnet' ? filecoinMainnet : filecoinCalibration
-  const chainId = chain.id
 
   logger.info(`Filecoin chain: ${chain.name}`)
 
@@ -66,25 +70,11 @@ export const uploadToFilecoin: UploadFunction<{
   if (balance === 0n) throw new DeployError(providerName, 'No USDfc on account')
 
   if (verbose) logger.info('Looking up existing data sets')
-  const dataSets = await getClientDataSets({ address, chain })
 
-  let providerId: bigint
-
-  // Only consider active datasets (not terminated) when picking provider
-  const activeDataSets = dataSets.filter((ds) => ds.pdpEndEpoch === 0n)
-
-  if (activeDataSets.length > 0 && !filecoinForceNewDataset) {
-    // biome-ignore lint/style/noNonNullAssertion: if there is more than one data set it must be defined
-    const lastProvider = activeDataSets.at(-1)!
-    providerId = lastProvider.providerId
-  } else if (providerAddress) {
-    providerId = await getProviderIdByAddress({
-      providerAddress,
-      chain,
-    })
-  } else {
-    providerId = await getRandomProviderId({ chain })
-  }
+  const providerId = await pickProvider({
+    chain,
+    providerAddress,
+  })
 
   if (verbose) logger.info(`Filecoin SP ID: ${providerId}`)
 
@@ -107,136 +97,106 @@ export const uploadToFilecoin: UploadFunction<{
 
   // Buffer CAR bytes once and derive Piece CID
   const carBytes = new Uint8Array(await car.arrayBuffer())
-  const calculatedCid = calculatePieceCID(carBytes)
-  const expectedPieceCid = calculatedCid.toString()
+  const pieceCid = calculatePieceCID(carBytes)
 
-  // Validate provided pieceCid (if any) and resolve final value
-  if (pieceCid && pieceCid !== expectedPieceCid)
-    throw new DeployError(
-      providerName,
-      'Provided pieceCid does not match CAR content',
-    )
-  const resolvedPieceCid = pieceCid || expectedPieceCid
+  const datasets = await getClientDataSets({
+    chain,
+    address,
+  })
 
-  // Upload piece bytes to SP
-  if (!pieceCid) {
-    logger.info(`Piece CID: ${resolvedPieceCid}`)
+  const providerActiveDataSets = datasets.filter(
+    (ds) => ds.providerId === providerId && ds.pdpEndEpoch === 0n,
+  )
 
-    let res = await fetch(new URL('/pdp/piece', providerURL), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        pieceCid: resolvedPieceCid,
-      }),
+  if (providerActiveDataSets.length === 0 || filecoinForceNewDataset) {
+    logger.info('Creating new data set')
+
+    // Upload piece first
+    if (verbose) logger.info('Uploading piece to provider')
+    await uploadPiece({
+      providerURL,
+      pieceCid: pieceCid.toString(),
+      bytes: carBytes,
     })
 
-    if (verbose) logger.request('POST', res.url, res.status)
+    // Create payload for dataset creation
+    const payload = createDataSetPayload({
+      chain,
+      payee,
+      payer: address,
+      privateKey,
+    })
 
-    const text = await res.text()
+    // Create dataset and add piece
+    const { hash } = await createDataSetAndAddPiece({
+      pieceCid: pieceCid.toString(),
+      subPieceCids: [pieceCid.toString()],
+      chain,
+      providerURL,
+      payload,
+    })
 
-    if (!res.ok) {
-      throw new DeployError(providerName, text)
-    }
+    if (verbose) logger.info(`Transaction hash: ${hash}`)
 
-    if (res.status === 201) {
-      const location = res.headers.get('Location')
-      if (!location)
-        throw new DeployError(
-          providerName,
-          'Missing "Location" Header in response',
-        )
-      const uploadUuid = location.match(/\/piece\/upload\/([a-fA-F0-9-]+)/)?.[1]
-
-      logger.info(`Upload UUID: ${uploadUuid}`)
-
-      res = await fetch(
-        new URL(`/pdp/piece/upload/${uploadUuid}`, providerURL),
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/octet-stream',
-            'Content-Length': carBytes.length.toString(),
-          },
-          body: carBytes,
-        },
-      )
-
-      if (verbose) logger.request('PUT', res.url, res.status)
-
-      if (res.status !== 204) {
-        throw new DeployError(providerName, await res.text())
-      }
-
-      logger.success('Uploaded piece to the SP')
-    }
+    // Wait for transaction
+    const provider = filProvider[chain.id]
+    await waitForTransaction(provider, hash)
   } else {
-    logger.info(`Piece CID: ${resolvedPieceCid}`)
-  }
+    logger.info('Using existing data set')
 
-  // Verify piece is available via PDP API
+    const dataset = providerActiveDataSets[0]
+
+    if (verbose) logger.info(`Data set ID: ${dataset.dataSetId}`)
+
+    // Upload piece first
+    if (verbose) logger.info('Uploading piece to provider')
+    await uploadPiece({
+      providerURL,
+      pieceCid: pieceCid.toString(),
+      bytes: carBytes,
+    })
+
+    // Create payload for adding pieces
+    const nonce = BigInt(randomInt(10 ** 8))
+    const extraData = await createUploadPiecesPayload({
+      pieceCid,
+      datasetId: dataset.dataSetId,
+      privateKey,
+      nonce,
+      clientDataSetId: dataset.clientDataSetId,
+      chain,
+    })
+
+    // Upload piece to existing dataset
+    const { hash } = await uploadPieceToDataSet({
+      datasetId: Number(dataset.dataSetId),
+      pieceCid,
+      extraData,
+      providerURL,
+    })
+
+    if (verbose) logger.info(`Transaction hash: ${hash}`)
+
+    // Wait for transaction
+    const provider = filProvider[chain.id]
+    await waitForTransaction(provider, hash)
+  }
+  logger.success('Uploaded piece to the SP')
+
   logger.info('Attempting to retrieve the piece from PDP API')
-  let pieceVerified = false
-  for (let i = 0; i < 30; i++) {
+
+  for (let i = 0; i < 5; i++) {
     const res = await fetch(
-      new URL(`/pdp/piece?pieceCid=${resolvedPieceCid}`, providerURL),
+      new URL(`/pdp/piece?pieceCid=${pieceCid.toString()}`, providerURL),
     )
     if (verbose) logger.request('GET', res.url, res.status)
 
     if (res.ok) {
-      pieceVerified = true
       break
     }
-    await setTimeout(5000)
-  }
-  if (!pieceVerified) {
-    throw new DeployError(providerName, 'Piece not found after 30s')
+    await setTimeout(3000)
   }
   logger.success('Piece found')
-
-  // Add piece to a dataset
-  // Filter to datasets for this SP, excluding terminated ones (pdpEndEpoch > 0)
-  const providerDataSets = dataSets.filter(
-    (set) => set.providerId === providerId && set.pdpEndEpoch === 0n,
-  )
-
-  if (providerDataSets.length === 0 || filecoinForceNewDataset) {
-    // Create dataset and add piece atomically (avoids race condition)
-    if (verbose || filecoinForceNewDataset) logger.info('Creating new dataset.')
-    const { datasetId, hash } = await createDataSet({
-      pieceCid: resolvedPieceCid,
-      subPieceCids: [resolvedPieceCid],
-      privateKey,
-      payee,
-      providerURL,
-      address,
-      chain,
-      perMonth,
-    })
-
-    logger.success(`Data set registered: ${datasetId}`)
-    logger.info(`Transaction: ${chain.blockExplorer}/tx/${hash}`)
-    logger.info('Waiting for 5 seconds to ensure everything is in sync')
-    await setTimeout(5000)
-  } else {
-    // Add piece to existing dataset
-    const datasetId = providerDataSets[0].dataSetId
-    logger.info(`Using existing dataset: ${datasetId}`)
-
-    const { hash, statusUrl } = await uploadPieceToDataSet({
-      pieceCid: calculatedCid,
-      providerURL,
-      verbose,
-      datasetId,
-      privateKey,
-      nonce: BigInt(randomInt(10 ** 8)),
-      chain,
-    })
-    logger.info(`Pending piece upload: ${statusUrl}`)
-    logger.info(`Pending transaction: ${chain.blockExplorer}/tx/${hash}`)
-    await waitForTransaction(filProvider[chainId], hash)
-  }
 
   return { cid }
 }

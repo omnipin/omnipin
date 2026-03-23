@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
+import { calculatePieceCID } from '@omnipin/foc/utils'
 import { randomPrivateKey } from 'ox/Secp256k1'
 import { DeployError, MissingKeyError, packCAR, walk } from '../../src/index.js'
 import { uploadToFilecoin } from '../../src/providers/ipfs/filecoin.js'
-import { calculatePieceCID } from '../../src/utils/filecoin/calculatePieceCID.js'
 
 const [size, files] = await walk('./dist', false)
 const car = await packCAR(files, 'test.car')
