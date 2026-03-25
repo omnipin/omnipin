@@ -2,14 +2,21 @@ import {
   createDataSetPayload,
   createUploadPiecesPayload,
   getClientDataSets,
+  getDataSet,
 } from '@omnipin/foc/data-set'
-import { getServicePrice, getUSDfcBalance } from '@omnipin/foc/fil-pay'
+import {
+  depositAndApproveOperatorWriteParameters,
+  getAccountInfo,
+  getServicePrice,
+  getUSDfcBalance,
+} from '@omnipin/foc/fil-pay'
 import {
   createDataSetAndAddPiece,
   uploadPiece,
   uploadPieceToDataSet,
 } from '@omnipin/foc/pdp-api'
 import {
+  getApprovedSPs,
   getProviderMetadata,
   getProviderPayee,
   pickProvider,
@@ -20,6 +27,7 @@ import {
   filecoinMainnet,
   filProvider,
 } from '@omnipin/foc/utils'
+import { AbiParameters } from 'ox'
 import { type Address, fromPublicKey } from 'ox/Address'
 import type { Hex } from 'ox/Hex'
 import { getPublicKey } from 'ox/Secp256k1'
@@ -28,9 +36,15 @@ import { randomInt, setTimeout } from '../../deps.js'
 import { DeployError, MissingKeyError } from '../../errors.js'
 import type { UploadFunction } from '../../types.js'
 import { logger } from '../../utils/logger.js'
-import { waitForTransaction } from '../../utils/tx.js'
+import {
+  sendTransaction,
+  simulateTransaction,
+  waitForTransaction,
+} from '../../utils/tx.js'
 
 const providerName = 'Filecoin'
+
+const SYBIL_FEE = 100_000_000_000_000_000n
 
 async function findPiece(
   providerURL: string,
@@ -74,8 +88,6 @@ export const uploadToFilecoin: UploadFunction<{
   filecoinForceNewDataset,
   size,
 }) => {
-  if (!providerURL && providerAddress)
-    throw new MissingKeyError('FILECOIN_SP_URL')
   if (!providerAddress && providerURL)
     throw new MissingKeyError('FILECOIN_SP_ADDRESS')
 
@@ -133,7 +145,60 @@ export const uploadToFilecoin: UploadFunction<{
     (ds) => ds.providerId === providerId && ds.pdpEndEpoch === 0n,
   )
 
-  if (providerActiveDataSets.length === 0 || filecoinForceNewDataset) {
+  const isNewDataSet =
+    providerActiveDataSets.length === 0 || filecoinForceNewDataset
+  const sybilFee = isNewDataSet ? SYBIL_FEE : 0n
+  const totalRequired = perMonth + sybilFee
+
+  logger.info(`Required lockup: ${Value.format(perMonth, 18)} USDFC`)
+  if (isNewDataSet) {
+    logger.info(`Sybil fee: ${Value.format(sybilFee, 18)} USDFC`)
+  }
+  logger.info(`Total required: ${Value.format(totalRequired, 18)} USDFC`)
+
+  const [funds, lockupCurrent, lockupRate, lockupLastSettledAt] =
+    await getAccountInfo({ address, chain })
+  const currentEpochHex = await filProvider[chain.id].request({
+    method: 'eth_blockNumber',
+  })
+  const currentEpoch = BigInt(currentEpochHex)
+  const epochSinceSettlement = currentEpoch - lockupLastSettledAt
+  const actualLockup = lockupCurrent + epochSinceSettlement * lockupRate
+  const availableFunds = funds > actualLockup ? funds - actualLockup : 0n
+
+  logger.info(`Available funds: ${Value.format(availableFunds, 18)} USDFC`)
+
+  const depositNeeded =
+    totalRequired > availableFunds ? totalRequired - availableFunds : 0n
+
+  if (depositNeeded > 0n) {
+    logger.info(`Depositing ${Value.format(depositNeeded, 18)} USDFC`)
+
+    const params = await depositAndApproveOperatorWriteParameters({
+      privateKey,
+      address,
+      amount: depositNeeded,
+      chain,
+    })
+
+    await simulateTransaction(params)
+
+    const hash = await sendTransaction({
+      ...params,
+      chainId: chain.id,
+      privateKey,
+    })
+
+    if (verbose) logger.info(`Deposit transaction: ${hash}`)
+
+    await waitForTransaction(filProvider[chain.id], hash)
+    logger.success('Deposit confirmed')
+  } else {
+    logger.info('Sufficient funds available, no deposit needed')
+  }
+
+  const nonce = BigInt(randomInt(10 ** 8))
+  if (isNewDataSet) {
     logger.info('Creating new data set')
 
     if (verbose) logger.info('Uploading piece to provider')
@@ -146,12 +211,28 @@ export const uploadToFilecoin: UploadFunction<{
     logger.info('Waiting for piece to be stored at provider')
     await findPiece(providerURL, pieceCid.toString(), { verbose })
 
-    const payload = createDataSetPayload({
+    const clientDataSetId = BigInt(randomInt(10 ** 8))
+
+    const createPayload = createDataSetPayload({
       chain,
       payee,
       payer: address,
       privateKey,
+      clientDataSetId,
     })
+
+    const addPayload = await createUploadPiecesPayload({
+      pieceCid,
+      clientDataSetId,
+      privateKey,
+      nonce,
+      chain,
+    })
+
+    const payload = AbiParameters.encode(
+      [{ type: 'bytes' }, { type: 'bytes' }],
+      [createPayload, addPayload],
+    )
 
     const { hash } = await createDataSetAndAddPiece({
       pieceCid: pieceCid.toString(),
@@ -182,10 +263,8 @@ export const uploadToFilecoin: UploadFunction<{
     logger.info('Waiting for piece to be stored at provider')
     await findPiece(providerURL, pieceCid.toString(), { verbose })
 
-    const nonce = BigInt(randomInt(10 ** 8))
     const extraData = await createUploadPiecesPayload({
       pieceCid,
-      datasetId: dataset.dataSetId,
       privateKey,
       nonce,
       clientDataSetId: dataset.clientDataSetId,
