@@ -1,6 +1,6 @@
 import { isTTY, PROVIDERS } from '../constants.js'
 import { AsciiBar, styleText } from '../deps.js'
-import { MissingKeyError, NoProvidersError } from '../errors.js'
+import { NoProvidersError } from '../errors.js'
 import {
   findEnvVarProviderName,
   parseTokensFromEnv,
@@ -18,6 +18,7 @@ export type DeployActionArgs = Partial<{
   dnslink: string
   'progress-bar': boolean
   'filecoin-chain': 'mainnet' | 'calibration'
+  'filecoin-force-new-dataset': boolean
 }> &
   PackActionArgs &
   EnsActionArgs
@@ -40,6 +41,7 @@ export const deployAction = async ({
     dnslink,
     'progress-bar': progressBar,
     'filecoin-chain': filecoinChain,
+    'filecoin-force-new-dataset': filecoinForceNewDataset,
     ...opts
   } = options
 
@@ -150,9 +152,6 @@ export const deployAction = async ({
         providerAddress = apiTokens.get('FILECOIN_SP_ADDRESS'),
         pieceCid = apiTokens.get('FILECOIN_PIECE_CID')
 
-      if (filecoinChain && !providerURL)
-        throw new MissingKeyError('FILECOIN_SP_URL')
-
       try {
         await provider.upload({
           name,
@@ -171,6 +170,7 @@ export const deployAction = async ({
           providerAddress,
           pieceCid,
           filecoinChain,
+          filecoinForceNewDataset,
         })
       } catch (e) {
         if (strict) throw e
