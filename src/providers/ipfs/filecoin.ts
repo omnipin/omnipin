@@ -94,19 +94,18 @@ export const uploadToFilecoin: UploadFunction<{
   const publicKey = getPublicKey({ privateKey })
   const address = fromPublicKey(publicKey)
 
-  logger.info(`Payer address: ${address}`)
-
   const chain =
     filecoinChain === 'mainnet' ? filecoinMainnet : filecoinCalibration
 
-  logger.info(`Filecoin chain: ${chain.name}`)
-
   const balance = await getUSDfcBalance({ address, chain })
-  logger.info(`USDfc balance: ${Value.format(balance, 18)}`)
 
-  if (balance === 0n) throw new DeployError(providerName, 'No USDfc on account')
+  if (verbose) {
+    logger.info(`Payer address: ${address}`)
+    logger.info(`Filecoin chain: ${chain.name}`)
 
-  if (verbose) logger.info('Looking up existing data sets')
+    logger.info(`USDfc balance: ${Value.format(balance, 18)}`)
+    logger.info('Looking up existing data sets')
+  }
 
   const providerId = await pickProvider({
     chain,
@@ -150,11 +149,13 @@ export const uploadToFilecoin: UploadFunction<{
   const sybilFee = isNewDataSet ? SYBIL_FEE : 0n
   const totalRequired = perMonth + sybilFee
 
-  logger.info(`Required lockup: ${Value.format(perMonth, 18)} USDFC`)
-  if (isNewDataSet) {
-    logger.info(`Sybil fee: ${Value.format(sybilFee, 18)} USDFC`)
+  if (verbose) {
+    logger.info(`Required lockup: ${Value.format(perMonth, 18)} USDFC`)
+    if (isNewDataSet) {
+      logger.info(`Sybil fee: ${Value.format(sybilFee, 18)} USDFC`)
+    }
+    logger.info(`Total required: ${Value.format(totalRequired, 18)} USDFC`)
   }
-  logger.info(`Total required: ${Value.format(totalRequired, 18)} USDFC`)
 
   const [funds, lockupCurrent, lockupRate, lockupLastSettledAt] =
     await getAccountInfo({ address, chain })
@@ -172,7 +173,8 @@ export const uploadToFilecoin: UploadFunction<{
     totalRequired > availableFunds ? totalRequired - availableFunds : 0n
 
   if (depositNeeded > 0n) {
-    logger.info(`Depositing ${Value.format(depositNeeded, 18)} USDFC`)
+    if (verbose)
+      logger.info(`Depositing ${Value.format(depositNeeded, 18)} USDFC`)
 
     const params = await depositAndApproveOperatorWriteParameters({
       privateKey,
@@ -208,7 +210,7 @@ export const uploadToFilecoin: UploadFunction<{
       bytes: carBytes,
     })
 
-    logger.info('Waiting for piece to be stored at provider')
+    if (verbose) logger.info('Waiting for piece to be stored at provider')
     await findPiece(providerURL, pieceCid.toString(), { verbose })
 
     const clientDataSetId = BigInt(randomInt(10 ** 8))
