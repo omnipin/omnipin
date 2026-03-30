@@ -1,5 +1,4 @@
 import type {
-  AssertLocation,
   SpaceBlobAdd,
   SpaceBlobAddFailure,
   SpaceBlobAddSuccess,
@@ -34,7 +33,6 @@ import type {
   UsageReportFailure,
   UsageReportSuccess,
 } from '@storacha/capabilities/types'
-import type { Delegation } from '@ucanto/core/delegation'
 import type {
   DID,
   Failure,

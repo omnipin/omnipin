@@ -1,20 +1,14 @@
 import { describe, expect, it } from 'bun:test'
 import { calculatePieceCID } from '@omnipin/foc/utils'
 import { randomPrivateKey } from 'ox/Secp256k1'
-import {
-  DeployError,
-  MissingKeyError,
-  packCAR,
-  UploadNotSupportedError,
-  walk,
-} from '../../src/index.js'
+import { MissingKeyError, packCAR, walk } from '../../src/index.js'
 import { uploadToFilecoin } from '../../src/providers/ipfs/filecoin.js'
 
 const [size, files] = await walk('./dist', false)
 const car = await packCAR(files, 'test.car')
 
 const carBytes = new Uint8Array(await car.blob.arrayBuffer())
-const pieceCid = calculatePieceCID(carBytes).toString()
+const _pieceCid = calculatePieceCID(carBytes).toString()
 
 describe('Filecoin', () => {
   it('should not throw MissingKeyError when only providerAddress is specified', async () => {

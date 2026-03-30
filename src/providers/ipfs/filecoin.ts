@@ -2,7 +2,6 @@ import {
   createDataSetPayload,
   createUploadPiecesPayload,
   getClientDataSets,
-  getDataSet,
 } from '@omnipin/foc/data-set'
 import {
   depositAndApproveOperatorWriteParameters,
@@ -16,7 +15,6 @@ import {
   uploadPieceToDataSet,
 } from '@omnipin/foc/pdp-api'
 import {
-  getApprovedSPs,
   getProviderMetadata,
   getProviderPayee,
   pickProvider,

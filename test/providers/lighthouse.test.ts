@@ -2,11 +2,9 @@
 import { describe, expect, it } from 'bun:test'
 
 import { PROVIDERS } from '../../src/constants.js'
-import { walk } from '../../src/utils/fs.js'
-import { packCAR } from '../../src/utils/ipfs.js'
 
 const { upload: uploadOnLighthouse } = PROVIDERS.LIGHTHOUSE_TOKEN
-const hasLighthouseToken = Boolean(Bun.env.OMNIPIN_LIGHTHOUSE_TOKEN)
+const _hasLighthouseToken = Boolean(Bun.env.OMNIPIN_LIGHTHOUSE_TOKEN)
 
 describe('Lighthouse', () => {
   describe('upload', () => {

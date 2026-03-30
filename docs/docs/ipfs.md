@@ -107,18 +107,23 @@ Omnipin supports a wide range of different IPFS providers.
       <td>❌</td>
     </tr>
 
-  </tbody>
+</tbody>
 </table>
 
-> Permissionless in this context means that there is no need to register an account in order to upload content.
+> Permissionless in this context means that there is no need to register an
+> account in order to upload content.
 
 ## Filecoin
 
 - Environment variables: `OMNIPIN_FILECOIN_TOKEN`
 
-Omnipin integrates with Filecoin on both mainnet and testnet (calibration). The integration handles balance checks, automatic deposits to a payment service, file upload and verification and a payment transaction submission. Only a wallet account with FIL and USDfc is required.
+Omnipin integrates with Filecoin on both mainnet and testnet (calibration). The
+integration handles balance checks, automatic deposits to a payment service,
+file upload and verification and a payment transaction submission. Only a wallet
+account with FIL and USDfc is required.
 
-Create a new wallet keypair and save a private key to the `OMNIPIN_FILECOIN_TOKEN` environment variable.
+Create a new wallet keypair and save a private key to the
+`OMNIPIN_FILECOIN_TOKEN` environment variable.
 
 ```
 OMNIPIN_FILECOIN_TOKEN=0xdeadbeef
@@ -126,15 +131,26 @@ OMNIPIN_FILECOIN_TOKEN=0xdeadbeef
 
 Top up the wallet with a bit of FIL and USDfc.
 
-Buy FIL and USDfc via [Squid Router](https://app.squidrouter.com/?chains=137%2C314&tokens=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359%2C0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee) or [SushiSwap](https://www.sushi.com/filecoin/swap?token0=NATIVE&token1=0x80b98d3aa09ffff255c3ba4a241111ff1262f045). It is recommended to bridge a bit of FIL first, and then swap a portion of it to USDfc, since cross-chain swaps for USDfc have low liquidity in pools. For most (<10GB) uploads, $1 of USDfc and 0.1 FIL should be enough.
+Buy FIL and USDfc via
+[Squid Router](https://app.squidrouter.com/?chains=137%2C314&tokens=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359%2C0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee)
+or
+[SushiSwap](https://www.sushi.com/filecoin/swap?token0=NATIVE&token1=0x80b98d3aa09ffff255c3ba4a241111ff1262f045).
+It is recommended to bridge a bit of FIL first, and then swap a portion of it to
+USDfc, since cross-chain swaps for USDfc have low liquidity in pools. For most
+(<10GB) uploads, $1 of USDfc and 0.1 FIL should be enough.
 
-If using the calibration testnet, you can get USDFc through a faucet as well [here](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc).
+If using the calibration testnet, you can get USDFc through a faucet as well
+[here](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc).
 
-A Filecoin SP (storage provider) is chosen at random for convenience. It can be overriden using `OMNIPIN_FILECOIN_SP_URL` and `OMNIPIN_FILECOIN_SP_ADDRESS` environment variables.
+A Filecoin SP (storage provider) is chosen at random from the list of approved
+providers for convenience, if there have been no uploads prior. Otherwise a
+previously used SP will be used. Provider choice can be overriden with
+`OMNIPIN_FILECOIN_SP_URL` and `OMNIPIN_FILECOIN_SP_ADDRESS` environment
+variables. If only `OMNIPIN_FILECOIN_SP_ADDRESS` is specified, the provider URL
+is fetched from the registry.
 
-:::info
-By default, Filecoin mainnet is used. Switch to the calibration testnet via `--filecoin-chain=calibration`
-:::
+:::info By default, Filecoin mainnet is used. Switch to the calibration testnet
+via `--filecoin-chain=calibration` :::
 
 A more detailed guide on Filecoin can be found [here](/docs/filecoin).
 
@@ -142,7 +158,8 @@ A more detailed guide on Filecoin can be found [here](/docs/filecoin).
 
 - API env variables: `OMNIPIN_SPEC_TOKEN`, `OMNIPIN_SPEC_URL`
 
-Obtain an opaque access token from the service. Populate your environment as such:
+Obtain an opaque access token from the service. Populate your environment as
+such:
 
 ```
 OMNIPIN_SPEC_TOKEN=<access_token>
@@ -156,11 +173,14 @@ A few services provide a pinning service API:
 
 ## Filebase
 
-- API env variables: `OMNIPIN_FILEBASE_TOKEN` for pinning (if not the first provider), additionally `OMNIPIN_FILEBASE_BUCKET_NAME` for upload + pin.
+- API env variables: `OMNIPIN_FILEBASE_TOKEN` for pinning (if not the first
+  provider), additionally `OMNIPIN_FILEBASE_BUCKET_NAME` for upload + pin.
 
 ### Upload
 
-`OMNIPIN_FILEBASE_TOKEN` for upload + pin is obtained by encoding access key and access secret to base64. Access key and access secret could be found in the Filebase console.
+`OMNIPIN_FILEBASE_TOKEN` for upload + pin is obtained by encoding access key and
+access secret to base64. Access key and access secret could be found in the
+Filebase console.
 
 ![Filebase console](/filebase.png)
 
@@ -174,7 +194,9 @@ echo "$accessKey:$accessSecret" | base64
 
 Filebase provides an RPC API which can be used for pinning.
 
-Request a new token in the "IPFS RPC API Keys" section in "Access Keys" page of the Filebase console. Save the token to the `OMNIPIN_FILEBASE_TOKEN` environment variable.
+Request a new token in the "IPFS RPC API Keys" section in "Access Keys" page of
+the Filebase console. Save the token to the `OMNIPIN_FILEBASE_TOKEN` environment
+variable.
 
 ## Storacha
 
@@ -208,7 +230,8 @@ storacha login
 # ? Open the GitHub login URL in your default browser? yes
 ```
 
-Storacha uses spaces (similar to buckets). You would need to create one, if you don't have one already:
+Storacha uses spaces (similar to buckets). You would need to create one, if you
+don't have one already:
 
 ```bash [Terminal]
 storacha space create
@@ -235,13 +258,16 @@ Once you have a space, you need to select it:
 storacha space use <space DID>
 ```
 
-When both the account and the space are set up, you need to generate a unique private key. It is required to create a delegation proof to be able ot upload files to the space.
+When both the account and the space are set up, you need to generate a unique
+private key. It is required to create a delegation proof to be able ot upload
+files to the space.
 
 ```bash [Terminal]
 storacha key create
 ```
 
-Save this private key (which starts with `Mg..`) to an environment variable (`OMNIPIN_STORACHA_TOKEN`).
+Save this private key (which starts with `Mg..`) to an environment variable
+(`OMNIPIN_STORACHA_TOKEN`).
 
 With the key generated, it is now possible to create a delegation proof:
 
@@ -262,7 +288,9 @@ OMNIPIN_STORACHA_PROOF=mAYIEAJM...uIXm2rXyL...Zxe4Bh6g2RQZwjDUcw3qrvMNXzu2pg/rdd
 
 - API env variables: `OMNIPIN_PINATA_TOKEN`
 
-Go to the dashboard page, then "API Keys" under "Developer" section. Click "New Key". An API key creation dialog should apppear. Select the checkboxes related to pinning. Click "Generate API Key".
+Go to the dashboard page, then "API Keys" under "Developer" section. Click "New
+Key". An API key creation dialog should apppear. Select the checkboxes related
+to pinning. Click "Generate API Key".
 
 ![Pinata dashboard](/pinata.png)
 
@@ -272,13 +300,17 @@ Save the JWT token to the `OMNIPIN_PINATA_TOKEN` environment variable.
 
 - API env variables: `OMNIPIN_4EVERLAND_TOKEN`
 
-Open 4EVERLAND dashboard. Navigate to Storage > 4Ever Pin. Click "Access token". Copy the token and save it to the `OMNIPIN_4EVERLAND_TOKEN` environment variable.
+Open 4EVERLAND dashboard. Navigate to Storage > 4Ever Pin. Click "Access token".
+Copy the token and save it to the `OMNIPIN_4EVERLAND_TOKEN` environment
+variable.
 
 ## QuickNode
 
 - API env variables: `OMNIPIN_QUICKNODE_TOKEN`
 
-Go to the dashboard and open the ["API Keys" page](https://dashboard.quicknode.com/api-keys). Click "Add API Key". In the "Applications" modal choose only "IPFS_REST".
+Go to the dashboard and open the
+["API Keys" page](https://dashboard.quicknode.com/api-keys). Click "Add API
+Key". In the "Applications" modal choose only "IPFS_REST".
 
 ![Quicknode API key modal](/quicknode.png)
 
@@ -292,16 +324,24 @@ Go to "API Key", enter "Omnipin" in the input box and click "Generate".
 
 - API env variables: `OMNIPIN_BLOCKFROST_TOKEN`
 
-Create a new project. It will automatically create a token. Save the token to the `OMNIPIN_BLOCKFROST_TOKEN` environment variable.
+Create a new project. It will automatically create a token. Save the token to
+the `OMNIPIN_BLOCKFROST_TOKEN` environment variable.
 
 ## Aleph
 
 - API env variables: `OMNIPIN_ALEPH_TOKEN`, `OMNIPIN_ALEPH_CHAIN`
 
-`OMNIPIN_ALEPH_TOKEN` is the private key of the account. Buy [$ALEPH](https://aleph.cloud/aleph-token) token for an account, around the same amount as the size of the website distribution. By default, mainnet will be used, but you can specify the chain with `OMNIPIN_ALEPH_CHAIN`. Supported chain are Ethereum (`ETH`), Avalanche (`AVAX`) and Base (`BASE`).
+`OMNIPIN_ALEPH_TOKEN` is the private key of the account. Buy
+[$ALEPH](https://aleph.cloud/aleph-token) token for an account, around the same
+amount as the size of the website distribution. By default, mainnet will be
+used, but you can specify the chain with `OMNIPIN_ALEPH_CHAIN`. Supported chain
+are Ethereum (`ETH`), Avalanche (`AVAX`) and Base (`BASE`).
 
 ## SimplePage
 
 - API env variables: `OMNIPIN_SIMPLEPAGE_TOKEN`
 
-`OMNIPIN_SIMPLEPAGE_TOKEN` is an ENS name used for a page. SimplePage requires an onchain [subscription](https://simplepage.eth.limo/user-guide/#subscription-management) ($1/month).
+`OMNIPIN_SIMPLEPAGE_TOKEN` is an ENS name used for a page. SimplePage requires
+an onchain
+[subscription](https://simplepage.eth.limo/user-guide/#subscription-management)
+($1/month).

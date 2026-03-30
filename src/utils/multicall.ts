@@ -1,6 +1,6 @@
 import { decodeResult, encodeData } from 'ox/AbiFunction'
 import type { Address } from 'ox/Address'
-import { fromNumber, type Hex } from 'ox/Hex'
+import type { Hex } from 'ox/Hex'
 import type { Provider } from 'ox/Provider'
 import type { FilecoinChain } from './filecoin/constants.js'
 import { SIMULATION_GAS_LIMIT } from './tx.js'
