@@ -149,8 +149,10 @@ previously used SP will be used. Provider choice can be overriden with
 variables. If only `OMNIPIN_FILECOIN_SP_ADDRESS` is specified, the provider URL
 is fetched from the registry.
 
-:::info By default, Filecoin mainnet is used. Switch to the calibration testnet
-via `--filecoin-chain=calibration` :::
+:::info
+By default, Filecoin mainnet is used. Switch to the calibration testnet
+via `--filecoin-chain=calibration`
+:::
 
 A more detailed guide on Filecoin can be found [here](/docs/filecoin).
 
