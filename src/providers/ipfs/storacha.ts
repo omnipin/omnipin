@@ -19,7 +19,7 @@ const abilities = [
 
 export const uploadOnStoracha: UploadFunction<{ proof: string }> = async ({
   token,
-  car,
+  bytes,
   proof,
 }) => {
   if (!proof) throw new MissingKeyError(`STORACHA_PROOF`)
@@ -27,6 +27,10 @@ export const uploadOnStoracha: UploadFunction<{ proof: string }> = async ({
   const { agent, space } = await setup({ pk: token, proof })
 
   if (!space) throw new Error('No space found')
+
+  const blob = new Blob([bytes.buffer as ArrayBuffer], {
+    type: 'application/vnd.ipld.car',
+  })
 
   try {
     const cid = await uploadCAR(
@@ -37,7 +41,7 @@ export const uploadOnStoracha: UploadFunction<{ proof: string }> = async ({
         ),
         with: space.did(),
       },
-      car,
+      blob,
     )
 
     return { cid: cid.toString() }

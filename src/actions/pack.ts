@@ -49,10 +49,9 @@ export const packAction = async ({
 
   if (tar) {
     const tar = await packTAR(files)
-    const blob = new Blob([tar as BlobPart])
-    return { blob, size }
+    return { bytes: tar, size }
   } else {
-    const { rootCID, blob } = await packCAR(files, name, dist)
+    const { rootCID, bytes } = await packCAR(files, name, dist)
 
     const cid = rootCID.toString()
     if (onlyHash) {
@@ -61,6 +60,6 @@ export const packAction = async ({
       logger.info(`Root CID: ${isTTY ? styleText('white', cid) : cid}`)
     }
 
-    return { name, cid, blob, files, size }
+    return { name, cid, bytes, files, size }
   }
 }

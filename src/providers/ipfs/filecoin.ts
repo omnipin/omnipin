@@ -79,7 +79,7 @@ export const uploadToFilecoin: UploadFunction<{
   providerAddress,
   providerURL,
   cid,
-  car,
+  bytes,
   token: privateKey,
   verbose,
   filecoinChain = 'mainnet',
@@ -130,7 +130,7 @@ export const uploadToFilecoin: UploadFunction<{
   logger.info(`Price for storage: ${Value.format(perMonth, 18)} USDfc/month`)
 
   // Buffer CAR bytes once and derive Piece CID
-  const carBytes = new Uint8Array(await car.arrayBuffer())
+  const carBytes = bytes
   const pieceCid = calculatePieceCID(carBytes)
 
   const datasets = await getClientDataSets({

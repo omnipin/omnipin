@@ -5,13 +5,13 @@ const providerName = 'SimplePage'
 
 export const uploadToSimplePage: UploadFunction = async ({
   token,
-  car,
+  bytes,
   name,
 }) => {
   const fd = new FormData()
   fd.append(
     'file',
-    new File([car], `${name}.car`, {
+    new File([bytes.buffer as ArrayBuffer], `${name}.car`, {
       type: 'application/vnd.ipld.car',
     }),
   )

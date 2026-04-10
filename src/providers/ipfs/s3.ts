@@ -5,7 +5,7 @@ import { logger } from '../../utils/logger.js'
 
 export const uploadOnS3 = async ({
   name,
-  car,
+  bytes,
   token,
   bucketName,
   apiUrl,
@@ -19,7 +19,9 @@ export const uploadOnS3 = async ({
   }>,
   'first' | 'cid'
 >): Promise<Response> => {
-  const file = new File([car], name)
+  const file = new File([bytes.buffer as ArrayBuffer], name, {
+    type: 'application/vnd.ipld.car',
+  })
 
   const res = await uploadCar({ apiUrl, file, token, bucketName })
 

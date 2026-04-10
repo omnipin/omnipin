@@ -9,12 +9,13 @@ const baseURL = 'https://rpc.filebase.io/api/v0'
 
 export const uploadOnFilebase: UploadFunction<{ bucketName: string }> = async ({
   first,
-  car,
+  bytes,
   name,
   token,
   bucketName,
   verbose,
   cid,
+  size,
 }) => {
   if (first) {
     if (!bucketName) throw new MissingKeyError(`FILEBASE_BUCKET_NAME`)
@@ -25,8 +26,8 @@ export const uploadOnFilebase: UploadFunction<{ bucketName: string }> = async ({
       providerName,
       verbose,
       name,
-      car,
-      size: car.size,
+      bytes,
+      size,
       token,
     })
 

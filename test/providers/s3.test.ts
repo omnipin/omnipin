@@ -14,7 +14,7 @@ describe('s3', () => {
     })
     const res = await uploadOnS3({
       name: 'test.car',
-      car: new Blob([]),
+      bytes: new Uint8Array(),
       token: 'token',
       bucketName: 'bucketName',
       apiUrl: 'https://example.com',
@@ -33,7 +33,7 @@ describe('s3', () => {
     expect(
       uploadOnS3({
         name: 'test.car',
-        car: new Blob([]),
+        bytes: new Uint8Array(),
         token: 'token',
         bucketName: 'bucketName',
         apiUrl: 'https://example.com',

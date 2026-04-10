@@ -31,7 +31,7 @@ describe('Storacha provider', () => {
           token,
           name: 'test',
           first: true,
-          car: car.blob,
+          bytes: car.bytes,
           cid: car.rootCID.toString(),
           size,
         })
