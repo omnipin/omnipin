@@ -78,6 +78,8 @@ export const packCAR = async (
   const file = await readFile(output)
   const bytes = file as Uint8Array
 
+  blockstore.clear()
+
   return { bytes, rootCID }
 }
 

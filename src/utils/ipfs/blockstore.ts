@@ -114,6 +114,10 @@ export class MemoryBlockstore implements Blockstore {
     this.data.delete(base32.encode(key.multihash.bytes))
   }
 
+  clear(): void {
+    this.data.clear()
+  }
+
   *getAll(options?: AbortOptions): AwaitGenerator<Pair> {
     options?.signal?.throwIfAborted()
 
