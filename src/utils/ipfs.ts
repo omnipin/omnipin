@@ -29,7 +29,7 @@ export const packCAR = async (
   files: FileCandidate[],
   name: string,
   dir = tmp,
-): Promise<{ blob: Blob; rootCID: CID }> => {
+): Promise<{ bytes: Uint8Array; rootCID: CID }> => {
   const output = `${dir}/${name}.car`
 
   const blockstore = new MemoryBlockstore()
@@ -76,11 +76,11 @@ export const packCAR = async (
   await new Promise<void>((resolve) => writeStream.on('close', resolve))
 
   const file = await readFile(output)
-  const blob = new Blob([file as BlobPart], {
-    type: 'application/vnd.ipld.car',
-  })
+  const bytes = file as Uint8Array
 
-  return { blob, rootCID }
+  blockstore.clear()
+
+  return { bytes, rootCID }
 }
 
 export const assertCID = (cid: string) => {

@@ -40,7 +40,7 @@ describe('Lighthouse', () => {
         cid,
         name: 'Omnipin test',
         first: false,
-        car: new Blob(),
+        bytes: new Uint8Array(),
         size: 0,
       })
 

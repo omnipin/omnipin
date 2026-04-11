@@ -5,7 +5,7 @@ import { logger } from '../../utils/logger.js'
 const providerName = 'Lighthouse'
 
 export const uploadOnLighthouse: UploadFunction = async ({
-  car,
+  bytes,
   name,
   first,
   token,
@@ -15,7 +15,13 @@ export const uploadOnLighthouse: UploadFunction = async ({
   if (first) {
     const fd = new FormData()
 
-    fd.append('file', car, `${name}.car`)
+    fd.append(
+      'file',
+      new Blob([Uint8Array.from(bytes).buffer], {
+        type: 'application/vnd.ipld.car',
+      }),
+      `${name}.car`,
+    )
 
     const res = await fetch(
       'https://upload.lighthouse.storage/api/v0/dag/import',

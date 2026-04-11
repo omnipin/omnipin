@@ -13,7 +13,7 @@ type AuthArgs = {
 export type UploadArgs<T = object> = {
   name: string
   verbose?: boolean
-  car: Blob
+  bytes: Uint8Array
   first: boolean
   size: number
   cid: string

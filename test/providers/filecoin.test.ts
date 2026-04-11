@@ -7,8 +7,7 @@ import { uploadToFilecoin } from '../../src/providers/ipfs/filecoin.js'
 const [size, files] = await walk('./dist', false)
 const car = await packCAR(files, 'test.car')
 
-const carBytes = new Uint8Array(await car.blob.arrayBuffer())
-const _pieceCid = calculatePieceCID(carBytes).toString()
+const _pieceCid = calculatePieceCID(car.bytes).toString()
 
 describe('Filecoin', () => {
   it('should not throw MissingKeyError when only providerAddress is specified', async () => {
@@ -18,7 +17,7 @@ describe('Filecoin', () => {
     // testing as first provider, not because of missing env vars
     try {
       await uploadToFilecoin({
-        car: car.blob,
+        bytes: car.bytes,
         cid: car.rootCID.toString(),
         size,
         first: true, // This should trigger UploadNotSupportedError
@@ -49,7 +48,7 @@ describe('Filecoin', () => {
   it('throws if no USDfc on account', async () => {
     try {
       await uploadToFilecoin({
-        car: car.blob,
+        bytes: car.bytes,
         cid: car.rootCID.toString(),
         size,
         first: true,

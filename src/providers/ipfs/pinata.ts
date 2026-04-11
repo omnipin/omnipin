@@ -10,7 +10,7 @@ export const statusOnPinata: StatusFunction = (args) => {
 }
 
 export const uploadOnPinata: UploadFunction = async ({
-  car,
+  bytes,
   name,
   token,
   verbose,
@@ -20,7 +20,12 @@ export const uploadOnPinata: UploadFunction = async ({
   if (first) {
     const fd = new FormData()
 
-    fd.append('file', car)
+    fd.append(
+      'file',
+      new Blob([bytes.buffer as ArrayBuffer], {
+        type: 'application/vnd.ipld.car',
+      }),
+    )
     fd.append('network', 'public')
 
     fd.append('name', `${name}.car`)

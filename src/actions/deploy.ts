@@ -80,7 +80,7 @@ export const deployAction = async ({
   const {
     name,
     cid: ipfsCid,
-    blob,
+    bytes,
     size,
   } = await packAction({
     dir,
@@ -117,7 +117,7 @@ export const deployAction = async ({
       const envVar = findEnvVarProviderName(provider.name)!
       try {
         const result = await provider.upload({
-          car: blob,
+          bytes,
           token: apiTokens.get(envVar)!,
           verbose,
           name: '',
@@ -155,7 +155,7 @@ export const deployAction = async ({
       try {
         await provider.upload({
           name,
-          car: blob,
+          bytes,
           token,
           bucketName,
           proof: apiTokens.get('STORACHA_PROOF'),

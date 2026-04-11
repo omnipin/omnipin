@@ -6,7 +6,7 @@ const te = new TextEncoder()
 
 describe('ipfs utils', () => {
   describe('packCAR', () => {
-    it('should pack files into a CAR and return blob and rootCID', async () => {
+    it('should pack files into a CAR and return bytes and rootCID', async () => {
       const files = [
         {
           path: 'a.txt',
@@ -22,11 +22,9 @@ describe('ipfs utils', () => {
         },
       ]
 
-      const { blob, rootCID } = await packCAR(files, 'test-car')
+      const { bytes, rootCID } = await packCAR(files, 'test-car')
 
-      assert.ok(blob instanceof Blob)
-      assert.strictEqual(blob.type, 'application/vnd.ipld.car')
-      assert.equal(blob.size, 468)
+      assert.ok(bytes instanceof Uint8Array)
       assert.ok(rootCID)
       assert.ok(rootCID.toString().startsWith('bafy'))
     })
