@@ -5,7 +5,8 @@ import {
 } from '@omnipin/foc/data-set'
 import {
   depositAndApproveOperatorWriteParameters,
-  getAccountInfo,
+  getAvailableFunds,
+  getDataSetCreationRequirements,
   getServicePrice,
   getUSDfcBalance,
 } from '@omnipin/foc/fil-pay'
@@ -41,8 +42,6 @@ import {
 } from '../../utils/tx.js'
 
 const providerName = 'Filecoin'
-
-const SYBIL_FEE = 100_000_000_000_000_000n
 
 async function findPiece(
   providerURL: string,
@@ -101,7 +100,7 @@ export const uploadToFilecoin: UploadFunction<{
     logger.info(`Payer address: ${address}`)
     logger.info(`Filecoin chain: ${chain.name}`)
 
-    logger.info(`USDfc balance: ${Value.format(balance, 18)}`)
+    logger.info(`Wallet USDfc balance: ${Value.format(balance, 18)}`)
     logger.info('Looking up existing data sets')
   }
 
@@ -144,31 +143,37 @@ export const uploadToFilecoin: UploadFunction<{
 
   const isNewDataSet =
     providerActiveDataSets.length === 0 || filecoinForceNewDataset
-  const sybilFee = isNewDataSet ? SYBIL_FEE : 0n
-  const totalRequired = perMonth + sybilFee
+  const creationRequirement = isNewDataSet
+    ? (await getDataSetCreationRequirements({ chain })).creationRequirement
+    : 0n
+  const requiredAmount =
+    isNewDataSet && creationRequirement > perMonth
+      ? creationRequirement
+      : perMonth
 
   if (verbose) {
-    logger.info(`Required lockup: ${Value.format(perMonth, 18)} USDFC`)
+    logger.info(`Storage price: ${Value.format(perMonth, 18)} USDFC/month`)
     if (isNewDataSet) {
-      logger.info(`Sybil fee: ${Value.format(sybilFee, 18)} USDFC`)
+      logger.info(
+        `Creation requirement: ${Value.format(creationRequirement, 18)} USDFC`,
+      )
     }
-    logger.info(`Total required: ${Value.format(totalRequired, 18)} USDFC`)
+    logger.info(`Required funds: ${Value.format(requiredAmount, 18)} USDFC`)
   }
 
-  const [funds, lockupCurrent, lockupRate, lockupLastSettledAt] =
-    await getAccountInfo({ address, chain })
-  const currentEpochHex = await filProvider[chain.id].request({
-    method: 'eth_blockNumber',
-  })
-  const currentEpoch = BigInt(currentEpochHex)
-  const epochSinceSettlement = currentEpoch - lockupLastSettledAt
-  const actualLockup = lockupCurrent + epochSinceSettlement * lockupRate
-  const availableFunds = funds > actualLockup ? funds - actualLockup : 0n
+  const { funds, availableFunds } = await getAvailableFunds({ address, chain })
 
-  logger.info(`Available funds: ${Value.format(availableFunds, 18)} USDFC`)
+  if (verbose) {
+    logger.info(
+      `Filecoin Pay deposited funds: ${Value.format(funds, 18)} USDFC`,
+    )
+  }
+  logger.info(
+    `Filecoin Pay available funds: ${Value.format(availableFunds, 18)} USDFC`,
+  )
 
   const depositNeeded =
-    totalRequired > availableFunds ? totalRequired - availableFunds : 0n
+    requiredAmount > availableFunds ? requiredAmount - availableFunds : 0n
 
   if (depositNeeded > 0n) {
     if (verbose)
