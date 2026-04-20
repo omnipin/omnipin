@@ -12,6 +12,8 @@ import { pingAction } from './actions/ping.js'
 import { statusAction } from './actions/status.js'
 import { zodiacAction } from './actions/zodiac.js'
 import { isTTY } from './constants.js'
+import { loadPlugin } from './plugin-loader.js'
+import { pluginRegistry } from './plugin-runtime.js'
 
 const cli = new CLI({ name: 'omnipin', plugins: isTTY ? [colorPlugin] : [] })
 
@@ -63,6 +65,11 @@ cli.command(
   {
     description: 'Start the deployment process',
     options: [
+      {
+        name: 'plugins',
+        description: 'Comma-separated list of plugins to load',
+        type: 'string',
+      },
       {
         name: 'strict',
         description: 'Throw if one of the providers fails',
@@ -146,7 +153,14 @@ cli.command<[string, string]>(
     }),
   {
     description: 'Update ENS domain Content-Hash with an IFPS CID',
-    options: ensOptions,
+    options: [
+      {
+        name: 'plugins',
+        description: 'Comma-separated list of plugins to load',
+        type: 'string',
+      },
+      ...ensOptions,
+    ],
   },
 )
 
@@ -239,6 +253,11 @@ cli.command<[string]>(
 cli.command<[string]>('pin', ([cid], options) => pinAction({ cid, options }), {
   options: [
     {
+      name: 'plugins',
+      description: 'Comma-separated list of plugins to load',
+      type: 'string',
+    },
+    {
       name: 'strict',
       description: 'Throw if one of the providers fails',
       type: 'boolean',
@@ -267,5 +286,49 @@ cli.command<[Address, Address]>(
   },
 )
 
-cli.help()
-cli.handle(process.argv.slice(2))
+// Parse plugins from CLI args
+const parsePlugins = async (pluginsArg?: string) => {
+  if (pluginsArg) {
+    const pluginSpecifiers = pluginsArg.split(',')
+    for (const specifier of pluginSpecifiers) {
+      try {
+        const plugin = await loadPlugin(specifier.trim())
+        await plugin.setup(pluginRegistry)
+        console.log(`🔌 Loaded plugin: ${plugin.name}`)
+      } catch (error) {
+        console.error(`❌ Failed to load plugin ${specifier}:`, error)
+        process.exit(1)
+      }
+    }
+  }
+}
+
+// We need to manually parse the --plugins argument since Spektr doesn't support global options easily
+const parsePluginsFromArgs = (args: string[]) => {
+  const pluginsIndex = args.findIndex(
+    (arg) => arg === '--plugins' || arg.startsWith('--plugins='),
+  )
+  if (pluginsIndex !== -1) {
+    if (args[pluginsIndex].startsWith('--plugins=')) {
+      return args[pluginsIndex].split('=')[1]
+    } else if (
+      pluginsIndex + 1 < args.length &&
+      !args[pluginsIndex + 1].startsWith('-')
+    ) {
+      return args[pluginsIndex + 1]
+    }
+  }
+  return undefined
+}
+
+// Main execution with plugin loading
+const main = async () => {
+  const pluginsArg = parsePluginsFromArgs(process.argv.slice(2))
+  await parsePlugins(pluginsArg)
+  cli.handle(process.argv.slice(2))
+}
+
+main().catch((error) => {
+  console.error('Fatal error:', error)
+  process.exit(1)
+})
