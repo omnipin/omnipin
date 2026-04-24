@@ -1,7 +1,7 @@
 import { DeployError, PinningNotSupportedError } from '../../errors.js'
 import type { UploadFunction } from '../../types.js'
 import { logger } from '../../utils/logger.js'
-import { referenceToCID } from '../../utils/swarm.js'
+import { referenceToCIDString } from '../../utils/swarm.js'
 
 const providerName = 'Swarmy'
 
@@ -31,7 +31,7 @@ export const uploadOnSwarmy: UploadFunction = async ({
   }
 
   return {
-    cid: referenceToCID(`0x${json.swarmReference}`).toString(),
+    cid: referenceToCIDString(`0x${json.swarmReference}`),
     rID: json.swarmReference,
   }
 }

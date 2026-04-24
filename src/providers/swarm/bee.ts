@@ -1,7 +1,7 @@
 import { DeployError, PinningNotSupportedError } from '../../errors.js'
 import type { UploadFunction } from '../../types.js'
 import { logger } from '../../utils/logger.js'
-import { referenceToCID } from '../../utils/swarm.js'
+import { referenceToCIDString } from '../../utils/swarm.js'
 
 const providerName = 'Bee'
 
@@ -34,7 +34,7 @@ export const uploadOnBee: UploadFunction<{ beeURL: string }> = async ({
   }
 
   return {
-    cid: referenceToCID(`0x${json.reference}`).toString(),
+    cid: referenceToCIDString(`0x${json.reference}`),
     rID: json.reference,
   }
 }
