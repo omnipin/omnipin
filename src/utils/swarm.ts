@@ -1,3 +1,4 @@
+import { base32 } from 'multiformats/bases/base32'
 import { create } from 'multiformats/hashes/digest'
 import { type Hex, toBytes } from 'ox/Hex'
 import * as varint from 'varint'
@@ -25,3 +26,6 @@ export const referenceToCID = (ref: Hex): Uint8Array =>
     SWARM_MANIFEST_CODEC,
     create(KECCAK_256_CODEC, toBytes(ref)).bytes,
   )
+
+export const referenceToCIDString = (ref: Hex): string =>
+  base32.encode(referenceToCID(ref))
