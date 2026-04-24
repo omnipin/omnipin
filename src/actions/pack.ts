@@ -48,18 +48,23 @@ export const packAction = async ({
   }
 
   if (tar) {
-    const tar = await packTAR(files)
-    return { bytes: tar, size }
-  } else {
-    const { rootCID, bytes } = await packCAR(files, name, dist)
+    const { bytes, output } = await packTAR(files, name, dist)
 
-    const cid = rootCID.toString()
-    if (onlyHash) {
-      console.log(cid)
-    } else {
-      logger.info(`Root CID: ${isTTY ? styleText('white', cid) : cid}`)
+    if (!onlyHash && output) {
+      logger.info(`TAR: ${isTTY ? styleText('white', output) : output}`)
     }
 
-    return { name, cid, bytes, files, size }
+    return { name, bytes, files, size }
   }
+
+  const { rootCID, bytes } = await packCAR(files, name, dist)
+
+  const cid = rootCID.toString()
+  if (onlyHash) {
+    console.log(cid)
+  } else {
+    logger.info(`Root CID: ${isTTY ? styleText('white', cid) : cid}`)
+  }
+
+  return { name, cid, bytes, files, size }
 }
