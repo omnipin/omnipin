@@ -231,8 +231,15 @@ cli.command<[string]>(
         type: 'boolean',
         short: 'v',
       },
+      {
+        name: 'tar',
+        description: 'Pack as a TAR archive (for Swarm) instead of a CAR',
+        type: 'boolean',
+        short: 't',
+      },
     ] as const,
-    description: 'Pack websites files into a CAR without uploading it anywhere',
+    description:
+      'Pack websites files into a CAR (or TAR with --tar) without uploading it anywhere',
   },
 )
 
