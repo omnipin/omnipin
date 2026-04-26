@@ -1,6 +1,6 @@
 # `omnipin status`
 
-Checks the deployment status of a IPFS CID across providers.
+Checks the deployment status of an IPFS CID across providers.
 
 ```sh
 omnipin status <cid>

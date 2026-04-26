@@ -7,7 +7,7 @@ Omnipin supports uploading on the [Swarm](https://ethswarm.org) decentralized ne
 - API token env variables: `OMNIPIN_SWARMY_TOKEN`
 - Supported methods: Upload
 
-Omnipin supports uploading on the [Swarm](https://ethswarm.org) decentralized network via [Swarmy](https://swarmy.cloud), a storage provider. A website is not possible to upload both on Swarm and IPFS, so when opting in for Swarmy, other providers will be ignored.
+Omnipin supports uploading on the [Swarm](https://ethswarm.org) decentralized network via [Swarmy](https://swarmy.cloud), a storage provider. A website cannot be uploaded to both Swarm and IPFS at the same time, so when opting in for Swarmy, other providers will be ignored.
 
 ### Setup
 
@@ -50,13 +50,14 @@ curl -sX POST http://localhost:1633/stamps/<amount>/<depth>
 # }
 ```
 
-Add the batch ID to the environment variables:
+Add the batch ID and the Bee node URL to the environment variables:
 
 ```sh
-OMNIPIN_BEE_TOKEN=8fc...2c6b
+OMNIPIN_BEE_TOKEN=8fc...8552c6b
+OMNIPIN_BEE_URL=http://localhost:1633
 ```
 
-Then run the the deployment command:
+Then run the deployment command:
 
 ```sh
 omnipin deploy --ens omnipin.eth --safe eth:0x...

@@ -99,7 +99,7 @@ Omnipin supports a wide range of different IPFS providers.
       <td>❌</td>
     </tr>
     <tr>
-      <td><a href="#aleph">SimplePage</a></td>
+      <td><a href="#simplepage">SimplePage</a></td>
       <td><a href="https://simplepage.eth.limo/architecture">Docs</a></td>
       <td>✅</td>
       <td>✅</td>
@@ -139,12 +139,12 @@ It is recommended to bridge a bit of FIL first, and then swap a portion of it to
 USDfc, since cross-chain swaps for USDfc have low liquidity in pools. For most
 (<10GB) uploads, $1 of USDfc and 0.1 FIL should be enough.
 
-If using the calibration testnet, you can get USDFc through a faucet as well
+If using the calibration testnet, you can get USDfc through a faucet as well
 [here](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc).
 
 A Filecoin SP (storage provider) is chosen at random from the list of approved
 providers for convenience, if there have been no uploads prior. Otherwise a
-previously used SP will be used. Provider choice can be overriden with
+previously used SP will be used. Provider choice can be overridden with
 `OMNIPIN_FILECOIN_SP_URL` and `OMNIPIN_FILECOIN_SP_ADDRESS` environment
 variables. If only `OMNIPIN_FILECOIN_SP_ADDRESS` is specified, the provider URL
 is fetched from the registry.
@@ -202,7 +202,7 @@ variable.
 
 ## Storacha
 
-- API env variables: `STORACHA_TOKEN`, `STORACHA_PROOF`
+- API env variables: `OMNIPIN_STORACHA_TOKEN`, `OMNIPIN_STORACHA_PROOF`
 
 Generating a key for Storacha requires a CLI tool.
 
@@ -261,7 +261,7 @@ storacha space use <space DID>
 ```
 
 When both the account and the space are set up, you need to generate a unique
-private key. It is required to create a delegation proof to be able ot upload
+private key. It is required to create a delegation proof to be able to upload
 files to the space.
 
 ```bash [Terminal]
@@ -291,7 +291,7 @@ OMNIPIN_STORACHA_PROOF=mAYIEAJM...uIXm2rXyL...Zxe4Bh6g2RQZwjDUcw3qrvMNXzu2pg/rdd
 - API env variables: `OMNIPIN_PINATA_TOKEN`
 
 Go to the dashboard page, then "API Keys" under "Developer" section. Click "New
-Key". An API key creation dialog should apppear. Select the checkboxes related
+Key". An API key creation dialog should appear. Select the checkboxes related
 to pinning. Click "Generate API Key".
 
 ![Pinata dashboard](/pinata.png)
@@ -336,7 +336,7 @@ the `OMNIPIN_BLOCKFROST_TOKEN` environment variable.
 `OMNIPIN_ALEPH_TOKEN` is the private key of the account. Buy
 [$ALEPH](https://aleph.cloud/aleph-token) token for an account, around the same
 amount as the size of the website distribution. By default, mainnet will be
-used, but you can specify the chain with `OMNIPIN_ALEPH_CHAIN`. Supported chain
+used, but you can specify the chain with `OMNIPIN_ALEPH_CHAIN`. Supported chains
 are Ethereum (`ETH`), Avalanche (`AVAX`) and Base (`BASE`).
 
 ## SimplePage

@@ -1,12 +1,12 @@
 # `omnipin ens`
 
-Updates ENS domain Content-Hash with an IFPS CID.
+Updates ENS domain Content-Hash with an IPFS CID.
 
 ```sh
 omnipin ens <cid> <domain.eth>
 ```
 
-Requires a ENS owner's private key (`OMNIPIN_PK`) to be defined.
+Requires an ENS owner's private key (`OMNIPIN_PK`) to be defined.
 
 ::: warning
 
@@ -21,7 +21,7 @@ It is recommended to use multisig wallets for deployments instead of using a pri
 - Default: `mainnet`
 - Options: `mainnet`, `sepolia`
 
-EVM Chain to use for ENS deployment. Requires `--ens` option to be defined.
+EVM Chain to use for ENS deployment.
 
 ### `safe`
 

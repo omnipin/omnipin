@@ -14,13 +14,13 @@ If `OMNIPIN_PK` is not specified, a private key will be generated on the spot.
 ```sh
 omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63
 
-# omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --verbose
+# omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63 --verbose
 # ⚠️ `OMNIPIN_PK` environment variable not set.
 # 🟢 Generating a Secp256k1 keypair
 #    0xeb12099469558be35d53d606e1d5e69d0854c57ef6658e909325c5a0e6493415
 # 🟢 Save the private key and do not share it to anyone
 # 🟢 Created zodiac.json in current directory
-# Open in a browser: https://app.safe.global/apps/open?safe=:0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262&appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder
+# Open in a browser: https://app.safe.global/apps/open?safe=eth:0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262&appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder
 # Upload zodiac.json in the UI
 ```
 
