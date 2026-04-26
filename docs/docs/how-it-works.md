@@ -109,7 +109,7 @@ A transaction is signed by a private key provided via `OMNIPIN_PK` and is immedi
 
 In case EOA is still required and neither Proposer nor Zodiac Roles options are available, it is recommended to take a list of security measures to minimize the potential risks of using an EOA for managing the ENS name:
 
-* Don't use the account for storing any assets other than a tiny portion of ETH required to pay the transaction feees
+* Don't use the account for storing any assets other than a tiny portion of ETH required to pay the transaction fees
 * Save the private key in CI secrets to not be able to retrieve it from elsewhere
 * If an ENS name is wrapped, unwrap it and set an owner to a different Ethereum account. In case the private key gets leaked, it is still possible to revoke access by changing the manager address.
 
@@ -122,7 +122,7 @@ While the Proposer flow is the safest and is the most secure, it is also the mos
 #### Setup
 
 1. Head over to the [Safe app](https://app.safe.global) and create a new wallet, if you don't have one yet.
-2. Create a new Ethereum account that will be used for proposing transactions, save it's private key to `OMNIPIN_PK`.
+2. Create a new Ethereum account that will be used for proposing transactions, save its private key to `OMNIPIN_PK`.
 3. To add a proposer, go to the Safe app > Settings > Setup. Scroll down to "Proposers" and click "Add Proposer". You can add multiple proposers to your Safe, but only one can be used at a time.
 
 ![Proposer UI](/proposer.png)
@@ -142,15 +142,15 @@ A transaction is signed by a private key provided via `OMNIPIN_PK` and is immedi
 4. Generate a JSON for a batch transaction setup via `omnipin zodiac`:
 
 ```sh
-omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1
+omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63
 
-# omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --verbose
+# omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63 --verbose
 # ⚠️ `OMNIPIN_PK` environment variable not set.
 # 🟢 Generating a Secp256k1 keypair
 #    0xeb12099469558be35d53d606e1d5e69d0854c57ef6658e909325c5a0e6493415
 # 🟢 Save the private key and do not share it to anyone
 # 🟢 Created zodiac.json in current directory
-# Open in a browser: https://app.safe.global/apps/open?safe=:0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262&appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder
+# Open in a browser: https://app.safe.global/apps/open?safe=eth:0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262&appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder
 # Upload zodiac.json in the UI
 ```
 

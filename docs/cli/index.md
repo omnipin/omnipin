@@ -72,14 +72,13 @@ omnipin deploy --providers Storacha,Lighthouse
 More verbose logs.
 
 ```sh
-omnipin deploy --verbose --providers=Gateway3
+omnipin deploy --verbose --providers=Pinata
 
 # 📦 Packing dist (30.99KB)
 # 🟢 Root CID: bafybeihw4r72ynkl2zv4od2ru4537qx2zxjkwlzddadqmochzhe524t7qu
-# 🟢 Deploying with providers: Gateway3
-# POST https://gw3.io/api/v0/dag/import?size=33547&ts=... 200
-# POST https://some-node.gtw3.io/api/v0/dag/import?sargs=...-...-...-...&ssig=.......-...-...%3D%3D 200
-# POST https://gw3.io/api/v0/pin/add?arg=...&ts=...&name=dist 200
+# 🟢 Deploying with providers: Pinata
+# POST https://uploads.pinata.cloud/v3/files 200
+# POST https://api.pinata.cloud/v3/files/public/... 200
 # ✓ [>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>] Finished in 3s
 # ✔ Deployed across all providers
 # Open in a browser:
@@ -91,9 +90,9 @@ omnipin deploy --verbose --providers=Gateway3
 
 Deploy using a [Safe](https://safe.global) multisig wallet. Requires private key of a Safe owner/delegate to sign a transaction. [EIP-3770](https://eips.ethereum.org/EIPS/eip-3770) addresses and ENS names are supported. Mainnet is used by default.
 
-The update will be sent to the Safe Transaction Service. `OMNIPIN_PK` must be a proposer's privat key.
+The update will be sent to the Safe Transaction Service. `OMNIPIN_PK` must be a proposer's private key.
 
-In case the `roles-mod-address` option is specified, a transaction will submitted via the Zodiac Roles module instead, skipping the Safe Transaction Service and going directly onchain. Just like with EOA, a transaction is simulated locally first.
+In case the `roles-mod-address` option is specified, a transaction will be submitted via the Zodiac Roles module instead, skipping the Safe Transaction Service and going directly onchain. Just like with EOA, a transaction is simulated locally first.
 
 ```sh
 # Propose transaction to Safe
