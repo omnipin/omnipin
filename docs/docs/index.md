@@ -168,7 +168,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - name: Install Omnipin
-        run: bun i -g omnipin@1.2.1
+        run: bun i -g omnipin
       - name: Build website
         run: bun i && bun run build
       - name: Deploy the site
