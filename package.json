@@ -1,79 +1,81 @@
 {
-  "name": "omnipin",
-  "version": "2.2.3",
-  "author": "v1rtl <hi@v1rtl.site>",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/omnipin/omnipin.git"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.4.7",
-    "@ipld/car": "^5.4.2",
-    "@ipld/dag-ucan": "^3.4.5",
-    "@omnipin/foc": "npm:@jsr/omnipin__foc@0.0.12",
-    "@rslib/core": "^0.20.0",
-    "@size-limit/file": "^12.0.1",
-    "@stauro/filebase-upload": "npm:@jsr/stauro__filebase-upload",
-    "@storacha/capabilities": "^2.3.0",
-    "@types/bun": "^1.3.10",
-    "@types/varint": "^6.0.3",
-    "@ucanto/client": "^9.0.2",
-    "@ucanto/core": "^10.4.6",
-    "@ucanto/principal": "^9.0.3",
-    "@ucanto/transport": "^9.2.1",
-    "@web3-storage/data-segment": "^5.3.0",
-    "cborg": "^4.5.8",
-    "ipfs-unixfs-importer": "^16.1.4",
-    "multiformats": "13.4.2",
-    "nanotar": "^0.3.0",
-    "ox": "^0.14.8",
-    "size-limit": "^12.0.1",
-    "spektr": "^0.2.0",
-    "tinyglobby": "^0.2.15",
-    "typescript": "^5.9.3",
-    "varint": "^6.0.0",
-    "vitepress": "^1.6.4"
-  },
-  "bin": {
-    "omnipin": "dist/index.js"
-  },
-  "description": "🌸 Self-custodial decentralized deployments",
-  "engineStrict": true,
-  "engines": {
-    "node": "^20.10.0 || >=21.1.0"
-  },
-  "files": [
-    "dist"
-  ],
-  "homepage": "https://github.com/omnipin/omnipin",
-  "keywords": [
-    "ipfs",
-    "filecoin",
-    "deploy",
-    "cli"
-  ],
-  "license": "MIT",
-  "overrides": {
-    "multiformats": "13.4.2"
-  },
-  "release": {
-    "branches": [
-      "main"
-    ]
-  },
-  "scripts": {
-    "build": "rslib",
-    "prepublishOnly": "bun run build && bun size-limit",
-    "check": "biome check",
-    "types": "tsc --noEmit",
-    "test:report": "bun test --coverage --coverage-reporter=lcov --coverage-dir=coverage"
-  },
-  "size-limit": [
-    {
-      "path": "dist/index.js",
-      "limit": "1MB",
-      "brotli": false
-    }
-  ],
-  "type": "module"
+	"name": "omnipin",
+	"version": "2.2.3",
+	"author": "v1rtl <hi@v1rtl.site>",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/omnipin/omnipin.git"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.7",
+		"@ipld/car": "^5.4.2",
+		"@ipld/dag-ucan": "^3.4.5",
+		"@omnipin/foc": "npm:@jsr/omnipin__foc@0.0.14",
+		"@rslib/core": "^0.20.0",
+		"@size-limit/file": "^12.0.1",
+		"@stauro/filebase-upload": "npm:@jsr/stauro__filebase-upload",
+		"@storacha/capabilities": "^2.3.0",
+		"@types/bun": "^1.3.10",
+		"@types/varint": "^6.0.3",
+		"@ucanto/client": "^9.0.2",
+		"@ucanto/core": "^10.4.6",
+		"@ucanto/principal": "^9.0.3",
+		"@ucanto/transport": "^9.2.1",
+		"@web3-storage/data-segment": "^5.3.0",
+		"cborg": "^4.5.8",
+		"ipfs-unixfs-importer": "^16.1.4",
+		"multiformats": "13.4.2",
+		"nanotar": "^0.3.0",
+		"ox": "^0.14.8",
+		"prool": "^0.2.4",
+		"size-limit": "^12.0.1",
+		"spektr": "^0.2.0",
+		"tinyglobby": "^0.2.15",
+		"typescript": "^5.9.3",
+		"varint": "^6.0.0",
+		"vitepress": "^1.6.4"
+	},
+	"bin": {
+		"omnipin": "dist/index.js"
+	},
+	"description": "🌸 Self-custodial decentralized deployments",
+	"engineStrict": true,
+	"engines": {
+		"node": "^20.10.0 || >=21.1.0"
+	},
+	"files": [
+		"dist"
+	],
+	"homepage": "https://github.com/omnipin/omnipin",
+	"keywords": [
+		"ipfs",
+		"filecoin",
+		"deploy",
+		"cli"
+	],
+	"license": "MIT",
+	"overrides": {
+		"multiformats": "13.4.2"
+	},
+	"release": {
+		"branches": [
+			"main"
+		]
+	},
+	"scripts": {
+		"build": "rslib",
+		"prepublishOnly": "bun run build && bun size-limit",
+		"check": "biome check",
+		"types": "tsc --noEmit",
+		"test:report": "bun test test/ --coverage --coverage-reporter=lcov --coverage-dir=coverage",
+		"test:e2e": "bun test e2e/"
+	},
+	"size-limit": [
+		{
+			"path": "dist/index.js",
+			"limit": "1MB",
+			"brotli": false
+		}
+	],
+	"type": "module"
 }
