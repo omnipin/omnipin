@@ -67,8 +67,8 @@
 		"prepublishOnly": "bun run build && bun size-limit",
 		"check": "biome check",
 		"types": "tsc --noEmit",
-		"test:report": "bun test test --coverage --coverage-reporter=lcov --coverage-dir=coverage",
-		"test:e2e": "bun test e2e"
+		"test:report": "bun test test/ --coverage --coverage-reporter=lcov --coverage-dir=coverage",
+		"test:e2e": "bun test e2e/"
 	},
 	"size-limit": [
 		{
