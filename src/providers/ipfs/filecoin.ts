@@ -4,10 +4,8 @@ import {
   getClientDataSets,
 } from '@omnipin/foc/data-set'
 import {
-  depositAndApproveOperatorWriteParameters,
-  getAvailableFunds,
-  getDataSetCreationRequirements,
-  getServicePrice,
+  depositWithPermitAndApproveOperatorWriteParameters,
+  depositWithPermitWriteParameters,
   getUSDfcBalance,
 } from '@omnipin/foc/fil-pay'
 import {
@@ -26,6 +24,7 @@ import {
   filecoinMainnet,
   filProvider,
 } from '@omnipin/foc/utils'
+import { getUploadCosts } from '@omnipin/foc/warm-storage'
 import { AbiParameters } from 'ox'
 import { type Address, fromPublicKey } from 'ox/Address'
 import type { Hex } from 'ox/Hex'
@@ -124,10 +123,6 @@ export const uploadToFilecoin: UploadFunction<{
 
   if (verbose) logger.info(`Filecoin SP Payee: ${payee}`)
 
-  const { perMonth } = await getServicePrice({ size, chain })
-
-  logger.info(`Price for storage: ${Value.format(perMonth, 18)} USDfc/month`)
-
   // Buffer CAR bytes once and derive Piece CID
   const carBytes = bytes
   const pieceCid = calculatePieceCID(carBytes)
@@ -143,48 +138,52 @@ export const uploadToFilecoin: UploadFunction<{
 
   const isNewDataSet =
     providerActiveDataSets.length === 0 || filecoinForceNewDataset
-  const creationRequirement = isNewDataSet
-    ? (await getDataSetCreationRequirements({ chain })).creationRequirement
-    : 0n
-  const requiredAmount =
-    isNewDataSet && creationRequirement > perMonth
-      ? creationRequirement
-      : perMonth
 
-  if (verbose) {
-    logger.info(`Storage price: ${Value.format(perMonth, 18)} USDFC/month`)
-    if (isNewDataSet) {
-      logger.info(
-        `Creation requirement: ${Value.format(creationRequirement, 18)} USDFC`,
-      )
-    }
-    logger.info(`Required funds: ${Value.format(requiredAmount, 18)} USDFC`)
-  }
+  // Single source of truth for cost / deposit / approval. Mirrors
+  // synapse-core's getUploadCosts: includes lockup, runway, debt, and a
+  // forward-looking buffer for epoch drift between this read and tx
+  // execution. Skips the buffer for first-ever uploads on fresh accounts.
+  const costs = await getUploadCosts({
+    clientAddress: address,
+    dataSize: BigInt(size),
+    isNewDataSet,
+    chain,
+  })
 
-  const { funds, availableFunds } = await getAvailableFunds({ address, chain })
+  logger.info(
+    `Price for storage: ${Value.format(costs.rate.perMonth, 18)} USDfc/month`,
+  )
 
   if (verbose) {
     logger.info(
-      `Filecoin Pay deposited funds: ${Value.format(funds, 18)} USDFC`,
+      `Storage price: ${Value.format(costs.rate.perMonth, 18)} USDFC/month`,
+    )
+    logger.info(
+      `Required deposit: ${Value.format(costs.depositNeeded, 18)} USDFC`,
+    )
+    logger.info(
+      `FWSS max-approved: ${costs.needsFwssMaxApproval ? 'no' : 'yes'}`,
     )
   }
-  logger.info(
-    `Filecoin Pay available funds: ${Value.format(availableFunds, 18)} USDFC`,
-  )
 
-  const depositNeeded =
-    requiredAmount > availableFunds ? requiredAmount - availableFunds : 0n
+  if (costs.depositNeeded > 0n) {
+    if (verbose) {
+      logger.info(`Depositing ${Value.format(costs.depositNeeded, 18)} USDFC`)
+    }
 
-  if (depositNeeded > 0n) {
-    if (verbose)
-      logger.info(`Depositing ${Value.format(depositNeeded, 18)} USDFC`)
-
-    const params = await depositAndApproveOperatorWriteParameters({
-      privateKey,
-      address,
-      amount: depositNeeded,
-      chain,
-    })
+    const params = costs.needsFwssMaxApproval
+      ? await depositWithPermitAndApproveOperatorWriteParameters({
+          privateKey,
+          address,
+          amount: costs.depositNeeded,
+          chain,
+        })
+      : await depositWithPermitWriteParameters({
+          privateKey,
+          address,
+          amount: costs.depositNeeded,
+          chain,
+        })
 
     await simulateTransaction(params)
 
@@ -198,6 +197,12 @@ export const uploadToFilecoin: UploadFunction<{
 
     await waitForTransaction(filProvider[chain.id], hash)
     logger.success('Deposit confirmed')
+  } else if (costs.needsFwssMaxApproval) {
+    // No deposit needed, but operator still needs max approval. Future
+    // enhancement: split-out a `setOperatorApproval` call. For now this
+    // path is unreachable in practice (deposit > 0 on first upload) and
+    // logged so we notice if it occurs.
+    logger.info('Operator approval needed but no deposit; skipping (no-op).')
   } else {
     logger.info('Sufficient funds available, no deposit needed')
   }

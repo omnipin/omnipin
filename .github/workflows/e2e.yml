@@ -1,0 +1,28 @@
+name: E2E
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.20
+      - name: install foundry
+        uses: foundry-rs/foundry-toolchain@v1
+      - name: install deps
+        run: bun i
+      - name: build
+        run: bun run build
+      - name: e2e
+        run: bun run test:e2e
