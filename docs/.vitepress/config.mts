@@ -1,5 +1,5 @@
-import { withMermaid } from 'vitepress-plugin-mermaid'
 import llmstxt from 'vitepress-plugin-llms'
+import { withMermaid } from 'vitepress-plugin-mermaid'
 
 const radicleIcon = `
 
