@@ -46,10 +46,11 @@ jobs:
           set -a; source "$HOME/.omnipin.env"; set +a
 
           rm -rf "$HOME/dist"
-          mkdir -p "$HOME/dist"
+          mkdir -p "$HOME/dist" "$HOME/tmp"
           tar -xf "$HOME/dist.tar" -C "$HOME/dist"
           rm -f "$HOME/dist.tar"
 
+          export TMPDIR="$HOME/tmp"
           cd "$HOME/dist"
           omnipin deploy --safe safe.omnipin.eth --ens omnipin.eth
           EOF
