@@ -55,7 +55,7 @@ Confirm with the user before writing `.env`. If `.env` already exists, append/me
 
 Ask: "Do you want to update an ENS contenthash as part of this deploy?"
 
-- If **no** → skip to step 5.
+- If **no** → skip to step 6.
 - If **yes** → ask for the ENS name (e.g. `myapp.eth`) and the chain (`mainnet` or `sepolia`, default `mainnet`).
 
 ### 4. Ask how to sign the ENS transaction
@@ -69,6 +69,18 @@ Options:
 1. **Safe with a delegate (recommended)** — a dedicated EOA (the *delegate*, formerly called *proposer* in Safe terminology) signs and proposes a transaction to the Safe Transaction Service; other Safe owners then confirm and execute it in the Safe UI. The delegate key still has to be available as `OMNIPIN_PK`, but unlike the EOA-only setup, it can only *propose* transactions — not execute them — so a compromise does not directly result in an ENS takeover. Requires:
    - `OMNIPIN_PK` set to the **delegate's** private key. The delegate must be added in the Safe settings (Settings → Delegates) for the Safe that owns the ENS name. It is *not* the ENS name manager's key.
    - `--safe <address-or-ens>` flag (EIP-3770 prefix like `eth:` or `sep:` is supported)
+
+   **Generating a fresh delegate key.** If the user doesn't already have a dedicated delegate key, ask: "Do you want me to generate a new delegate key for you?" If yes, generate it using a vetted tool — never roll your own crypto with Node.js `crypto`, `ethers.Wallet.createRandom()` from a script, or any other ad-hoc snippet. Use one of these, in order:
+
+   1. **`cast wallet new`** (Foundry — preferred). Run it and capture both the address and private key from stdout.
+   2. **`openssl`** as a fallback if Foundry isn't installed:
+      ```sh
+      openssl rand -hex 32   # private key (prepend 0x)
+      ```
+      Then derive the address with `cast wallet address <pk>` if available, or instruct the user to import the key into a wallet to read off the address.
+   3. If neither is installed, ask the user to install Foundry (`curl -L https://foundry.paradigm.xyz | bash && foundryup`) rather than using anything else.
+
+   After generation, write the private key to `.env` as `OMNIPIN_PK`, show the *address* (not the key) to the user, and tell them to add that address as a delegate in the Safe UI.
 2. **EOA (private key)** — fastest, least secure. Use only for testing or low-stakes deploys. Requires `OMNIPIN_PK` set to the ENS name manager's private key. Warn the user that a compromised key means total ENS takeover.
 3. **Safe with Zodiac Roles** — advanced. Use only when the user explicitly asks for it, e.g. high-frequency automated deploys where requiring a Safe confirmation on every push is excessive. Submits the tx onchain through a Zodiac Roles Module using a restricted role key, bypassing the Safe Transaction Service. Requires:
    - `OMNIPIN_PK` set to the role member's private key
@@ -78,14 +90,14 @@ Options:
 
 Always warn that storing `OMNIPIN_PK` in `.env` carries risk; recommend the Safe delegate flow for any production or CI deployment.
 
-### 5. Ask about DNSLink (optional)
+### 5. DNSLink (only if the user explicitly asks)
 
-Ask if the user also wants to update a DNSLink TXT record (Cloudflare-only at the moment). If yes, collect:
+**Do not bring up DNSLink unless the user mentions it themselves.** It is an opt-in extra and not part of the default flow. If the user does ask to update a DNSLink TXT record (Cloudflare-only at the moment), collect:
 
 - `OMNIPIN_CF_KEY` — Cloudflare API token with Web3 gateway edit permission
 - `OMNIPIN_CF_ZONE_ID` — Cloudflare Zone ID
 
-Add `--dnslink` to the final command.
+Then add `--dnslink` to the final command.
 
 ### 6. Build the final command
 
@@ -100,13 +112,6 @@ omnipin deploy --providers Filecoin,Pinata --ens myapp.eth
 
 # IPFS + ENS via Safe delegate (recommended)
 omnipin deploy --providers Filecoin,Pinata --ens myapp.eth --safe eth:0xYourSafe
-
-# IPFS + ENS via Safe delegate + DNSLink
-omnipin deploy \
-  --providers Filecoin,Pinata,Storacha \
-  --ens myapp.eth \
-  --safe eth:0xYourSafe \
-  --dnslink
 
 # Advanced: IPFS + ENS via Safe + Zodiac Roles (only when explicitly requested)
 omnipin deploy \
@@ -140,7 +145,7 @@ Use these env var names exactly. Do not invent variants.
 
 | Provider     | `--providers` value | Required env vars |
 |--------------|---------------------|-------------------|
-| Filecoin     | `Filecoin`          | `OMNIPIN_FILECOIN_TOKEN` (private key with FIL + USDfc). Optional: `OMNIPIN_FILECOIN_SP_URL`, `OMNIPIN_FILECOIN_SP_ADDRESS` |
+| Filecoin     | `Filecoin`          | `OMNIPIN_FILECOIN_TOKEN` — private key of a wallet funded with FIL + USDfc, see [Funding a Filecoin wallet](#funding-a-filecoin-wallet). **Do not ask for SP overrides by default**; Omnipin picks a storage provider automatically. Only mention `OMNIPIN_FILECOIN_SP_URL` / `OMNIPIN_FILECOIN_SP_ADDRESS` if the user explicitly wants to pin a specific SP. |
 | Spec (generic pinning service) | `Spec` | `OMNIPIN_SPEC_TOKEN`, `OMNIPIN_SPEC_URL` |
 | Filebase     | `Filebase`          | `OMNIPIN_FILEBASE_TOKEN`. For upload+pin also `OMNIPIN_FILEBASE_BUCKET_NAME` |
 | Storacha     | `Storacha`          | `OMNIPIN_STORACHA_TOKEN`, `OMNIPIN_STORACHA_PROOF` |
@@ -175,6 +180,32 @@ Use these env var names exactly. Do not invent variants.
 |---------|---------|
 | `OMNIPIN_CF_KEY` | Cloudflare API token with Web3 gateway edit permission |
 | `OMNIPIN_CF_ZONE_ID` | Cloudflare Zone ID |
+
+## Funding a Filecoin wallet
+
+The `Filecoin` provider needs a wallet (an Ethereum-style private key in `OMNIPIN_FILECOIN_TOKEN`) funded with two tokens:
+
+- **FIL** — Filecoin's native token, used for gas and as collateral
+- **USDfc** — a FIL-backed USD stablecoin, used to pay for storage
+
+For most small (<10 GB) deployments, ~0.1 FIL and ~$1 of USDfc is enough.
+
+If the user doesn't have a wallet yet, generate one with `cast wallet new` (from Foundry) or any other Ethereum keypair tool, save the private key as `OMNIPIN_FILECOIN_TOKEN`, and fund the corresponding address.
+
+### Getting FIL
+
+Suggest these in order:
+
+1. **ChainSafe Forest mainnet faucet** — small drip (0.01 FIL), no swap needed. Direct the user to <https://forest-explorer.chainsafe.dev/faucet/mainnet>, where they paste their `f`-prefixed Filecoin address and click "Send". **The agent should not try to call this endpoint directly** — it's behind a Cloudflare bot challenge, requires a live nonce/gas estimate from a Filecoin RPC, and is rate-limited per address. Always have the user perform this step in the browser.
+2. **Calibration testnet** — for testing only. Use the [FIL faucet](https://forest-explorer.chainsafe.dev/faucet/calibnet) and pass `--filecoin-chain calibration` in the deploy command.
+3. **Bridge** — for larger amounts. Bridge FIL via [Squid Router](https://app.squidrouter.com/?chains=137%2C314&tokens=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359%2C0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee).
+
+### Getting USDfc
+
+The mainnet faucet **does not provide USDfc** — it only sends FIL. Suggest these:
+
+1. **Swap on Filecoin** — once the wallet has FIL on Filecoin mainnet, swap a small portion to USDfc on [SushiSwap](https://www.sushi.com/filecoin/swap?token0=NATIVE&token1=0x80b98d3aa09ffff255c3ba4a241111ff1262f045). Cross-chain USDfc liquidity is low, so always bridge FIL first and swap *on* Filecoin rather than swapping to USDfc on another chain and bridging.
+2. **Calibration testnet** — for testing only, use the [USDfc faucet](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc).
 
 ## Safety notes
 
