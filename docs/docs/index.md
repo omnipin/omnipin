@@ -108,13 +108,13 @@ Updating ENS Content-Hash record requires paying a network fee. The fee varies d
 
 Using a private key of the ENS name manager account imposes significant security risks. In case of environment compromise, an attacker is able to update the ENS name to a malicious version.
 
-One of the unique features that Omnipin offers is [Safe](https://safe.global) integration. Instead of EOA managing the ENS name, a multi-signature wallet is put in the front. Such an approach allows for advanced security for ENS update pipelines, such as multi-factor authorisation with the [Proposer Flow](/docs/how-it-works#proposer) or role-based permissions with [Zodiac Roles](/docs/how-it-works#zodiac-roles).
+One of the unique features that Omnipin offers is [Safe](https://safe.global) integration. Instead of EOA managing the ENS name, a multi-signature wallet is put in the front. Such an approach allows for advanced security for ENS update pipelines, such as multi-factor authorisation with the [Delegate Flow](/docs/how-it-works#proposer) or role-based permissions with [Zodiac Roles](/docs/how-it-works#zodiac-roles).
 
-The recommended setup is the **Proposer Flow**: the deploy key only has permission to *propose* a transaction to the Safe Transaction Service, and other Safe owners confirm and execute it from the Safe UI. This way, a compromised CI key cannot update ENS on its own.
+The recommended setup is the **Delegate Flow**: a dedicated EOA (the *delegate*, formerly called *proposer*) signs and proposes a transaction to the Safe Transaction Service, and other Safe owners then confirm and execute it from the Safe UI. The delegate key still needs to be present as `OMNIPIN_PK` — but unlike the EOA-only setup, this key cannot update ENS on its own; it can only suggest transactions for the Safe to approve.
 
 1. Head over to the [Safe app](https://app.safe.global) and create a new Safe (or use an existing one) that owns the ENS name.
 
-2. In the Safe settings, add a **proposer** — this can be either an existing Safe owner or a fresh EOA you create just for deployments. Save its private key as `OMNIPIN_PK`.
+2. In the Safe settings, add a **delegate** — typically a fresh EOA created just for deployments. Save its private key as `OMNIPIN_PK`.
 
 3. Run the deploy with `--safe`:
 

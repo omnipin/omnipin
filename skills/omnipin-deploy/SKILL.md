@@ -1,6 +1,6 @@
 ---
 name: omnipin-deploy
-description: Deploy a static site to decentralized storage with Omnipin. Use this skill when the user wants to deploy, pin, or publish a site/dapp to IPFS, Filecoin, Swarm, or to update an ENS contenthash / DNSLink. The skill prompts the user to choose providers, gathers the required env vars, and asks whether to update ENS (via EOA private key or Safe with proposer / Zodiac Roles).
+description: Deploy a static site to decentralized storage with Omnipin. Use this skill when the user wants to deploy, pin, or publish a site/dapp to IPFS, Filecoin, Swarm, or to update an ENS contenthash / DNSLink. The skill prompts the user to choose providers, gathers the required env vars, and asks whether to update ENS (via EOA private key, Safe with a delegate, or Zodiac Roles).
 ---
 
 # Deploy with Omnipin
@@ -55,12 +55,12 @@ Ask: "Do you want to update an ENS contenthash as part of this deploy?"
 
 If ENS was selected, ask: "How do you want to sign the ENS update?"
 
-Default to **Safe with Proposer** unless the user has a clear reason to pick something else.
+Default to **Safe with a delegate** unless the user has a clear reason to pick something else.
 
 Options:
 
-1. **Safe with Proposer (recommended)** — the deploy *proposes* a transaction to the Safe Transaction Service; other Safe owners then confirm and execute it in the Safe UI. A compromised `OMNIPIN_PK` cannot update ENS on its own. Requires:
-   - `OMNIPIN_PK` set to a **proposer's** private key (a Safe owner or a delegate added as a proposer in Safe settings)
+1. **Safe with a delegate (recommended)** — a dedicated EOA (the *delegate*, formerly called *proposer* in Safe terminology) signs and proposes a transaction to the Safe Transaction Service; other Safe owners then confirm and execute it in the Safe UI. The delegate key still has to be available as `OMNIPIN_PK`, but unlike the EOA-only setup, it can only *propose* transactions — not execute them — so a compromise does not directly result in an ENS takeover. Requires:
+   - `OMNIPIN_PK` set to the **delegate's** private key. The delegate must be added in the Safe settings (Settings → Delegates) for the Safe that owns the ENS name. It is *not* the ENS name manager's key.
    - `--safe <address-or-ens>` flag (EIP-3770 prefix like `eth:` or `sep:` is supported)
 2. **EOA (private key)** — fastest, least secure. Use only for testing or low-stakes deploys. Requires `OMNIPIN_PK` set to the ENS name manager's private key. Warn the user that a compromised key means total ENS takeover.
 3. **Safe with Zodiac Roles** — advanced. Use only when the user explicitly asks for it, e.g. high-frequency automated deploys where requiring a Safe confirmation on every push is excessive. Submits the tx onchain through a Zodiac Roles Module using a restricted role key, bypassing the Safe Transaction Service. Requires:
@@ -69,7 +69,7 @@ Options:
    - `--roles-mod-address <0x...>` flag (the deployed Roles Module address)
    - First-time setup: run `omnipin zodiac --safe <safe>` to generate `zodiac.json`, then upload it via the Safe Transaction Builder. See [Safe integration guide](https://omnipin.eth.limo/docs/#safe-integration).
 
-Always warn that storing `OMNIPIN_PK` in `.env` carries risk; recommend Safe with Proposer for any production or CI deployment.
+Always warn that storing `OMNIPIN_PK` in `.env` carries risk; recommend the Safe delegate flow for any production or CI deployment.
 
 ### 5. Ask about DNSLink (optional)
 
@@ -91,10 +91,10 @@ omnipin deploy --providers Filecoin,Pinata
 # IPFS + ENS via EOA
 omnipin deploy --providers Filecoin,Pinata --ens myapp.eth
 
-# IPFS + ENS via Safe proposer (recommended)
+# IPFS + ENS via Safe delegate (recommended)
 omnipin deploy --providers Filecoin,Pinata --ens myapp.eth --safe eth:0xYourSafe
 
-# IPFS + ENS via Safe proposer + DNSLink
+# IPFS + ENS via Safe delegate + DNSLink
 omnipin deploy \
   --providers Filecoin,Pinata,Storacha \
   --ens myapp.eth \
@@ -157,7 +157,7 @@ Use these env var names exactly. Do not invent variants.
 | Purpose | Env / flag |
 |---------|------------|
 | EOA signer | `OMNIPIN_PK` (private key of ENS manager) |
-| Safe proposer | `OMNIPIN_PK` (proposer's key) + `--safe <addr|ens>` |
+| Safe delegate | `OMNIPIN_PK` (delegate's key, configured in Safe settings) + `--safe <addr|ens>` |
 | Safe + Zodiac Roles | `OMNIPIN_PK` (role member) + `--safe <addr|ens>` + `--roles-mod-address <0x...>` |
 | Custom RPC | `--rpc-url <url>` |
 | Chain | `--chain mainnet|sepolia` (default `mainnet`) |
@@ -173,5 +173,5 @@ Use these env var names exactly. Do not invent variants.
 
 - Never commit `.env`. Add it to `.gitignore` if missing.
 - Never print secret values back to the user after collection.
-- Strongly prefer Safe with Proposer over a raw `OMNIPIN_PK` (EOA) for any production deployment, especially in CI. Only suggest Zodiac Roles when the user specifically needs unattended high-frequency deploys.
+- Strongly prefer the Safe delegate flow over a raw `OMNIPIN_PK` (EOA name manager) for any production deployment, especially in CI. The delegate key still lives in `.env` / CI secrets, but it can only propose transactions — not execute them. Only suggest Zodiac Roles when the user specifically needs unattended high-frequency deploys.
 - For CI, suggest mapping each env var to a CI secret rather than hard-coding it (see Omnipin's CI/CD docs for a GitHub Actions example).
