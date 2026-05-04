@@ -1,15 +1,17 @@
-name: Deploy with Omnipin
+name: Deploy with Omnipin (Swarm)
 on:
   push:
     branches: [main]
     paths:
       - "docs/**"
   workflow_dispatch: {}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    outputs:
-      cid: ${{ steps.pack_omnipin.outputs.cid }}
+    env:
+      DEPLOY_HOST: 167.17.40.160
+      DEPLOY_USER: deployer
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
@@ -21,11 +23,33 @@ jobs:
         run: cd docs && bun i
       - name: Build website
         run: cd docs && bun docs:build
-      - name: Deploy the site
-        run: cd docs/.vitepress && omnipin deploy --strict --ens ${{ vars.OMNIPIN_ENS }} --safe ${{ vars.OMNIPIN_SAFE }}
-        env:
-          OMNIPIN_STORACHA_PROOF: ${{ secrets.OMNIPIN_STORACHA_PROOF }}
-          OMNIPIN_STORACHA_TOKEN: ${{ secrets.OMNIPIN_STORACHA_TOKEN }}
-          OMNIPIN_4EVERLAND_TOKEN: ${{ secrets.OMNIPIN_4EVERLAND_TOKEN }}
-          OMNIPIN_FILECOIN_TOKEN: ${{ secrets.OMNIPIN_FILECOIN_TOKEN }}
-          OMNIPIN_PK: ${{ secrets.OMNIPIN_PK }}
+      - name: Pack dist as tar
+        working-directory: docs/.vitepress
+        run: omnipin pack --tar --output dist.tar
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOYER_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.DEPLOYER_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+      - name: Rsync tarball to server
+        run: |
+          rsync -avz --progress \
+            -e "ssh -i ~/.ssh/id_ed25519" \
+            docs/.vitepress/dist.tar \
+            ${DEPLOY_USER}@${DEPLOY_HOST}:/home/${DEPLOY_USER}/dist.tar
+      - name: Deploy on server
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${DEPLOY_USER}@${DEPLOY_HOST} bash -se <<'EOF'
+          set -euo pipefail
+          set -a; source "$HOME/.omnipin.env"; set +a
+
+          rm -rf "$HOME/dist"
+          mkdir -p "$HOME/dist"
+          tar -xf "$HOME/dist.tar" -C "$HOME/dist"
+          rm -f "$HOME/dist.tar"
+
+          cd "$HOME/dist"
+          omnipin deploy --safe safe.omnipin.eth --ens omnipin.eth
+          EOF
