@@ -18,14 +18,14 @@ jobs:
         with:
           bun-version: 1.3.5
       - name: Install Omnipin
-        run: bun i -g omnipin@2.2.0
+        run: bun i -g omnipin@2.2.5
       - name: Install deps
         run: cd docs && bun i
       - name: Build website
         run: cd docs && bun docs:build
       - name: Pack dist as tar
         working-directory: docs/.vitepress
-        run: omnipin pack --tar --output dist.tar
+        run: omnipin pack --tar --name dist --dist .
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
