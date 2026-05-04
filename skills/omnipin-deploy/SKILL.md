@@ -55,7 +55,7 @@ Confirm with the user before writing `.env`. If `.env` already exists, append/me
 
 Ask: "Do you want to update an ENS contenthash as part of this deploy?"
 
-- If **no** → skip to step 5.
+- If **no** → skip to step 6.
 - If **yes** → ask for the ENS name (e.g. `myapp.eth`) and the chain (`mainnet` or `sepolia`, default `mainnet`).
 
 ### 4. Ask how to sign the ENS transaction
@@ -78,14 +78,14 @@ Options:
 
 Always warn that storing `OMNIPIN_PK` in `.env` carries risk; recommend the Safe delegate flow for any production or CI deployment.
 
-### 5. Ask about DNSLink (optional)
+### 5. DNSLink (only if the user explicitly asks)
 
-Ask if the user also wants to update a DNSLink TXT record (Cloudflare-only at the moment). If yes, collect:
+**Do not bring up DNSLink unless the user mentions it themselves.** It is an opt-in extra and not part of the default flow. If the user does ask to update a DNSLink TXT record (Cloudflare-only at the moment), collect:
 
 - `OMNIPIN_CF_KEY` — Cloudflare API token with Web3 gateway edit permission
 - `OMNIPIN_CF_ZONE_ID` — Cloudflare Zone ID
 
-Add `--dnslink` to the final command.
+Then add `--dnslink` to the final command.
 
 ### 6. Build the final command
 
@@ -100,13 +100,6 @@ omnipin deploy --providers Filecoin,Pinata --ens myapp.eth
 
 # IPFS + ENS via Safe delegate (recommended)
 omnipin deploy --providers Filecoin,Pinata --ens myapp.eth --safe eth:0xYourSafe
-
-# IPFS + ENS via Safe delegate + DNSLink
-omnipin deploy \
-  --providers Filecoin,Pinata,Storacha \
-  --ens myapp.eth \
-  --safe eth:0xYourSafe \
-  --dnslink
 
 # Advanced: IPFS + ENS via Safe + Zodiac Roles (only when explicitly requested)
 omnipin deploy \
