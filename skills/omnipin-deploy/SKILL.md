@@ -16,11 +16,18 @@ Use this skill when the user asks to:
 - Update a DNSLink TXT record via Cloudflare
 - Set up Omnipin for the first time in a project (env vars + CLI flags)
 
-If `omnipin` is not installed, install it first:
+Prefer running `omnipin` via the project's package manager runner instead of installing it globally. Detect the runtime in use (look for `bun.lock`, `pnpm-lock.yaml`, `package-lock.json`, `deno.json` / `deno.lock`) and use the matching command:
 
-```sh
-bun i -g omnipin   # or: npm i -g omnipin / pnpm i -g omnipin
-```
+| Runtime | Command |
+|---------|---------|
+| Bun     | `bunx omnipin <args>` |
+| pnpm    | `pnpm dlx omnipin <args>` |
+| npm     | `npx omnipin <args>` |
+| Deno    | `deno run --allow-read --allow-env --allow-write --allow-net npm:omnipin <args>` |
+
+Only fall back to a global install (`bun i -g omnipin` / `npm i -g omnipin` / `pnpm i -g omnipin`) if the user explicitly asks for it.
+
+In all command examples below, `omnipin` is shorthand — substitute it with the appropriate runner command above.
 
 ## Steps
 
