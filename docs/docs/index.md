@@ -110,45 +110,23 @@ Using a private key of the ENS name manager account imposes significant security
 
 One of the unique features that Omnipin offers is [Safe](https://safe.global) integration. Instead of EOA managing the ENS name, a multi-signature wallet is put in the front. Such an approach allows for advanced security for ENS update pipelines, such as multi-factor authorisation with the [Proposer Flow](/docs/how-it-works#proposer) or role-based permissions with [Zodiac Roles](/docs/how-it-works#zodiac-roles).
 
-Proposer flow requires additional factor of authorisation on every deploy, which might be excessive for some websites, especially those with frequent updates. Because of that, the guide will instead cover setup with Zodiac Roles.
+The recommended setup is the **Proposer Flow**: the deploy key only has permission to *propose* a transaction to the Safe Transaction Service, and other Safe owners confirm and execute it from the Safe UI. This way, a compromised CI key cannot update ENS on its own.
 
-1. Head over to the [Safe app](https://app.safe.global) and create a new wallet, if you don't have one yet.
+1. Head over to the [Safe app](https://app.safe.global) and create a new Safe (or use an existing one) that owns the ENS name.
 
-2. Install Safe Zodiac Roles Module through the [Zodiac app](https://app.safe.global/share/safe-app?appUrl=https%3A%2F%2Fzodiac.gnosisguild.org%2F)
+2. In the Safe settings, add a **proposer** — this can be either an existing Safe owner or a fresh EOA you create just for deployments. Save its private key as `OMNIPIN_PK`.
 
-3. Generate a JSON for a batch transaction setup via `omnipin zodiac`:
-
-```sh
-omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63
-
-# omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63 --verbose
-# ⚠️ `OMNIPIN_PK` environment variable not set.
-# 🟢 Generating a Secp256k1 keypair
-#    0xeb12099469558be35d53d606e1d5e69d0854c57ef6658e909325c5a0e6493415
-# 🟢 Save the private key and do not share it to anyone
-# 🟢 Created zodiac.json in current directory
-# Open in a browser: https://app.safe.global/apps/open?safe=eth:0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262&appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder
-# Upload zodiac.json in the UI
-```
-
-This will create a `zodiac.json` in a current directory. If `OMNIPIN_PK` is not specified, an Ethereum Account will be generated on the spot.
-
-4. Head over to the Safe [transaction builder](https://app.safe.global/apps/open?appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder) page.
-
-5. Drag and drop the JSON file and confirm transaction execution.
-
-6. This will deploy a new Zodiac Roles module address which should be passed during deployment.
-
-Updating ENS is now possible to do within a single command, while maintaining security properties of a Safe.
+3. Run the deploy with `--safe`:
 
 ```sh
-omnipin deploy \
-    --safe 0xyoursafeAddress \
-    omnipin.eth \
-    --roles-mod-address 0xyourRolesModAddress
+omnipin deploy --ens omnipin.eth --safe eth:0xyoursafeAddress
 ```
 
-Once a transaction finishes getting indexed, the ENS Content-Hash record should start pointing to a new deployment. Now the web app should be discoverable through [any ENS gateway](https://docs.ens.domains/dweb/intro/#browser-support--gateways), for example eth.limo.
+This will propose a transaction to the Safe Transaction Service. Other Safe owners will then see the pending transaction in the Safe UI and confirm/execute it. Once executed and indexed, the ENS Content-Hash record points to the new deployment, and the site is reachable through [any ENS gateway](https://docs.ens.domains/dweb/intro/#browser-support--gateways) such as eth.limo.
+
+::: tip Zodiac Roles
+For high-frequency deploys where requiring a confirmation on every push is excessive, Omnipin also supports submitting transactions directly onchain through a [Zodiac Roles](/docs/how-it-works#zodiac-roles) module with a restricted role. See [`omnipin zodiac`](/cli/zodiac) and the `--roles-mod-address` flag for setup.
+:::
 
 ## Automation with CI/CD
 
@@ -172,7 +150,7 @@ jobs:
       - name: Build website
         run: bun i && bun run build
       - name: Deploy the site
-        run: omnipin deploy .vitepress/dist --strict --ens ${{ vars.OMNIPIN_ENS }} --safe ${{ vars.OMNIPIN_SAFE }} --roles-mod-address ${{ vars.OMNIPIN_ROLES_MOD }}
+        run: omnipin deploy .vitepress/dist --strict --ens ${{ vars.OMNIPIN_ENS }} --safe ${{ vars.OMNIPIN_SAFE }}
         env:
           OMNIPIN_PINATA_TOKEN: ${{ secrets.OMNIPIN_PINATA_TOKEN }}
           OMNIPIN_STORACHA_PROOF: ${{ secrets.OMNIPIN_STORACHA_PROOF }}

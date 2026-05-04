@@ -55,19 +55,21 @@ Ask: "Do you want to update an ENS contenthash as part of this deploy?"
 
 If ENS was selected, ask: "How do you want to sign the ENS update?"
 
+Default to **Safe with Proposer** unless the user has a clear reason to pick something else.
+
 Options:
 
-1. **EOA (private key)** — fastest, least secure. Requires `OMNIPIN_PK` (private key of the ENS name manager).
-2. **Safe with Proposer** — recommended. The deploy *proposes* a transaction to the Safe Transaction Service; other Safe owners then confirm and execute it in the Safe UI. Requires:
-   - `OMNIPIN_PK` set to a **proposer's** private key (a Safe owner or a delegate added as a proposer)
+1. **Safe with Proposer (recommended)** — the deploy *proposes* a transaction to the Safe Transaction Service; other Safe owners then confirm and execute it in the Safe UI. A compromised `OMNIPIN_PK` cannot update ENS on its own. Requires:
+   - `OMNIPIN_PK` set to a **proposer's** private key (a Safe owner or a delegate added as a proposer in Safe settings)
    - `--safe <address-or-ens>` flag (EIP-3770 prefix like `eth:` or `sep:` is supported)
-3. **Safe with Zodiac Roles** — most secure for automation. Submits the tx onchain through a Zodiac Roles Module using a restricted role key, bypassing the Safe Transaction Service. Requires:
+2. **EOA (private key)** — fastest, least secure. Use only for testing or low-stakes deploys. Requires `OMNIPIN_PK` set to the ENS name manager's private key. Warn the user that a compromised key means total ENS takeover.
+3. **Safe with Zodiac Roles** — advanced. Use only when the user explicitly asks for it, e.g. high-frequency automated deploys where requiring a Safe confirmation on every push is excessive. Submits the tx onchain through a Zodiac Roles Module using a restricted role key, bypassing the Safe Transaction Service. Requires:
    - `OMNIPIN_PK` set to the role member's private key
    - `--safe <address-or-ens>` flag
    - `--roles-mod-address <0x...>` flag (the deployed Roles Module address)
-   - First-time setup: instruct the user to run `omnipin zodiac --safe <safe>` to generate `zodiac.json`, then upload it via the Safe Transaction Builder. See [Safe integration guide](https://omnipin.eth.limo/docs/#safe-integration).
+   - First-time setup: run `omnipin zodiac --safe <safe>` to generate `zodiac.json`, then upload it via the Safe Transaction Builder. See [Safe integration guide](https://omnipin.eth.limo/docs/#safe-integration).
 
-Always warn that storing `OMNIPIN_PK` in `.env` carries risk; recommend Safe + Zodiac Roles for production / CI.
+Always warn that storing `OMNIPIN_PK` in `.env` carries risk; recommend Safe with Proposer for any production or CI deployment.
 
 ### 5. Ask about DNSLink (optional)
 
@@ -89,16 +91,22 @@ omnipin deploy --providers Filecoin,Pinata
 # IPFS + ENS via EOA
 omnipin deploy --providers Filecoin,Pinata --ens myapp.eth
 
-# IPFS + ENS via Safe proposer
+# IPFS + ENS via Safe proposer (recommended)
 omnipin deploy --providers Filecoin,Pinata --ens myapp.eth --safe eth:0xYourSafe
 
-# IPFS + ENS via Safe + Zodiac Roles + DNSLink
+# IPFS + ENS via Safe proposer + DNSLink
 omnipin deploy \
   --providers Filecoin,Pinata,Storacha \
   --ens myapp.eth \
   --safe eth:0xYourSafe \
-  --roles-mod-address 0xYourRolesMod \
   --dnslink
+
+# Advanced: IPFS + ENS via Safe + Zodiac Roles (only when explicitly requested)
+omnipin deploy \
+  --providers Filecoin,Pinata \
+  --ens myapp.eth \
+  --safe eth:0xYourSafe \
+  --roles-mod-address 0xYourRolesMod
 
 # Swarm via Swarmy + ENS
 omnipin deploy --providers Swarmy --ens myapp.eth --safe eth:0xYourSafe
@@ -165,5 +173,5 @@ Use these env var names exactly. Do not invent variants.
 
 - Never commit `.env`. Add it to `.gitignore` if missing.
 - Never print secret values back to the user after collection.
-- Strongly prefer Safe + Zodiac Roles over a raw `OMNIPIN_PK` for any production deployment, especially in CI.
+- Strongly prefer Safe with Proposer over a raw `OMNIPIN_PK` (EOA) for any production deployment, especially in CI. Only suggest Zodiac Roles when the user specifically needs unattended high-frequency deploys.
 - For CI, suggest mapping each env var to a CI secret rather than hard-coding it (see Omnipin's CI/CD docs for a GitHub Actions example).
