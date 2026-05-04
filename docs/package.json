@@ -1,7 +1,15 @@
 {
   "devDependencies": {
-    "mermaid": "^11.12.2",
+    "mermaid": "^11.14.0",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-llms": "^1.12.2",
     "vitepress-plugin-mermaid": "^2.0.17"
+  },
+  "overrides": {
+    "safer-buffer": "npm:@socketregistry/safer-buffer@^1"
+  },
+  "resolutions": {
+    "safer-buffer": "npm:@socketregistry/safer-buffer@^1"
   },
   "scripts": {
     "docs:dev": "vitepress dev",

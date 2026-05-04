@@ -1,3 +1,4 @@
+import llmstxt from 'vitepress-plugin-llms'
 import { withMermaid } from 'vitepress-plugin-mermaid'
 
 const radicleIcon = `
@@ -203,6 +204,10 @@ export default withMermaid({
   ],
   description: 'Supercharged dweb deployments',
 
+  vite: {
+    plugins: [llmstxt()],
+  },
+
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
@@ -254,6 +259,10 @@ export default withMermaid({
           {
             text: 'Kubo',
             link: '/docs/kubo',
+          },
+          {
+            text: 'Agent Skill',
+            link: '/docs/agent',
           },
         ],
       },
