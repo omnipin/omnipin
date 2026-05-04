@@ -140,7 +140,7 @@ Use these env var names exactly. Do not invent variants.
 
 | Provider     | `--providers` value | Required env vars |
 |--------------|---------------------|-------------------|
-| Filecoin     | `Filecoin`          | `OMNIPIN_FILECOIN_TOKEN` (private key with FIL + USDfc). Optional: `OMNIPIN_FILECOIN_SP_URL`, `OMNIPIN_FILECOIN_SP_ADDRESS` |
+| Filecoin     | `Filecoin`          | `OMNIPIN_FILECOIN_TOKEN` (private key of a wallet funded with FIL + USDfc — see [Funding a Filecoin wallet](#funding-a-filecoin-wallet)). Optional: `OMNIPIN_FILECOIN_SP_URL`, `OMNIPIN_FILECOIN_SP_ADDRESS` |
 | Spec (generic pinning service) | `Spec` | `OMNIPIN_SPEC_TOKEN`, `OMNIPIN_SPEC_URL` |
 | Filebase     | `Filebase`          | `OMNIPIN_FILEBASE_TOKEN`. For upload+pin also `OMNIPIN_FILEBASE_BUCKET_NAME` |
 | Storacha     | `Storacha`          | `OMNIPIN_STORACHA_TOKEN`, `OMNIPIN_STORACHA_PROOF` |
@@ -175,6 +175,23 @@ Use these env var names exactly. Do not invent variants.
 |---------|---------|
 | `OMNIPIN_CF_KEY` | Cloudflare API token with Web3 gateway edit permission |
 | `OMNIPIN_CF_ZONE_ID` | Cloudflare Zone ID |
+
+## Funding a Filecoin wallet
+
+The `Filecoin` provider needs a wallet (an Ethereum-style private key in `OMNIPIN_FILECOIN_TOKEN`) funded with two tokens:
+
+- **FIL** — Filecoin's native token, used for gas
+- **USDfc** — a FIL-backed USD stablecoin, used to pay for storage
+
+For most small (<10 GB) deployments, ~0.1 FIL and ~$1 of USDfc is enough.
+
+Suggest these funding paths to the user, in order of preference:
+
+1. **ChainSafe Forest faucet (mainnet)** — fastest, no swap needed. Direct the user to <https://forest-explorer.chainsafe.dev/faucet/mainnet> to request a small amount of mainnet FIL and USDfc to their wallet address.
+2. **Calibration testnet** — for testing only. Use the [FIL faucet](https://forest-explorer.chainsafe.dev/faucet/calibnet) and [USDfc faucet](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc), and pass `--filecoin-chain calibration` in the deploy command.
+3. **Bridge / swap** — for larger amounts. Bridge FIL via [Squid Router](https://app.squidrouter.com/?chains=137%2C314&tokens=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359%2C0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee) and swap a portion to USDfc on [SushiSwap](https://www.sushi.com/filecoin/swap?token0=NATIVE&token1=0x80b98d3aa09ffff255c3ba4a241111ff1262f045). USDfc cross-chain liquidity is low, so always bridge FIL first and swap on Filecoin.
+
+If the user doesn't have a wallet yet, generate one with `cast wallet new` (from Foundry) or any other Ethereum keypair tool, save the private key as `OMNIPIN_FILECOIN_TOKEN`, and fund the corresponding address.
 
 ## Safety notes
 
