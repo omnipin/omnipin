@@ -162,7 +162,7 @@ Use these env var names exactly. Do not invent variants.
 | Provider | `--providers` value | Required env vars |
 |----------|---------------------|-------------------|
 | Swarmy   | `Swarmy`            | `OMNIPIN_SWARMY_TOKEN` |
-| Bee node | `Bee`               | `OMNIPIN_BEE_TOKEN` (postage batch ID), `OMNIPIN_BEE_URL` |
+| Bee node | `Bee`               | `OMNIPIN_BEE_TOKEN` (postage batch ID); optional `OMNIPIN_BEE_URL` (defaults to `http://localhost:1633`) |
 
 ### ENS / Safe
 

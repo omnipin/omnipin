@@ -5,11 +5,13 @@ import { referenceToCIDString } from '../../utils/swarm.js'
 
 const providerName = 'Bee'
 
-export const uploadOnBee: UploadFunction<{ beeURL: string }> = async ({
+export const DEFAULT_BEE_URL = 'http://localhost:1633'
+
+export const uploadOnBee: UploadFunction<{ beeURL?: string }> = async ({
   token,
   bytes,
   verbose,
-  beeURL,
+  beeURL = DEFAULT_BEE_URL,
   first,
 }) => {
   if (!first) throw new PinningNotSupportedError(providerName)

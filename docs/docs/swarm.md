@@ -35,7 +35,7 @@ omnipin deploy --ens omnipin.eth --safe eth:0x...
 
 ## Bee node
 
-- API token env variables: `OMNIPIN_BEE_TOKEN`, `OMNIPIN_BEE_URL`
+- API token env variables: `OMNIPIN_BEE_TOKEN`, `OMNIPIN_BEE_URL` (optional, defaults to `http://localhost:1633`)
 - Supported methods: Upload
 
 ### Running a Bee node
@@ -113,12 +113,14 @@ curl -sX POST http://localhost:1633/stamps/<amount>/<depth>
 # }
 ```
 
-Add the batch ID and the Bee node URL to the environment variables:
+Add the batch ID to the environment variables:
 
 ```sh
 OMNIPIN_BEE_TOKEN=8fc...8552c6b
-OMNIPIN_BEE_URL=http://localhost:1633
+# OMNIPIN_BEE_URL=http://localhost:1633  # optional, this is the default
 ```
+
+Set `OMNIPIN_BEE_URL` only if your Bee node is not running on `http://localhost:1633`.
 
 Then run the deployment command:
 
