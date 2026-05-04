@@ -5,6 +5,12 @@
     "vitepress-plugin-llms": "^1.12.2",
     "vitepress-plugin-mermaid": "^2.0.17"
   },
+  "overrides": {
+    "safer-buffer": "npm:@socketregistry/safer-buffer@^1"
+  },
+  "resolutions": {
+    "safer-buffer": "npm:@socketregistry/safer-buffer@^1"
+  },
   "scripts": {
     "docs:dev": "vitepress dev",
     "docs:build": "vitepress build",
