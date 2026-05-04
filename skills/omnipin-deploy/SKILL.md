@@ -140,7 +140,7 @@ Use these env var names exactly. Do not invent variants.
 
 | Provider     | `--providers` value | Required env vars |
 |--------------|---------------------|-------------------|
-| Filecoin     | `Filecoin`          | `OMNIPIN_FILECOIN_TOKEN` (private key of a wallet funded with FIL + USDfc — see [Funding a Filecoin wallet](#funding-a-filecoin-wallet)). Optional: `OMNIPIN_FILECOIN_SP_URL`, `OMNIPIN_FILECOIN_SP_ADDRESS` |
+| Filecoin     | `Filecoin`          | `OMNIPIN_FILECOIN_TOKEN` — private key of a wallet funded with FIL + USDfc, see [Funding a Filecoin wallet](#funding-a-filecoin-wallet). **Do not ask for SP overrides by default**; Omnipin picks a storage provider automatically. Only mention `OMNIPIN_FILECOIN_SP_URL` / `OMNIPIN_FILECOIN_SP_ADDRESS` if the user explicitly wants to pin a specific SP. |
 | Spec (generic pinning service) | `Spec` | `OMNIPIN_SPEC_TOKEN`, `OMNIPIN_SPEC_URL` |
 | Filebase     | `Filebase`          | `OMNIPIN_FILEBASE_TOKEN`. For upload+pin also `OMNIPIN_FILEBASE_BUCKET_NAME` |
 | Storacha     | `Storacha`          | `OMNIPIN_STORACHA_TOKEN`, `OMNIPIN_STORACHA_PROOF` |
