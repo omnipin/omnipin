@@ -194,9 +194,10 @@ When the user picks `Bee` as the Swarm provider, walk them through running a loc
 Follow the official installer for the user's OS: <https://docs.ethswarm.org/docs/bee/installation/install>. On Linux/macOS, the quickest path is the install script:
 
 ```sh
-wget -q -O - https://api.github.com/repos/ethersphere/bee/releases/latest \
+curl -s https://api.github.com/repos/ethersphere/bee/releases/latest \
   | grep "browser_download_url.*$(uname -s | tr A-Z a-z)-$(uname -m)" \
-  | cut -d '"' -f 4 | xargs wget
+  | cut -d '"' -f 4 \
+  | xargs -n1 curl -LO
 ```
 
 Or use the package manager for the platform (Homebrew tap, `.deb`, `.rpm`) per the docs.
