@@ -38,12 +38,13 @@ Follow this flow strictly. Do not invent env var names or providers — only use
 Ask the user to pick one or more providers. Present the list grouped by network:
 
 - **IPFS**: `Filecoin`, `Spec`, `Filebase`, `Storacha`, `Pinata`, `4EVERLAND`, `QuickNode`, `Lighthouse`, `Blockfrost`, `Aleph`, `SimplePage`
-- **Swarm** (mutually exclusive with IPFS providers): `Swarmy`, `Bee`
+- **Swarm** (mutually exclusive with IPFS providers): `Bee` (recommended), `Swarmy`
 
 Important constraints:
 
 - Swarm and IPFS cannot be combined in the same deploy. If the user picks a Swarm provider, do not also pick IPFS providers.
 - For a robust deployment, recommend at least 2 IPFS providers (e.g. `Filecoin` + `Pinata`).
+- For Swarm deployments, prefer `Bee` (a self-hosted Bee node) over `Swarmy` (a hosted gateway). Bee gives you direct control over postage stamps and avoids relying on a third-party uploader. Only suggest `Swarmy` if the user explicitly does not want to run a node.
 
 ### 2. Collect required env vars per provider
 
@@ -120,7 +121,10 @@ omnipin deploy \
   --safe eth:0xYourSafe \
   --roles-mod-address 0xYourRolesMod
 
-# Swarm via Swarmy + ENS
+# Swarm via a self-hosted Bee node + ENS (recommended Swarm flow)
+omnipin deploy --providers Bee --ens myapp.eth --safe eth:0xYourSafe
+
+# Swarm via Swarmy (hosted) + ENS
 omnipin deploy --providers Swarmy --ens myapp.eth --safe eth:0xYourSafe
 ```
 
@@ -162,7 +166,7 @@ Use these env var names exactly. Do not invent variants.
 | Provider | `--providers` value | Required env vars |
 |----------|---------------------|-------------------|
 | Swarmy   | `Swarmy`            | `OMNIPIN_SWARMY_TOKEN` |
-| Bee node | `Bee`               | `OMNIPIN_BEE_TOKEN` (postage batch ID); optional `OMNIPIN_BEE_URL` (defaults to `http://localhost:1633`) |
+| Bee node (recommended) | `Bee`     | `OMNIPIN_BEE_TOKEN` (postage batch ID); optional `OMNIPIN_BEE_URL` (defaults to `http://localhost:1633`). See [Setting up a Bee node](#setting-up-a-bee-node). |
 
 ### ENS / Safe
 
@@ -180,6 +184,74 @@ Use these env var names exactly. Do not invent variants.
 |---------|---------|
 | `OMNIPIN_CF_KEY` | Cloudflare API token with Web3 gateway edit permission |
 | `OMNIPIN_CF_ZONE_ID` | Cloudflare Zone ID |
+
+## Setting up a Bee node
+
+When the user picks `Bee` as the Swarm provider, walk them through running a local Bee node and buying a postage batch. Prefer this flow over `Swarmy` for Swarm deployments — it's the upstream-supported path and the user keeps full control of their stamps.
+
+### 1. Install Bee
+
+Follow the official installer for the user's OS: <https://docs.ethswarm.org/docs/bee/installation/install>. On Linux/macOS, the quickest path is the install script:
+
+```sh
+wget -q -O - https://api.github.com/repos/ethersphere/bee/releases/latest \
+  | grep "browser_download_url.*$(uname -s | tr A-Z a-z)-$(uname -m)" \
+  | cut -d '"' -f 4 | xargs wget
+```
+
+Or use the package manager for the platform (Homebrew tap, `.deb`, `.rpm`) per the docs.
+
+### 2. Write the Bee config
+
+Suggest these defaults as a starting point. Write them to `~/.bee.yaml` (or `/etc/bee/bee.yaml` for a system install) and confirm with the user before overwriting an existing config:
+
+```yaml
+full-node: false
+mainnet: true
+password: password
+blockchain-rpc-endpoint: "https://rpc.gnosischain.com"
+swap-enable: true
+verbosity: 4
+welcome-message: "welcome-from-the-hive"
+warmup-time: 10s
+bootnode: /dnsaddr/mainnet.ethswarm.org
+```
+
+Notes:
+
+- `full-node: false` runs a light node — sufficient for uploading via Omnipin. Only switch to `true` if the user wants to earn by serving chunks.
+- `password: password` is fine for a throwaway local node, but **warn the user to change it** if the node will be exposed beyond `localhost`. The password encrypts the node's Swarm key.
+- `blockchain-rpc-endpoint` points at a public Gnosis Chain RPC. For production, suggest a dedicated RPC (e.g. their own node, a paid provider) — public endpoints rate-limit and can stall the node.
+- `mainnet: true` + `swap-enable: true` means the node will fund itself on Gnosis Chain. The node needs a small amount of xDAI and xBZZ on its own address before it can buy stamps; Bee prints the address on first start, and the docs cover funding: <https://docs.ethswarm.org/docs/bee/installation/fund-your-node>.
+
+### 3. Start Bee and wait for it to sync
+
+```sh
+bee start --config ~/.bee.yaml
+```
+
+Or, if installed as a service, `sudo systemctl start bee` / `brew services start swarm-bee`. Wait until `curl http://localhost:1633/health` returns `"status":"ok"` and the node has finished warmup.
+
+### 4. Buy a postage batch
+
+Omnipin needs a postage batch ID to upload. Buy one once the node is funded and synced:
+
+```sh
+curl -s -XPOST "http://localhost:1633/stamps/<amount>/<depth>"
+```
+
+Reasonable starting values for a small site: `amount=414720000` (~24 hours TTL at current price) and `depth=20` (~1 GB capacity). For long-lived sites, increase `amount` (TTL scales linearly) and/or `depth`. The endpoint returns a `batchID` — that's the value to put in `OMNIPIN_BEE_TOKEN`.
+
+See <https://docs.ethswarm.org/docs/develop/access-the-swarm/buy-a-stamp-batch> for current pricing and the depth/amount tradeoff.
+
+### 5. Wire it into `.env`
+
+```sh
+OMNIPIN_BEE_TOKEN=<batchID from step 4>
+# OMNIPIN_BEE_URL is optional; defaults to http://localhost:1633
+```
+
+Then deploy as usual: `omnipin deploy --providers Bee [--ens ...]`.
 
 ## Funding a Filecoin wallet
 
