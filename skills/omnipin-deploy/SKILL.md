@@ -241,7 +241,7 @@ Omnipin needs a postage batch ID to upload. Buy one once the node is funded and 
 curl -s -XPOST "http://localhost:1633/stamps/<amount>/<depth>"
 ```
 
-Reasonable starting values for a small site: `amount=414720000` (~24 hours TTL at current price) and `depth=20` (~1 GB capacity). For long-lived sites, increase `amount` (TTL scales linearly) and/or `depth`. The endpoint returns a `batchID` — that's the value to put in `OMNIPIN_BEE_TOKEN`.
+Reasonable starting values for a small site: `amount=414720000` (~24 hours TTL at current price) and `depth=18` (~128 MB effective capacity, plenty for most static sites). Bump `depth` to 20+ only if the site is actually larger than ~100 MB — depth scales the stamp cost exponentially. For long-lived sites, increase `amount` (TTL scales linearly). The endpoint returns a `batchID` — that's the value to put in `OMNIPIN_BEE_TOKEN`.
 
 See <https://docs.ethswarm.org/docs/develop/access-the-swarm/buy-a-stamp-batch> for current pricing and the depth/amount tradeoff.
 
