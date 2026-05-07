@@ -139,6 +139,21 @@ export const uploadToFilecoin: UploadFunction<{
   const isNewDataSet =
     providerActiveDataSets.length === 0 || filecoinForceNewDataset
 
+  // Upload the piece to the SP *before* reading costs / depositing. The
+  // 5-epoch buffer in `getUploadCosts` only covers drift between the balance
+  // read and the on-chain tx that consumes the lockup. With large payloads
+  // the upload + SP scheduling alone can exceed 5 epochs, so we hoist the
+  // long step ahead of the cost read to keep `addPieces` close to settlement.
+  if (verbose) logger.info('Uploading piece to provider')
+  await uploadPiece({
+    providerURL,
+    pieceCid: pieceCid.toString(),
+    bytes: carBytes,
+  })
+
+  if (verbose) logger.info('Waiting for piece to be stored at provider')
+  await findPiece(providerURL, pieceCid.toString(), { verbose })
+
   // Single source of truth for cost / deposit / approval. Mirrors
   // synapse-core's getUploadCosts: includes lockup, runway, debt, and a
   // forward-looking buffer for epoch drift between this read and tx
@@ -211,16 +226,6 @@ export const uploadToFilecoin: UploadFunction<{
   if (isNewDataSet) {
     logger.info('Creating new data set')
 
-    if (verbose) logger.info('Uploading piece to provider')
-    await uploadPiece({
-      providerURL,
-      pieceCid: pieceCid.toString(),
-      bytes: carBytes,
-    })
-
-    if (verbose) logger.info('Waiting for piece to be stored at provider')
-    await findPiece(providerURL, pieceCid.toString(), { verbose })
-
     const clientDataSetId = BigInt(randomInt(10 ** 8))
 
     const createPayload = createDataSetPayload({
@@ -262,16 +267,6 @@ export const uploadToFilecoin: UploadFunction<{
     const dataset = providerActiveDataSets[0]
 
     if (verbose) logger.info(`Data set ID: ${dataset.dataSetId}`)
-
-    if (verbose) logger.info('Uploading piece to provider')
-    await uploadPiece({
-      providerURL,
-      pieceCid: pieceCid.toString(),
-      bytes: carBytes,
-    })
-
-    logger.info('Waiting for piece to be stored at provider')
-    await findPiece(providerURL, pieceCid.toString(), { verbose })
 
     const extraData = await createUploadPiecesPayload({
       pieceCid,
