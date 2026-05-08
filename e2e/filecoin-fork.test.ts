@@ -30,6 +30,12 @@ import { Instance } from 'prool'
 const FORK_RPC = 'https://api.node.glif.io/rpc/v1'
 const PORT = 8545
 const ANVIL_URL = `http://localhost:${PORT}`
+// One block before the original deposit (which landed at 5991311) and four
+// before the `InsufficientLockupFunds` revert at 5991314. Pinning here gives
+// us the *pre-deposit* payer state that triggered the bug, so `getUploadCosts`
+// has to actually size a deposit (instead of returning 0n on a post-deposit
+// snapshot).
+const FORK_BLOCK = 5991310n
 
 // A real Filecoin Mainnet payer with an active draining rail and >65 USDfc
 // in their wallet — same address that experienced the original revert.
@@ -71,6 +77,7 @@ const blockNumber = async () => BigInt(await rpc('eth_blockNumber', []))
 beforeAll(async () => {
   anvil = Instance.anvil({
     forkUrl: FORK_RPC,
+    forkBlockNumber: FORK_BLOCK,
     chainId: 314,
     port: PORT,
     autoImpersonate: true,
