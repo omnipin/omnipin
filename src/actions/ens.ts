@@ -8,6 +8,7 @@ import { toHex } from 'ox/Signature'
 import { chains, isTTY } from '../constants.js'
 import { styleText } from '../deps.js'
 import { MissingCLIArgsError, MissingKeyError } from '../errors.js'
+import { pluginRegistry } from '../plugin-runtime.js'
 import type { ChainName } from '../types.js'
 import { getExactAddress } from '../utils/address/getExactAddress.js'
 import { getEnsResolver } from '../utils/ens/get-resolver.js'
@@ -39,6 +40,8 @@ import {
 } from '../utils/tx.js'
 import { execTransactionWithRole } from '../utils/zodiac-roles/exec.js'
 
+type Hash = Hex
+
 export type EnsActionArgs = Partial<{
   chain: ChainName
   safe: Address | EIP3770Address | EnsName
@@ -57,6 +60,15 @@ export const ensAction = async ({
   domain: string
   options: EnsActionArgs
 }) => {
+  // Run before hooks
+  const beforeCtx = await pluginRegistry.runBefore('ens', {
+    cid,
+    domain,
+    options,
+  })
+  cid = beforeCtx.cid
+  domain = beforeCtx.domain
+  options = beforeCtx.options
   const {
     chain: chainName = 'mainnet',
     safe: safeAddress,
@@ -68,6 +80,9 @@ export const ensAction = async ({
   assertCID(cid)
   if (!domain) throw new MissingCLIArgsError(['domain'])
   const chain = chains[chainName]
+
+  let txHash: string | undefined
+  let safeTxHash: Hash | undefined
 
   const transport = fromHttp(rpcUrl ?? chainToRpcUrl(chainName))
 
@@ -166,12 +181,13 @@ export const ensAction = async ({
         explorerUrl: chain.blockExplorers.default.url,
       })
     } else {
-      const { safeTxHash } = await prepareSafeTransactionData({
+      const preparedSafeTx = await prepareSafeTransactionData({
         txData,
         safeAddress: from,
         chainId: chain.id,
         provider,
       })
+      safeTxHash = preparedSafeTx.safeTxHash
 
       logger.info(`Signing a Safe transaction with a hash ${safeTxHash}`)
 
@@ -219,7 +235,7 @@ export const ensAction = async ({
     })
 
     if (!dryRun) {
-      const hash = await sendTransaction({
+      txHash = await sendTransaction({
         privateKey: pk,
         provider,
         chainId: chain.id,
@@ -229,11 +245,11 @@ export const ensAction = async ({
       })
 
       logger.info(
-        `Transaction pending: ${chain.blockExplorers.default.url}/tx/${hash}`,
+        `Transaction pending: ${chain.blockExplorers.default.url}/tx/${txHash}`,
       )
 
       try {
-        await waitForTransaction(provider, hash)
+        await waitForTransaction(provider, txHash as `0x${string}`)
       } catch (e) {
         return logger.error(e)
       }
@@ -245,4 +261,12 @@ export const ensAction = async ({
       )
     }
   }
+
+  // Run after hooks
+  const result = {
+    domain,
+    txHash: txHash,
+    safeTxHash: safeAddress ? safeTxHash : undefined,
+  }
+  await pluginRegistry.runAfter('ens', { ...beforeCtx, ...result })
 }

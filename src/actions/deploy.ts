@@ -6,6 +6,7 @@ import {
   parseTokensFromEnv,
   tokensToProviderNames,
 } from '../index.js'
+import { pluginRegistry } from '../plugin-runtime.js'
 import { deployMessage, logger } from '../utils/logger.js'
 import { dnsLinkAction } from './dnslink.js'
 import { type EnsActionArgs, ensAction } from './ens.js'
@@ -30,6 +31,10 @@ export const deployAction = async ({
   dir?: string
   options?: DeployActionArgs
 }) => {
+  // Run before hooks
+  const beforeCtx = await pluginRegistry.runBefore('deploy', { dir, options })
+  dir = beforeCtx.dir
+  options = beforeCtx.options
   const {
     strict,
     ens,
@@ -76,6 +81,12 @@ export const deployAction = async ({
   )
 
   let cid: string = undefined!
+  let result: {
+    cid: string
+    protocol: 'ipfs' | 'swarm'
+    succeeded: string[]
+    failed: Array<{ provider: string; error: Error }>
+  }
 
   const {
     name,
@@ -180,6 +191,8 @@ export const deployAction = async ({
     bar?.update(total)
   }
 
+  const protocol = swarmProviders.length !== 0 ? 'swarm' : 'ipfs'
+
   if (
     errors.length !== 0 &&
     (errors.length === ipfsProviders.length ||
@@ -189,13 +202,37 @@ export const deployAction = async ({
     errors.forEach((e) => {
       logger.error(e)
     })
-    return
+    result = {
+      cid,
+      protocol,
+      succeeded: [],
+      failed: errors.map((e) => ({ provider: 'unknown', error: e })),
+    }
   } else if (errors.length) {
     logger.warn('There were some problems with deploying')
     errors.forEach((e) => {
       logger.error(e)
     })
-  } else logger.success('Deployed across all providers')
+    result = {
+      cid,
+      protocol,
+      succeeded: (swarmProviders.length !== 0 ? swarmProviders : ipfsProviders)
+        .filter((p) => !errors.some((e) => e.message.includes(p.name)))
+        .map((p) => p.name),
+      failed: errors.map((e) => ({ provider: 'unknown', error: e })),
+    }
+  } else {
+    logger.success('Deployed across all providers')
+    result = {
+      cid,
+      protocol,
+      succeeded: (swarmProviders.length !== 0
+        ? swarmProviders
+        : ipfsProviders
+      ).map((p) => p.name),
+      failed: [],
+    }
+  }
 
   if (swarmCid) {
     logger.success('Deployed on Swarm')
@@ -213,6 +250,9 @@ export const deployAction = async ({
       }`,
     )
   }
+
+  // Run after hooks
+  await pluginRegistry.runAfter('deploy', { ...beforeCtx, ...result })
 
   if (typeof ens === 'string') {
     console.log('\n')
