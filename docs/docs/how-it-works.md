@@ -63,7 +63,7 @@ Since content on IPFS and Swarm has deterministic immutable hashes, it is possib
 Omnipin scans the environment for provided API keys and tokens for storage providers, but is also possible to specify providers manually.
 
 ```sh
-omnipin deploy --providers Storacha,Lighthouse
+omnipin deploy --providers Pinata,Lighthouse
 ```
 
 ```jsonc

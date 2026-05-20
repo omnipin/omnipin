@@ -43,14 +43,6 @@ Omnipin supports a wide range of different IPFS providers.
       <td>✅</td>
     </tr>
     <tr>
-      <td><a href="#storacha">Storacha</a></td>
-      <td><a href="https://docs.storacha.network/how-to/upload">Docs</a></td>
-      <td>❌</td>
-      <td>✅</td>
-      <td>❌</td>
-      <td>❌</td>
-    </tr>
-    <tr>
       <td><a href="#pinata">Pinata</a></td>
       <td><a href="https://docs.pinata.cloud/files/uploading-files">Docs</a></td>
       <td>❌</td>
@@ -199,92 +191,6 @@ Filebase provides an RPC API which can be used for pinning.
 Request a new token in the "IPFS RPC API Keys" section in "Access Keys" page of
 the Filebase console. Save the token to the `OMNIPIN_FILEBASE_TOKEN` environment
 variable.
-
-## Storacha
-
-- API env variables: `OMNIPIN_STORACHA_TOKEN`, `OMNIPIN_STORACHA_PROOF`
-
-Generating a key for Storacha requires a CLI tool.
-
-Install it with:
-
-:::code-group
-
-```sh [pnpm]
-pnpm i -g @storacha/cli
-```
-
-```sh [npm]
-npm i -g @storacha/cli
-```
-
-```sh [bun]
-bun i -g @storacha/cli
-```
-
-:::
-
-Next, login to your Storacha account:
-
-```bash [Terminal]
-storacha login
-# ? How do you want to login? Via GitHub
-# ? Open the GitHub login URL in your default browser? yes
-```
-
-Storacha uses spaces (similar to buckets). You would need to create one, if you
-don't have one already:
-
-```bash [Terminal]
-storacha space create
-# ? What would you like to call this space? omnipin-docs
-# 🔑 You need to save the following secret recovery key somewhere safe! For example write it down on
-# a piece of paper and put it inside your favorite book.
-
-# •••• •••••• ••••• ••••• •••••• •••••••• ••••••• ••••••• •••• •••••• •••••• •••• •••••• •••••••
-# ••••• •••• ••••••• ••••• •••• ••••• •••••• ••••••• ••••• ••••
-
-# 🔐 Secret recovery key is correct!
-# 🏗️ To serve this space we need to set a billing account
-# ✨ Billing account is set
-# ⛓️ To manage space across devices we need to authorize an account
-# ✨ Account is authorized
-# 🐔 Space created: did:key:z6Mkw...qAk
-```
-
-Save the recovery key in a safe place.
-
-Once you have a space, you need to select it:
-
-```bash [Terminal]
-storacha space use <space DID>
-```
-
-When both the account and the space are set up, you need to generate a unique
-private key. It is required to create a delegation proof to be able to upload
-files to the space.
-
-```bash [Terminal]
-storacha key create
-```
-
-Save this private key (which starts with `Mg..`) to an environment variable
-(`OMNIPIN_STORACHA_TOKEN`).
-
-With the key generated, it is now possible to create a delegation proof:
-
-```bash [Terminal]
-storacha delegation create <did_command_above> --can 'store/add' --can 'upload/add' --can 'space/blob/add' --can 'space/index/add' --can 'filecoin/offer' --base64
-```
-
-Save the command output in a `OMNIPIN_STORACHA_PROOF` environment variable.
-
-In the end your environment variables should look like this:
-
-```sh [.env]
-OMNIPIN_STORACHA_TOKEN=Mg123456789ogR1enjgn123bi1KqzYz123456v123iLJkeiLIO4=
-OMNIPIN_STORACHA_PROOF=mAYIEAJM...uIXm2rXyL...Zxe4Bh6g2RQZwjDUcw3qrvMNXzu2pg/rdd...IGXkvTsk9jnMGkBKPo...A7rC1u/tWHthsGVm8F6...pYJQABcRIgFFoH6R...8ukdZvYKuk2pthEmuyCVkAmPlC/kT3MM
-```
 
 ## Pinata
 
