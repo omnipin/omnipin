@@ -12,6 +12,10 @@ import {
   uploadOnFilebase,
 } from './providers/ipfs/filebase.js'
 import { uploadToFilecoin } from './providers/ipfs/filecoin.js'
+import {
+  statusOnIpfsNinja,
+  uploadOnIpfsNinja,
+} from './providers/ipfs/ipfs-ninja.js'
 import { uploadOnLighthouse } from './providers/ipfs/lighthouse.js'
 import { statusOnPinata, uploadOnPinata } from './providers/ipfs/pinata.js'
 import { pinOnQuicknode } from './providers/ipfs/quicknode.js'
@@ -77,6 +81,13 @@ export const PROVIDERS: Record<
   LIGHTHOUSE_TOKEN: {
     name: 'Lighthouse',
     upload: uploadOnLighthouse,
+    supported: 'both',
+    protocol: 'ipfs',
+  },
+  IPFS_NINJA_TOKEN: {
+    name: 'IPFSNinja',
+    upload: uploadOnIpfsNinja,
+    status: statusOnIpfsNinja,
     supported: 'both',
     protocol: 'ipfs',
   },

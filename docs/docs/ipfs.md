@@ -43,6 +43,14 @@ Omnipin supports a wide range of different IPFS providers.
       <td>✅</td>
     </tr>
     <tr>
+      <td><a href="#ipfs-ninja">IPFS.NINJA</a></td>
+      <td><a href="https://ipfs.ninja/docs/api/pinning">Docs</a></td>
+      <td>❌</td>
+      <td>✅</td>
+      <td>✅</td>
+      <td>✅</td>
+    </tr>
+    <tr>
       <td><a href="#pinata">Pinata</a></td>
       <td><a href="https://docs.pinata.cloud/files/uploading-files">Docs</a></td>
       <td>❌</td>
@@ -191,6 +199,25 @@ Filebase provides an RPC API which can be used for pinning.
 Request a new token in the "IPFS RPC API Keys" section in "Access Keys" page of
 the Filebase console. Save the token to the `OMNIPIN_FILEBASE_TOKEN` environment
 variable.
+
+## IPFS.NINJA
+
+- API env variables: `OMNIPIN_IPFS_NINJA_TOKEN`
+
+[IPFS.NINJA](https://ipfs.ninja) is a paid IPFS pinning service with a free
+tier. Omnipin uploads via the CAR import endpoint, which preserves the local
+root CID exactly (no re-chunking or re-hashing).
+
+Sign up at [ipfs.ninja/signup](https://ipfs.ninja/signup), then create an API
+key from the [API Keys page](https://ipfs.ninja/api-keys). The key starts with
+`bws_`. Save it as:
+
+```sh
+OMNIPIN_IPFS_NINJA_TOKEN=bws_your_api_key_here
+```
+
+Maximum CAR upload size is **100 MB** per request. Larger sites need to be
+split across multiple imports or use a different provider.
 
 ## Pinata
 
