@@ -17,7 +17,6 @@ import { statusOnPinata, uploadOnPinata } from './providers/ipfs/pinata.js'
 import { pinOnQuicknode } from './providers/ipfs/quicknode.js'
 import { uploadToSimplePage } from './providers/ipfs/simplepage.js'
 import { specPin, specStatus } from './providers/ipfs/spec.js'
-import { uploadOnStoracha } from './providers/ipfs/storacha.js'
 import { uploadOnBee } from './providers/swarm/bee.js'
 import { uploadOnSwarmy } from './providers/swarm/swarmy.js'
 import type {
@@ -36,12 +35,6 @@ export const PROVIDERS: Record<
     protocol: 'ipfs' | 'swarm'
   }
 > = {
-  STORACHA_TOKEN: {
-    name: 'Storacha',
-    upload: uploadOnStoracha,
-    supported: 'upload',
-    protocol: 'ipfs',
-  },
   FILEBASE_TOKEN: {
     name: 'Filebase',
     upload: uploadOnFilebase,

@@ -158,7 +158,6 @@ export const deployAction = async ({
           bytes,
           token,
           bucketName,
-          proof: apiTokens.get('STORACHA_PROOF'),
           cid,
           first: ipfsProviders.indexOf(provider) === 0,
           verbose,

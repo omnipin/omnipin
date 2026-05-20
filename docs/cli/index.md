@@ -64,7 +64,7 @@ omnipin deploy --dist $PWD ./dist.car
 An explicit list of providers to deploy on. Requires environment variables of specified providers to be defined. The list is comma separated **without** spaces.
 
 ```sh
-omnipin deploy --providers Storacha,Lighthouse
+omnipin deploy --providers Pinata,Lighthouse
 ```
 
 ### `verbose`

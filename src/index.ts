@@ -1,6 +1,5 @@
 export * from './constants.js'
 export * from './errors.js'
-export * from './providers/ipfs/storacha.js'
 export * from './utils/env.js'
 export { fileSize, walk } from './utils/fs.js'
 export * from './utils/ipfs.js'

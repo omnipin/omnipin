@@ -153,8 +153,6 @@ jobs:
         run: omnipin deploy .vitepress/dist --strict --ens ${{ vars.OMNIPIN_ENS }} --safe ${{ vars.OMNIPIN_SAFE }}
         env:
           OMNIPIN_PINATA_TOKEN: ${{ secrets.OMNIPIN_PINATA_TOKEN }}
-          OMNIPIN_STORACHA_PROOF: ${{ secrets.OMNIPIN_STORACHA_PROOF }}
-          OMNIPIN_STORACHA_TOKEN: ${{ secrets.OMNIPIN_STORACHA_TOKEN }}
           OMNIPIN_LIGHTHOUSE_TOKEN: ${{ secrets.OMNIPIN_LIGHTHOUSE_TOKEN }}
           OMNIPIN_4EVERLAND_TOKEN: ${{ secrets.OMNIPIN_4EVERLAND_TOKEN }}
           OMNIPIN_PK: ${{ secrets.OMNIPIN_PK }}

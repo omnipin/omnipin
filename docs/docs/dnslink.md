@@ -28,7 +28,7 @@ Once all the environment variables are ready, you simply have to pass a `--dnsli
 ```
 📦 Packing .vitepress/dist (7.76MB)
 🟢 Root CID: bafybeic5ddic5i25eoee2bhw4br4cug45xeemhtsyklbj3kld6a6gcjv5u
-🟢 Deploying with providers: Storacha, Filebase
+🟢 Deploying with providers: Pinata, Filebase
 ✓ [>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>] Finished in 15s
 ✔ Deployed across all providers
 
