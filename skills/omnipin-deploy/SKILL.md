@@ -37,7 +37,7 @@ Follow this flow strictly. Do not invent env var names or providers — only use
 
 Ask the user to pick one or more providers. Present the list grouped by network:
 
-- **IPFS**: `Filecoin`, `Spec`, `Filebase`, `Pinata`, `4EVERLAND`, `QuickNode`, `Lighthouse`, `Blockfrost`, `Aleph`, `SimplePage`
+- **IPFS**: `Filecoin`, `Spec`, `Filebase`, `IPFSNinja`, `Pinata`, `4EVERLAND`, `QuickNode`, `Lighthouse`, `Blockfrost`, `Aleph`, `SimplePage`
 - **Swarm** (mutually exclusive with IPFS providers): `Bee` (recommended), `Swarmy`
 
 Important constraints:
@@ -152,6 +152,7 @@ Use these env var names exactly. Do not invent variants.
 | Filecoin     | `Filecoin`          | `OMNIPIN_FILECOIN_TOKEN` — private key of a wallet funded with FIL + USDfc, see [Funding a Filecoin wallet](#funding-a-filecoin-wallet). **Do not ask for SP overrides by default**; Omnipin picks a storage provider automatically. Only mention `OMNIPIN_FILECOIN_SP_URL` / `OMNIPIN_FILECOIN_SP_ADDRESS` if the user explicitly wants to pin a specific SP. |
 | Spec (generic pinning service) | `Spec` | `OMNIPIN_SPEC_TOKEN`, `OMNIPIN_SPEC_URL` |
 | Filebase     | `Filebase`          | `OMNIPIN_FILEBASE_TOKEN`. For upload+pin also `OMNIPIN_FILEBASE_BUCKET_NAME` |
+| IPFS.NINJA   | `IPFSNinja`         | `OMNIPIN_IPFS_NINJA_TOKEN` (key starts with `bws_`; generate at <https://ipfs.ninja/api-keys>). Max 100 MB CAR per upload. |
 | Pinata       | `Pinata`            | `OMNIPIN_PINATA_TOKEN` (JWT) |
 | 4EVERLAND    | `4EVERLAND`         | `OMNIPIN_4EVERLAND_TOKEN` |
 | QuickNode    | `QuickNode`         | `OMNIPIN_QUICKNODE_TOKEN` |
