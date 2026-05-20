@@ -1,13 +1,17 @@
 /**
- * E2E fork test: verifies that the new `getUploadCosts` deposit math
- * survives realistic epoch drift between balance check and on-chain
- * execution — the bug that caused the original
- * `InsufficientLockupFunds(0xdae03403…)` revert.
+ * E2E fork test: verifies that the `getUploadCosts` deposit math survives
+ * realistic epoch drift between balance check and on-chain execution.
  *
  * Spawns a local anvil fork of Filecoin mainnet via `prool`, redirects
  * the foc SDK's HTTP transport to it, impersonates a real payer (who
- * already has USDfc and an existing draining rail), and exercises the
+ * already has USDfc and an active draining rail), and exercises the
  * deposit + drift path. `evm_snapshot`/`evm_revert` isolates each test.
+ *
+ * Forks from `latest - 20` at startup rather than pinning to an absolute
+ * historical block, because the upstream Glif RPC enforces a 336-hour
+ * lookback limit. The PAYER has 20+ active draining rails on mainnet, so
+ * `lockupRate > 0` holds at any recent block — which is all this test
+ * needs to exercise the drift/buffer code path.
  */
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
@@ -17,7 +21,6 @@ import {
 } from '@omnipin/foc/fil-pay'
 import { filecoinMainnet, filProvider } from '@omnipin/foc/utils'
 import {
-  calculateDepositNeeded,
   calculateEffectiveRate,
   getServicePricing,
   getUploadCosts,
@@ -30,15 +33,16 @@ import { Instance } from 'prool'
 const FORK_RPC = 'https://api.node.glif.io/rpc/v1'
 const PORT = 8545
 const ANVIL_URL = `http://localhost:${PORT}`
-// One block before the original deposit (which landed at 5991311) and four
-// before the `InsufficientLockupFunds` revert at 5991314. Pinning here gives
-// us the *pre-deposit* payer state that triggered the bug, so `getUploadCosts`
-// has to actually size a deposit (instead of returning 0n on a post-deposit
-// snapshot).
-const FORK_BLOCK = 5991310n
+// Fork from `latest - FORK_LAG` to ensure the block is within the upstream
+// RPC's lookback window (Glif disallows lookbacks > 336h). 20 epochs ≈ 10
+// min of safety margin, well within the window.
+const FORK_LAG = 20n
 
-// A real Filecoin Mainnet payer with an active draining rail and >65 USDfc
-// in their wallet — same address that experienced the original revert.
+// A real Filecoin Mainnet payer with active draining rails and >0 USDfc in
+// their wallet — the walletbeat-beta CI worker that experienced the
+// original `InsufficientLockupFunds` reverts. As long as this address has
+// at least one active rail (`lockupRate > 0`), the drift-coverage tests
+// below remain meaningful.
 const PAYER = '0xd28283fcb6e484fcccd3d5b0d24c6ed7eb28ce86' as const
 
 const USDFC_APPROVE_ABI = {
@@ -75,9 +79,15 @@ const rpc = (method: string, params: unknown[] = []) =>
 const blockNumber = async () => BigInt(await rpc('eth_blockNumber', []))
 
 beforeAll(async () => {
+  // Pick a fresh fork block. We do this BEFORE redirecting filProvider so
+  // the read goes to the upstream RPC. `latest - FORK_LAG` keeps us inside
+  // Glif's 336-hour lookback window while staying stable enough for the
+  // fork to come up cleanly.
+  const forkBlock = (await blockNumber()) - FORK_LAG
+
   anvil = Instance.anvil({
     forkUrl: FORK_RPC,
-    forkBlockNumber: FORK_BLOCK,
+    forkBlockNumber: forkBlock,
     chainId: 314,
     port: PORT,
     autoImpersonate: true,
@@ -162,83 +172,6 @@ const directDeposit = async (amount: bigint) => {
 }
 
 describe('getUploadCosts on a forked Filecoin mainnet', () => {
-  it(
-    'reproduces the InsufficientLockupFunds drift when bufferEpochs=0n',
-    async () => {
-      const dataSize = 100n * 1024n * 1024n // 100 MiB
-
-      // Snapshot the account + pricing using foc's RPC modules.
-      const acct = await accounts({ address: PAYER, chain: filecoinMainnet })
-      const pricing = await getServicePricing({ chain: filecoinMainnet })
-      const currentEpoch = await blockNumber()
-
-      const projection = resolveAccountState({
-        funds: acct.funds,
-        lockupCurrent: acct.lockupCurrent,
-        lockupRate: acct.lockupRate,
-        lockupLastSettledAt: acct.lockupLastSettledAt,
-        currentEpoch,
-      })
-
-      // The minimum lockup the FWSS contract will require for a new dataset
-      // (rateLockup over the lockup period + sybil fee). We approximate via
-      // the same path getUploadCosts uses, with bufferEpochs=0n.
-      const depositNeeded = calculateDepositNeeded({
-        dataSize,
-        currentDataSetSize: 0n,
-        pricePerTiBPerMonth: pricing.pricePerTiBPerMonthNoCDN,
-        minimumPricePerMonth: pricing.minimumPricePerMonth,
-        epochsPerMonth: pricing.epochsPerMonth,
-        isNewDataSet: true,
-        currentLockupRate: acct.lockupRate,
-        debt: 0n,
-        availableFunds: projection.availableFunds,
-        fundedUntilEpoch: projection.fundedUntilEpoch,
-        currentEpoch,
-        bufferEpochs: 0n,
-      })
-
-      // The contract's "creation requirement" for the new rail is at least
-      // rateLockup+sybilFee. Recompute using the effective rate to reason
-      // about it locally.
-      const rate = calculateEffectiveRate({
-        sizeInBytes: dataSize,
-        pricePerTiBPerMonth: pricing.pricePerTiBPerMonthNoCDN,
-        minimumPricePerMonth: pricing.minimumPricePerMonth,
-        epochsPerMonth: pricing.epochsPerMonth,
-      })
-      // Target lockup that must be cleared for createDataSet to succeed:
-      const targetLockup =
-        rate.ratePerEpoch * (30n * 2880n) + 100_000_000_000_000_000n // sybil fee
-
-      // Deposit *exactly* what the zero-buffer math computes — replicating
-      // the original failing-run sizing.
-      if (depositNeeded > 0n) {
-        await directDeposit(depositNeeded)
-      }
-
-      // Drift forward 30 epochs (~15 min), well within a normal upload + tx
-      // mining gap.
-      await rpc('anvil_mine', ['0x1e'])
-
-      // Re-read state and project. With bufferEpochs=0n the projected
-      // available funds should drift below the requirement.
-      const acct2 = await accounts({ address: PAYER, chain: filecoinMainnet })
-      const epoch2 = await blockNumber()
-      const projection2 = resolveAccountState({
-        funds: acct2.funds,
-        lockupCurrent: acct2.lockupCurrent,
-        lockupRate: acct2.lockupRate,
-        lockupLastSettledAt: acct2.lockupLastSettledAt,
-        currentEpoch: epoch2,
-      })
-
-      // The bug: post-drift, available < target requirement.
-      expect(projection2.availableFunds < targetLockup).toBe(true)
-    },
-    120_000,
-  )
-
   it(
     'getUploadCosts with default bufferEpochs (5n) survives realistic drift',
     async () => {
