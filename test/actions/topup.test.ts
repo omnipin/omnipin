@@ -38,7 +38,7 @@ describe('topup action', () => {
     await expect(
       topupAction({
         amount: '1',
-        options: { provider: 'Filecoin', 'from-chain': 'eth' },
+        options: { provider: 'Pinata', 'from-chain': 'eth' },
       }),
     ).rejects.toBeInstanceOf(UnknownProviderError)
   })

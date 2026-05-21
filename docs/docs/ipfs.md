@@ -83,6 +83,14 @@ Omnipin supports a wide range of different IPFS providers.
       <td>❌</td>
     </tr>
     <tr>
+      <td><a href="#aioz">AIOZ</a></td>
+      <td><a href="https://aioz.network">Docs</a></td>
+      <td>❌</td>
+      <td>✅</td>
+      <td>✅</td>
+      <td>✅</td>
+    </tr>
+    <tr>
       <td><a href="#blockfrost">Blockfrost</a></td>
       <td><a href="https://blockfrost.dev">Docs</a></td>
       <td>❌</td>
@@ -254,6 +262,34 @@ Key". In the "Applications" modal choose only "IPFS_REST".
 - API env variables: `OMNIPIN_LIGHTHOUSE_TOKEN`
 
 Go to "API Key", enter "Omnipin" in the input box and click "Generate".
+
+## AIOZ
+
+- API env variables: `OMNIPIN_AIOZ_TOKEN`
+
+`OMNIPIN_AIOZ_TOKEN` is an API key and secret pair in the format
+`api_key:api_secret`. Register on the [AIOZ Network](https://aioz.network) and
+create an API key from the dashboard.
+
+```
+OMNIPIN_AIOZ_TOKEN=your_api_key:your_api_secret
+```
+
+### Top-up
+
+AIOZ requires a balance on AIOZ Network (chain 168) to pin content. Use the
+`topup` command to bridge AIOZ tokens from a source chain:
+
+```sh
+omnipin topup --provider=AIOZ \
+  --from-chain=eth \
+  --to=0xYOUR_AIOZ_PIN_ACCOUNT \
+  0.5
+```
+
+Supported source chains: `eth`, `arb`, `opt`, `bsc`, `base`, `polygon`,
+`avalanche`. The command bridges AIOZ from the source chain to AIOZ Network,
+then forwards the funds to your AIOZ-Pin account.
 
 ## Blockfrost
 
