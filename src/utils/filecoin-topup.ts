@@ -1,10 +1,3 @@
-import { encodeData } from 'ox/AbiFunction'
-import { type Address, fromPublicKey } from 'ox/Address'
-import { type Hex, toBigInt } from 'ox/Hex'
-import * as Provider from 'ox/Provider'
-import { fromHttp } from 'ox/RpcTransport'
-import { getPublicKey } from 'ox/Secp256k1'
-import * as Value from 'ox/Value'
 import {
   depositWithPermitAndApproveOperatorWriteParameters,
   depositWithPermitWriteParameters,
@@ -12,6 +5,14 @@ import {
   isFwssMaxApproved,
 } from '@omnipin/foc/fil-pay'
 import { filecoinMainnet, filProvider } from '@omnipin/foc/utils'
+import { encodeData } from 'ox/AbiFunction'
+import { type Address, fromPublicKey } from 'ox/Address'
+import { type Hex, toBigInt } from 'ox/Hex'
+import * as Provider from 'ox/Provider'
+import { fromHttp } from 'ox/RpcTransport'
+import { getPublicKey } from 'ox/Secp256k1'
+import * as Value from 'ox/Value'
+import { setTimeout } from '../deps.js'
 import { logger } from './logger.js'
 import {
   getRouteWithRetry,
@@ -21,7 +22,6 @@ import {
   type SquidRouteParams,
 } from './squid.js'
 import { sendTransaction, waitForTransaction } from './tx.js'
-import { setTimeout } from '../deps.js'
 
 /** Filecoin EVM mainnet (chain 314) constants. */
 export const FILECOIN_MAINNET = {
@@ -393,7 +393,7 @@ export const topupFilecoin = async ({
   const isNative = sourceToken.toLowerCase() === NATIVE_TOKEN.toLowerCase()
   if (!isNative) {
     const spender = (filRoute?.transactionRequest.target ??
-      usdfcRoute!.transactionRequest.target) as Address
+      usdfcRoute?.transactionRequest.target) as Address
     await ensureAllowance({
       provider,
       privateKey,
@@ -497,9 +497,7 @@ export const topupFilecoin = async ({
       privateKey,
     })) as Hex
 
-    logger.info(
-      `Deposit tx: ${FILECOIN_MAINNET.explorer}/tx/${depositHash}`,
-    )
+    logger.info(`Deposit tx: ${FILECOIN_MAINNET.explorer}/tx/${depositHash}`)
 
     await waitForTransaction(filProvider[filecoinMainnet.id], depositHash)
     logger.success('Deposit confirmed')
