@@ -23,10 +23,10 @@ export const NATIVE_TOKEN: Address =
 
 export type SquidRouteParams = {
   fromAddress: Address
-  fromChain: string | number
+  fromChain: string
   fromToken: Address
   fromAmount: string
-  toChain: string | number
+  toChain: string
   toToken: Address
   toAddress: Address
   slippage: number
@@ -165,8 +165,8 @@ export const getStatus = async ({
 }: {
   transactionId: Hex
   requestId?: string
-  fromChainId: string | number
-  toChainId: string | number
+  fromChainId: string
+  toChainId: string
   integratorId?: string
   fetchFn?: typeof fetch
 }): Promise<SquidStatusResponse> => {
@@ -208,8 +208,8 @@ export const pollSquidStatus = async ({
 }: {
   transactionId: Hex
   requestId?: string
-  fromChainId: string | number
-  toChainId: string | number
+  fromChainId: string
+  toChainId: string
   maxAttempts?: number
   intervalMs?: number
   warmupAttempts?: number

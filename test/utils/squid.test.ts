@@ -12,10 +12,10 @@ import {
 
 const SAMPLE_PARAMS: SquidRouteParams = {
   fromAddress: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
-  fromChain: 42161,
+  fromChain: "42161",
   fromToken: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
   fromAmount: '10000000',
-  toChain: 314,
+  toChain: "314",
   toToken: '0x80b98d3aa09ffff255c3ba4a241111ff1262f045',
   toAddress: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
   slippage: 1,
@@ -150,8 +150,8 @@ describe('squid utils', () => {
       ) as unknown as typeof fetch
       const res = await getStatus({
         transactionId: TX_HASH,
-        fromChainId: 42161,
-        toChainId: 314,
+        fromChainId: "42161",
+        toChainId: "314",
         fetchFn,
       })
       expect(res.squidTransactionStatus).toBe('ongoing')
@@ -163,8 +163,8 @@ describe('squid utils', () => {
       ) as unknown as typeof fetch
       const res = await getStatus({
         transactionId: TX_HASH,
-        fromChainId: 42161,
-        toChainId: 314,
+        fromChainId: "42161",
+        toChainId: "314",
         fetchFn,
       })
       expect(res.squidTransactionStatus).toBe('success')
@@ -178,8 +178,8 @@ describe('squid utils', () => {
       ) as unknown as typeof fetch
       const res = await pollSquidStatus({
         transactionId: TX_HASH,
-        fromChainId: 42161,
-        toChainId: 314,
+        fromChainId: "42161",
+        toChainId: "314",
         intervalMs: 1,
         fetchFn,
       })
@@ -192,8 +192,8 @@ describe('squid utils', () => {
       ) as unknown as typeof fetch
       const res = await pollSquidStatus({
         transactionId: TX_HASH,
-        fromChainId: 42161,
-        toChainId: 314,
+        fromChainId: "42161",
+        toChainId: "314",
         intervalMs: 1,
         fetchFn,
       })
@@ -207,8 +207,8 @@ describe('squid utils', () => {
       await expect(
         pollSquidStatus({
           transactionId: TX_HASH,
-          fromChainId: 42161,
-          toChainId: 314,
+          fromChainId: "42161",
+          toChainId: "314",
           intervalMs: 1,
           fetchFn,
         }),
@@ -222,8 +222,8 @@ describe('squid utils', () => {
       await expect(
         pollSquidStatus({
           transactionId: TX_HASH,
-          fromChainId: 42161,
-          toChainId: 314,
+          fromChainId: "42161",
+          toChainId: "314",
           intervalMs: 1,
           fetchFn,
         }),
@@ -239,8 +239,8 @@ describe('squid utils', () => {
       }) as unknown as typeof fetch
       const res = await pollSquidStatus({
         transactionId: TX_HASH,
-        fromChainId: 42161,
-        toChainId: 314,
+        fromChainId: "42161",
+        toChainId: "314",
         intervalMs: 1,
         warmupAttempts: 5,
         fetchFn,
@@ -256,8 +256,8 @@ describe('squid utils', () => {
       await expect(
         pollSquidStatus({
           transactionId: TX_HASH,
-          fromChainId: 42161,
-          toChainId: 314,
+          fromChainId: "42161",
+          toChainId: "314",
           intervalMs: 1,
           maxAttempts: 3,
           fetchFn,
