@@ -1,14 +1,17 @@
-# `omnipin topup`
+# `omnipin bridge`
 
-Bridge and deposit native tokens to a provider account. Supports **AIOZ**
-and **Filecoin**.
+Bridge native tokens from a source chain into a provider's chain. Supports
+**AIOZ** (chain 168) and **Filecoin** (chain 314). `bridge` stops once the
+bridged funds land in the destination wallet — for Filecoin you typically
+follow up with [`omnipin deposit`](./deposit) to move the bridged USDfc into
+Filecoin Pay.
 
 ```sh
 # AIOZ: bridge native AIOZ from Ethereum or BSC into an AIOZ Network address.
-OMNIPIN_PK=0x... omnipin topup --provider=AIOZ --from-chain=eth <amount> --to=<address>
+OMNIPIN_PK=0x... omnipin bridge --provider=AIOZ --from-chain=eth <amount> --to=<address>
 
 # Filecoin: swap any supported source token into FIL (gas) + USDfc (storage).
-OMNIPIN_PK=0x... omnipin topup --provider=Filecoin \
+OMNIPIN_PK=0x... omnipin bridge --provider=Filecoin \
   --from-chain=arb --from-token=USDC <amount> --to=<filecoin_address>
 ```
 
@@ -22,7 +25,7 @@ token's on-chain `decimals()` (e.g. `10` with `--from-token=USDC` means
 ## How it works (AIOZ)
 
 The AIOZ bridge is a deposit-address / hot-wallet design — there is no
-contract on the deposit side, no approval, no event ABI. The full top-up
+contract on the deposit side, no approval, no event ABI. The full bridge
 runs in three steps:
 
 1. Look up the live pool address for the chosen direction from the AIOZ
@@ -42,7 +45,7 @@ mainnet for the optional forward step.
 
 ### `provider`
 
-Provider to top up. One of `AIOZ` or `Filecoin`.
+Provider to bridge for. One of `AIOZ` or `Filecoin`.
 
 ### `from-chain`
 
@@ -91,13 +94,12 @@ More verbose logs, including per-poll status updates from the relayer.
 
 ## How it works (Filecoin)
 
-Filecoin top-ups go through [Squid Router](https://app.squidrouter.com),
+Filecoin bridging goes through [Squid Router](https://app.squidrouter.com),
 which wraps Axelar's cross-chain bridge with destination-side gas payment
 and an on-chain DEX swap on Filecoin (Sushiswap V3 against the
 `axlUSDC` / `USDfc` / `WFIL` pools). This means a single source-chain
 transaction can deliver native FIL **and** USDfc on Filecoin without the
-recipient needing FIL for destination gas. The bridged USDfc is then
-automatically deposited into **Filecoin Pay** for storage payments.
+recipient needing FIL for destination gas.
 
 For each invocation:
 
@@ -109,11 +111,14 @@ For each invocation:
 3. The FIL leg is executed and polled on Squid's `/v2/status` until
    `success`.
 4. The USDfc leg is executed and polled the same way.
-5. After the USDfc balance arrives on Filecoin, it is deposited into
-   **Filecoin Pay** via `depositWithPermit` (or
-   `depositWithPermitAndApproveOperator` for first-time deposits). This
-   credits the storage payment contract so the `Filecoin` IPFS provider
-   can use the funds for dataset uploads.
+
+After `bridge` returns, the bridged USDfc sits in the destination wallet
+on Filecoin. To make it spendable by the `Filecoin` IPFS provider, run
+[`omnipin deposit`](./deposit) to move it into Filecoin Pay:
+
+```sh
+OMNIPIN_PK=0x... omnipin deposit --provider=Filecoin <usdfc-amount>
+```
 
 If Squid's API returns a non-2xx, the error includes a deeplink to the
 Squid web UI (`https://app.squidrouter.com/?chains=…&tokens=…`) preserving
@@ -133,7 +138,7 @@ own integrator ID:
 export OMNIPIN_SQUID_INTEGRATOR_ID=your-integrator-id
 ```
 
-This is useful when running many top-ups from the same address (Squid
+This is useful when running many bridges from the same address (Squid
 rate-limits quote requests per `fromAddress`).
 
 ## Environment
@@ -163,9 +168,5 @@ rate-limits quote requests per `fromAddress`).
   errors during heavy use. Omnipin retries with exponential backoff.
 - USDfc is the canonical USD-pegged storage payment token used by the
   `Filecoin` IPFS provider (see [docs/docs/filecoin.md](../docs/filecoin)).
-- After bridging, USDfc is deposited into Filecoin Pay via
-  `depositWithPermit` (EIP-2612 permit, no prior ERC-20 approval needed).
-  First-time deposits also set max operator approval for the FWSS
-  storage contract in the same transaction.
 - Filecoin EVM chain ID is `314` (hex `0x13a`). Default RPC:
   `https://api.node.glif.io/rpc/v1`. Explorer: `https://filfox.info`.

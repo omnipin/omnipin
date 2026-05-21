@@ -4,10 +4,10 @@ import {
   isSourceChainKey,
   resolveSourceToken,
   SOURCE_CHAINS,
-} from '../../src/utils/filecoin-topup.js'
+} from '../../src/utils/filecoin-bridge.js'
 import { NATIVE_TOKEN } from '../../src/utils/squid.js'
 
-describe('filecoin-topup utils', () => {
+describe('filecoin-bridge utils', () => {
   describe('SOURCE_CHAINS', () => {
     it('contains the seven allow-listed chains', () => {
       expect(Object.keys(SOURCE_CHAINS).sort()).toEqual(
