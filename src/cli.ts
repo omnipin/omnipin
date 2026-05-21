@@ -10,6 +10,7 @@ import { packAction } from './actions/pack.js'
 import { pinAction } from './actions/pin.js'
 import { pingAction } from './actions/ping.js'
 import { statusAction } from './actions/status.js'
+import { type TopupActionArgs, topupAction } from './actions/topup.js'
 import { zodiacAction } from './actions/zodiac.js'
 import { isTTY } from './constants.js'
 
@@ -264,6 +265,52 @@ cli.command<[string]>('pin', ([cid], options) => pinAction({ cid, options }), {
   ] as const,
   description: 'Pin an IPFS CID on multiple providers',
 })
+
+cli.command<[string]>(
+  'topup',
+  ([amount], options) =>
+    topupAction({
+      amount: amount as string,
+      options: options as TopupActionArgs,
+    }),
+  {
+    description: 'Bridge and top up native tokens for a provider',
+    options: [
+      {
+        name: 'provider',
+        description: 'Provider to top up (currently only AIOZ)',
+        type: 'string',
+      },
+      {
+        name: 'from-chain',
+        description: 'Source chain for the bridge (eth or bsc, AIOZ only)',
+        type: 'string',
+      },
+      {
+        name: 'to',
+        description:
+          'Destination address on the provider chain. Defaults to the signer address.',
+        type: 'string',
+      },
+      {
+        name: 'rpc-url',
+        description: 'Custom RPC for the source chain',
+        type: 'string',
+      },
+      {
+        name: 'aioz-rpc-url',
+        description: 'Custom RPC for AIOZ mainnet (chain 168)',
+        type: 'string',
+      },
+      {
+        name: 'verbose',
+        description: 'More verbose logs',
+        type: 'boolean',
+        short: 'v',
+      },
+    ] as const,
+  },
+)
 
 cli.command<[Address, Address]>(
   'zodiac',
