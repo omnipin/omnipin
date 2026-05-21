@@ -11,7 +11,7 @@ describe('filecoin-topup utils', () => {
   describe('SOURCE_CHAINS', () => {
     it('contains the seven allow-listed chains', () => {
       expect(Object.keys(SOURCE_CHAINS).sort()).toEqual(
-        ['arb', 'avalanche', 'base', 'bsc', 'eth', 'opt', 'polygon'].sort(),
+        ['arb', 'avax', 'base', 'bsc', 'eth', 'opt', 'polygon'].sort(),
       )
     })
 
@@ -22,7 +22,7 @@ describe('filecoin-topup utils', () => {
       expect(SOURCE_CHAINS.polygon.id).toBe(137)
       expect(SOURCE_CHAINS.base.id).toBe(8453)
       expect(SOURCE_CHAINS.arb.id).toBe(42161)
-      expect(SOURCE_CHAINS.avalanche.id).toBe(43114)
+      expect(SOURCE_CHAINS.avax.id).toBe(43114)
     })
   })
 

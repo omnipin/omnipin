@@ -52,7 +52,7 @@ export type SourceChainKey =
   | 'polygon'
   | 'base'
   | 'arb'
-  | 'avalanche'
+  | 'avax'
 
 type ChainConfig = {
   id: SourceChainId
@@ -139,7 +139,7 @@ export const SOURCE_CHAINS: Record<SourceChainKey, ChainConfig> = {
       USDT: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
     },
   },
-  avalanche: {
+  avax: {
     id: 43114,
     name: 'Avalanche',
     rpc: 'https://avalanche-c-chain-rpc.publicnode.com',

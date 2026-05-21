@@ -49,7 +49,7 @@ Provider to top up. One of `AIOZ` or `Filecoin`.
 Source chain for the bridge.
 
 - **AIOZ:** `eth`, `bsc`.
-- **Filecoin:** `eth`, `opt`, `bsc`, `polygon`, `base`, `arb`, `avalanche`.
+- **Filecoin:** `eth`, `opt`, `bsc`, `polygon`, `base`, `arb`, `avax`.
 
 ### `from-token` (Filecoin only)
 

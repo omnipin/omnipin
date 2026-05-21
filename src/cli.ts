@@ -284,7 +284,7 @@ cli.command<[string]>(
       {
         name: 'from-chain',
         description:
-          'Source chain for the bridge. AIOZ: eth, bsc. Filecoin: eth, opt, bsc, polygon, base, arb, avalanche.',
+          'Source chain for the bridge. AIOZ: eth, bsc. Filecoin: eth, opt, bsc, polygon, base, arb, avax.',
         type: 'string',
       },
       {
