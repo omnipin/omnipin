@@ -143,7 +143,9 @@ rate-limits quote requests per `fromAddress`).
 - `OMNIPIN_SQUID_INTEGRATOR_ID` — optional Squid integrator ID
   (Filecoin only).
 
-## Notes (AIOZ)
+## Notes
+
+### AIOZ
 
 - The bridge pool addresses are EOAs and can rotate. Omnipin always
   re-fetches them from `/swap-directions` before sending.
@@ -153,7 +155,7 @@ rate-limits quote requests per `fromAddress`).
   `168` (hex `0xa8`), RPC `https://eth-dataseed.aioz.network`, explorer
   `https://explorer.aioz.network`.
 
-## Notes (Filecoin)
+### Filecoin
 
 - Bridge legs typically settle within 1–3 minutes. The poll waits up to
   ~10 minutes per leg.
