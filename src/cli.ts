@@ -278,12 +278,19 @@ cli.command<[string]>(
     options: [
       {
         name: 'provider',
-        description: 'Provider to top up (currently only AIOZ)',
+        description: 'Provider to top up (AIOZ or Filecoin)',
         type: 'string',
       },
       {
         name: 'from-chain',
-        description: 'Source chain for the bridge (eth or bsc, AIOZ only)',
+        description:
+          'Source chain for the bridge. AIOZ: eth, bsc. Filecoin: eth, opt, bsc, polygon, base, arb, avax.',
+        type: 'string',
+      },
+      {
+        name: 'from-token',
+        description:
+          'Source token symbol (USDC, ETH, USDT, …) or 0x address. Required for Filecoin.',
         type: 'string',
       },
       {
@@ -300,6 +307,18 @@ cli.command<[string]>(
       {
         name: 'aioz-rpc-url',
         description: 'Custom RPC for AIOZ mainnet (chain 168)',
+        type: 'string',
+      },
+      {
+        name: 'fil-ratio',
+        description:
+          'Fraction of the input split to FIL (rest to USDfc). Filecoin only. Default 0.1.',
+        type: 'string',
+      },
+      {
+        name: 'slippage',
+        description:
+          'Maximum acceptable slippage in percent for Squid swaps. Filecoin only. Default 1.',
         type: 'string',
       },
       {

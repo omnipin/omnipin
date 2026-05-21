@@ -91,4 +91,100 @@ describe('topup action', () => {
       }),
     ).rejects.toThrow(/Invalid amount/)
   })
+
+  describe('Filecoin', () => {
+    it('throws MissingCLIArgsError if --from-chain is missing', async () => {
+      process.env.OMNIPIN_PK = DUMMY_PK
+      await expect(
+        topupAction({
+          amount: '1',
+          options: { provider: 'Filecoin', 'from-token': 'USDC' },
+        }),
+      ).rejects.toBeInstanceOf(MissingCLIArgsError)
+    })
+
+    it('throws MissingCLIArgsError for an unsupported --from-chain', async () => {
+      process.env.OMNIPIN_PK = DUMMY_PK
+      await expect(
+        topupAction({
+          amount: '1',
+          options: {
+            provider: 'Filecoin',
+            'from-chain': 'fantom',
+            'from-token': 'USDC',
+          },
+        }),
+      ).rejects.toBeInstanceOf(MissingCLIArgsError)
+    })
+
+    it('throws MissingCLIArgsError if --from-token is missing', async () => {
+      process.env.OMNIPIN_PK = DUMMY_PK
+      await expect(
+        topupAction({
+          amount: '1',
+          options: { provider: 'Filecoin', 'from-chain': 'arb' },
+        }),
+      ).rejects.toBeInstanceOf(MissingCLIArgsError)
+    })
+
+    it('rejects an out-of-range --fil-ratio', async () => {
+      process.env.OMNIPIN_PK = DUMMY_PK
+      await expect(
+        topupAction({
+          amount: '1',
+          options: {
+            provider: 'Filecoin',
+            'from-chain': 'arb',
+            'from-token': 'USDC',
+            'fil-ratio': '2',
+          },
+        }),
+      ).rejects.toThrow(/fil-ratio/)
+    })
+
+    it('rejects a non-numeric --fil-ratio', async () => {
+      process.env.OMNIPIN_PK = DUMMY_PK
+      await expect(
+        topupAction({
+          amount: '1',
+          options: {
+            provider: 'Filecoin',
+            'from-chain': 'arb',
+            'from-token': 'USDC',
+            'fil-ratio': 'half',
+          },
+        }),
+      ).rejects.toThrow(/fil-ratio/)
+    })
+
+    it('rejects a non-positive --slippage', async () => {
+      process.env.OMNIPIN_PK = DUMMY_PK
+      await expect(
+        topupAction({
+          amount: '1',
+          options: {
+            provider: 'Filecoin',
+            'from-chain': 'arb',
+            'from-token': 'USDC',
+            slippage: '0',
+          },
+        }),
+      ).rejects.toThrow(/slippage/)
+    })
+
+    it('rejects a --slippage above the cap', async () => {
+      process.env.OMNIPIN_PK = DUMMY_PK
+      await expect(
+        topupAction({
+          amount: '1',
+          options: {
+            provider: 'Filecoin',
+            'from-chain': 'arb',
+            'from-token': 'USDC',
+            slippage: '75',
+          },
+        }),
+      ).rejects.toThrow(/slippage/)
+    })
+  })
 })
