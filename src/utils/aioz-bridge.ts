@@ -7,7 +7,12 @@ import { fromHttp } from 'ox/RpcTransport'
 import { getPublicKey } from 'ox/Secp256k1'
 import { setTimeout } from '../deps.js'
 import { logger } from './logger.js'
-import { sendTransaction, waitForTransaction } from './tx.js'
+import {
+  estimateGas,
+  getBalance,
+  sendTransaction,
+  waitForTransaction,
+} from './tx.js'
 
 export const AIOZ_BRIDGE_API = 'https://api-bridge.aioz.network'
 
@@ -247,11 +252,17 @@ export const topupAioz = async ({
 
   // 3. Poll the relayer.
   logger.info('Waiting for AIOZ bridge relayer to credit destination chain…')
+  let lastStatus: string | null = null
   const { txOut: bridgeTxOut } = await pollSwapStatus({
     srcTxHash,
     onAttempt: (attempt, status) => {
-      if (verbose) {
-        logger.info(`  poll #${attempt}: status=${status ?? '<none>'}`)
+      if (!verbose) return
+      // Only log when status actually changes — the relayer can take a few
+      // minutes to index the source tx, during which status is null. Quiet
+      // those repeats; surface real transitions promptly.
+      if (status !== lastStatus) {
+        lastStatus = status
+        logger.info(`  poll #${attempt}: status=${status ?? 'pending'}`)
       }
     },
   })
@@ -268,12 +279,45 @@ export const topupAioz = async ({
     return { srcTxHash, bridgeTxOut }
   }
 
-  logger.info(
-    `Forwarding ${amountWei} (wei) native AIOZ to ${destination} on ${AIOZ_MAINNET.name}`,
-  )
-
   const aiozTransport = fromHttp(aiozRpcUrl ?? AIOZ_MAINNET.rpc)
   const aiozProvider = Provider.from(aiozTransport)
+
+  // Wait for the relayer's destination tx to actually land in our balance.
+  // `status=sent` is the relayer's last word, but the receipt on chain 168
+  // may need a few seconds to be visible via RPC.
+  const balance = await waitForBalance({
+    provider: aiozProvider,
+    address: signer,
+    minimumWei: amountWei,
+    verbose,
+  })
+
+  // Estimate gas for the value transfer and reserve enough native AIOZ to
+  // pay for it. The bridged amount lands as native AIOZ exactly equal to
+  // what we sent, so we must subtract the gas cost from what we forward.
+  const gasUnits = await estimateGas({
+    provider: aiozProvider,
+    from: signer,
+    to: destination,
+    data: '0x',
+    value: '0x0',
+  })
+  const gasPriceWei = await getEffectiveGasPriceWei(aiozProvider)
+  // Use a 2× safety multiplier (matches sendTransaction's maxFeePerGas
+  // formula of 2×baseFee + priorityFee).
+  const gasReserve = gasUnits * gasPriceWei * 2n
+
+  const forwardAmount = balance - gasReserve
+  if (forwardAmount <= 0n) {
+    logger.warn(
+      `Not enough native AIOZ on signer to cover gas + forward (balance=${balance}, gasReserve=${gasReserve}). Leaving funds at signer.`,
+    )
+    return { srcTxHash, bridgeTxOut }
+  }
+
+  logger.info(
+    `Forwarding ${forwardAmount} (wei) native AIOZ to ${destination} on ${AIOZ_MAINNET.name} (reserved ${gasReserve} for gas)`,
+  )
 
   const forwardTxHash = (await sendTransaction({
     provider: aiozProvider,
@@ -282,7 +326,7 @@ export const topupAioz = async ({
     to: destination,
     data: '0x',
     from: signer,
-    value: amountWei,
+    value: forwardAmount,
   })) as Hex
 
   logger.info(
@@ -293,4 +337,65 @@ export const topupAioz = async ({
   logger.success('Forward tx confirmed')
 
   return { srcTxHash, bridgeTxOut, forwardTxHash }
+}
+
+/**
+ * Poll the destination chain's RPC until the signer's native balance
+ * reaches at least `minimumWei`. The AIOZ bridge relayer reports
+ * `status=sent` as soon as the destination tx is mined, but some RPC
+ * providers lag by a few seconds before exposing the new balance.
+ */
+const waitForBalance = async ({
+  provider,
+  address,
+  minimumWei,
+  maxAttempts = 30,
+  intervalMs = 2_000,
+  verbose,
+}: {
+  provider: Provider.Provider
+  address: Address
+  minimumWei: bigint
+  maxAttempts?: number
+  intervalMs?: number
+  verbose?: boolean
+}): Promise<bigint> => {
+  for (let i = 0; i < maxAttempts; i++) {
+    const balance = await getBalance({ provider, address })
+    if (balance >= minimumWei) return balance
+    if (verbose && i % 5 === 0) {
+      logger.info(
+        `Waiting for destination balance (have ${balance}, need ${minimumWei})`,
+      )
+    }
+    await setTimeout(intervalMs)
+  }
+  throw new Error(
+    `Destination balance did not reach ${minimumWei} within ${maxAttempts} polls`,
+  )
+}
+
+/** Best-effort gas price read: EIP-1559 if available, else legacy. */
+const getEffectiveGasPriceWei = async (
+  provider: Provider.Provider,
+): Promise<bigint> => {
+  try {
+    const block = (await provider.request({
+      method: 'eth_getBlockByNumber',
+      params: ['latest', false],
+    })) as { baseFeePerGas?: string } | null
+    if (block?.baseFeePerGas) {
+      const baseFee = BigInt(block.baseFeePerGas)
+      const tip = BigInt(
+        ((await provider.request({
+          method: 'eth_maxPriorityFeePerGas',
+        })) as string) || '0x0',
+      )
+      return baseFee + tip
+    }
+  } catch {
+    // fall through to legacy gasPrice
+  }
+  const gp = (await provider.request({ method: 'eth_gasPrice' })) as string
+  return BigInt(gp)
 }
