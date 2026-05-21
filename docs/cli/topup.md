@@ -96,7 +96,8 @@ which wraps Axelar's cross-chain bridge with destination-side gas payment
 and an on-chain DEX swap on Filecoin (Sushiswap V3 against the
 `axlUSDC` / `USDfc` / `WFIL` pools). This means a single source-chain
 transaction can deliver native FIL **and** USDfc on Filecoin without the
-recipient needing FIL for destination gas.
+recipient needing FIL for destination gas. The bridged USDfc is then
+automatically deposited into **Filecoin Pay** for storage payments.
 
 For each invocation:
 
@@ -108,6 +109,11 @@ For each invocation:
 3. The FIL leg is executed and polled on Squid's `/v2/status` until
    `success`.
 4. The USDfc leg is executed and polled the same way.
+5. After the USDfc balance arrives on Filecoin, it is deposited into
+   **Filecoin Pay** via `depositWithPermit` (or
+   `depositWithPermitAndApproveOperator` for first-time deposits). This
+   credits the storage payment contract so the `Filecoin` IPFS provider
+   can use the funds for dataset uploads.
 
 If Squid's API returns a non-2xx, the error includes a deeplink to the
 Squid web UI (`https://app.squidrouter.com/?chains=…&tokens=…`) preserving
@@ -155,5 +161,9 @@ rate-limits quote requests per `fromAddress`).
   errors during heavy use. Omnipin retries with exponential backoff.
 - USDfc is the canonical USD-pegged storage payment token used by the
   `Filecoin` IPFS provider (see [docs/docs/filecoin.md](../docs/filecoin)).
+- After bridging, USDfc is deposited into Filecoin Pay via
+  `depositWithPermit` (EIP-2612 permit, no prior ERC-20 approval needed).
+  First-time deposits also set max operator approval for the FWSS
+  storage contract in the same transaction.
 - Filecoin EVM chain ID is `314` (hex `0x13a`). Default RPC:
   `https://api.node.glif.io/rpc/v1`. Explorer: `https://filfox.info`.
