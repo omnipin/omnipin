@@ -182,10 +182,10 @@ export const pollSwapStatus = async ({
 }
 
 /**
- * Full top-up flow: bridge AIOZ from ETH/BSC to AIOZ mainnet, then optionally
- * forward the native AIOZ to a destination address.
+ * Bridge AIOZ from ETH/BSC to AIOZ mainnet, then optionally forward the
+ * native AIOZ to a destination address.
  */
-export const topupAioz = async ({
+export const bridgeAioz = async ({
   privateKey,
   fromChain,
   amountWei,

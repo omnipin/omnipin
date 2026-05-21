@@ -1,10 +1,3 @@
-import {
-  depositWithPermitAndApproveOperatorWriteParameters,
-  depositWithPermitWriteParameters,
-  getUSDfcBalance,
-  isFwssMaxApproved,
-} from '@omnipin/foc/fil-pay'
-import { filecoinMainnet, filProvider } from '@omnipin/foc/utils'
 import { encodeData } from 'ox/AbiFunction'
 import { type Address, fromPublicKey } from 'ox/Address'
 import { type Hex, toBigInt } from 'ox/Hex'
@@ -12,7 +5,6 @@ import * as Provider from 'ox/Provider'
 import { fromHttp } from 'ox/RpcTransport'
 import { getPublicKey } from 'ox/Secp256k1'
 import * as Value from 'ox/Value'
-import { setTimeout } from '../deps.js'
 import { logger } from './logger.js'
 import {
   getRouteWithRetry,
@@ -274,7 +266,7 @@ const ensureAllowance = async ({
   await waitForTransaction(provider, txHash)
 }
 
-export type FilecoinTopupResult = {
+export type FilecoinBridgeResult = {
   /** Source-chain transaction that triggered the USDfc bridge leg. */
   usdfcTxHash?: Hex
   /** Source-chain transaction that triggered the FIL bridge leg. */
@@ -285,10 +277,14 @@ export type FilecoinTopupResult = {
 }
 
 /**
- * Top up Filecoin: bridge a portion of the input token to native FIL (gas)
- * and the rest to USDfc (storage payment) via Squid Router.
+ * Bridge a portion of the input token to native FIL (gas) and the rest to
+ * USDfc (storage payment) on Filecoin via Squid Router.
+ *
+ * This stops once the funds land in the destination wallet. To deposit the
+ * bridged USDfc into Filecoin Pay (so the `Filecoin` IPFS provider can spend
+ * it on storage), call `depositFilecoinUsdfc` afterwards.
  */
-export const topupFilecoin = async ({
+export const bridgeFilecoin = async ({
   privateKey,
   fromChain,
   fromToken,
@@ -310,7 +306,7 @@ export const topupFilecoin = async ({
   slippage: number
   sourceRpcUrl?: string
   verbose?: boolean
-}): Promise<FilecoinTopupResult> => {
+}): Promise<FilecoinBridgeResult> => {
   if (filRatio < 0 || filRatio > 1) {
     throw new Error(`--fil-ratio must be in [0, 1], got ${filRatio}`)
   }
@@ -341,7 +337,7 @@ export const topupFilecoin = async ({
   const usdfcAtomic = totalAmountAtomic - filAtomic
 
   logger.start(
-    `Top-up Filecoin: ${amount} ${fromToken} from ${chainConfig.name} → ${destination}`,
+    `Bridge to Filecoin: ${amount} ${fromToken} from ${chainConfig.name} → ${destination}`,
   )
   logger.info(
     `Split: ${filAtomic} (FIL leg) + ${usdfcAtomic} (USDfc leg), source-token atomic units`,
@@ -405,7 +401,7 @@ export const topupFilecoin = async ({
     })
   }
 
-  const result: FilecoinTopupResult = {}
+  const result: FilecoinBridgeResult = {}
 
   if (filRoute && filParams) {
     logger.info(`Executing FIL leg on ${chainConfig.name}`)
@@ -459,51 +455,7 @@ export const topupFilecoin = async ({
     result.usdfcStatus = status
   }
 
-  // Deposit bridged USDfc to Filecoin Pay
-  if (usdfcAtomic > 0n) {
-    logger.info('Waiting for USDfc balance to arrive on Filecoin…')
-    const usdfcBalance = await waitForUsdfcBalance({
-      address: destination,
-      minimumWei: usdfcAtomic,
-      verbose,
-    })
-
-    logger.info(
-      `Depositing ${Value.format(usdfcBalance, 18)} USDfc to Filecoin Pay`,
-    )
-
-    const alreadyApproved = await isFwssMaxApproved({
-      clientAddress: destination,
-      chain: filecoinMainnet,
-    })
-
-    const params = alreadyApproved
-      ? await depositWithPermitWriteParameters({
-          privateKey,
-          address: destination,
-          amount: usdfcBalance,
-          chain: filecoinMainnet,
-        })
-      : await depositWithPermitAndApproveOperatorWriteParameters({
-          privateKey,
-          address: destination,
-          amount: usdfcBalance,
-          chain: filecoinMainnet,
-        })
-
-    const depositHash = (await sendTransaction({
-      ...params,
-      chainId: filecoinMainnet.id,
-      privateKey,
-    })) as Hex
-
-    logger.info(`Deposit tx: ${FILECOIN_MAINNET.explorer}/tx/${depositHash}`)
-
-    await waitForTransaction(filProvider[filecoinMainnet.id], depositHash)
-    logger.success('Deposit confirmed')
-  }
-
-  logger.success('Filecoin top-up complete')
+  logger.success('Filecoin bridge complete')
   return result
 }
 
@@ -543,42 +495,5 @@ const logRouteSummary = (label: string, route: SquidRoute) => {
     .join(' / ')
   logger.info(
     `  ${label}: $${est.fromAmountUSD} → $${est.toAmountUSD} (${est.estimatedRouteDuration}s) [${actions}]`,
-  )
-}
-
-/**
- * Poll Filecoin RPC until the address's USDfc balance reaches at least
- * `minimumWei`. The Squid relayer reports `success` as soon as the
- * destination tx is mined, but some RPC providers lag by a few seconds
- * before exposing the new balance.
- */
-const waitForUsdfcBalance = async ({
-  address,
-  minimumWei,
-  maxAttempts = 60,
-  intervalMs = 10_000,
-  verbose,
-}: {
-  address: Address
-  minimumWei: bigint
-  maxAttempts?: number
-  intervalMs?: number
-  verbose?: boolean
-}): Promise<bigint> => {
-  for (let i = 0; i < maxAttempts; i++) {
-    const balance = await getUSDfcBalance({
-      address,
-      chain: filecoinMainnet,
-    })
-    if (balance >= minimumWei) return balance
-    if (verbose && i % 5 === 0) {
-      logger.info(
-        `Waiting for USDfc balance (have ${Value.format(balance, 18)}, need ${Value.format(minimumWei, 18)})`,
-      )
-    }
-    await setTimeout(intervalMs)
-  }
-  throw new Error(
-    `USDfc balance did not reach ${Value.format(minimumWei, 18)} within ${maxAttempts} polls`,
   )
 }

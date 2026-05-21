@@ -301,6 +301,14 @@ export default withMermaid({
             text: 'Zodiac',
             link: '/cli/zodiac',
           },
+          {
+            text: 'Bridge',
+            link: '/cli/bridge',
+          },
+          {
+            text: 'Deposit',
+            link: '/cli/deposit',
+          },
         ],
       },
     ],

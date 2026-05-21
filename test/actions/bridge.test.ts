@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { topupAction } from '../../src/actions/topup.js'
+import { bridgeAction } from '../../src/actions/bridge.js'
 import {
   MissingCLIArgsError,
   MissingKeyError,
@@ -9,7 +9,7 @@ import {
 const DUMMY_PK =
   '0x4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318'
 
-describe('topup action', () => {
+describe('bridge action', () => {
   let originalPk: string | undefined
 
   beforeEach(() => {
@@ -24,19 +24,19 @@ describe('topup action', () => {
 
   it('throws MissingCLIArgsError if amount is missing', async () => {
     await expect(
-      topupAction({ amount: '', options: { provider: 'AIOZ' } }),
+      bridgeAction({ amount: '', options: { provider: 'AIOZ' } }),
     ).rejects.toBeInstanceOf(MissingCLIArgsError)
   })
 
   it('throws MissingCLIArgsError if provider is missing', async () => {
     await expect(
-      topupAction({ amount: '1', options: {} }),
+      bridgeAction({ amount: '1', options: {} }),
     ).rejects.toBeInstanceOf(MissingCLIArgsError)
   })
 
   it('throws UnknownProviderError for unsupported providers', async () => {
     await expect(
-      topupAction({
+      bridgeAction({
         amount: '1',
         options: { provider: 'Pinata', 'from-chain': 'eth' },
       }),
@@ -45,7 +45,7 @@ describe('topup action', () => {
 
   it('throws MissingKeyError when OMNIPIN_PK is not set', async () => {
     await expect(
-      topupAction({
+      bridgeAction({
         amount: '1',
         options: { provider: 'AIOZ', 'from-chain': 'eth' },
       }),
@@ -55,7 +55,7 @@ describe('topup action', () => {
   it('throws MissingCLIArgsError for invalid --from-chain', async () => {
     process.env.OMNIPIN_PK = DUMMY_PK
     await expect(
-      topupAction({
+      bridgeAction({
         amount: '1',
         options: { provider: 'AIOZ', 'from-chain': 'polygon' },
       }),
@@ -65,7 +65,7 @@ describe('topup action', () => {
   it('throws MissingCLIArgsError if --from-chain is missing for AIOZ', async () => {
     process.env.OMNIPIN_PK = DUMMY_PK
     await expect(
-      topupAction({
+      bridgeAction({
         amount: '1',
         options: { provider: 'AIOZ' },
       }),
@@ -75,7 +75,7 @@ describe('topup action', () => {
   it('rejects non-positive amounts', async () => {
     process.env.OMNIPIN_PK = DUMMY_PK
     await expect(
-      topupAction({
+      bridgeAction({
         amount: '0',
         options: { provider: 'AIOZ', 'from-chain': 'eth' },
       }),
@@ -85,7 +85,7 @@ describe('topup action', () => {
   it('rejects malformed amounts', async () => {
     process.env.OMNIPIN_PK = DUMMY_PK
     await expect(
-      topupAction({
+      bridgeAction({
         amount: 'not-a-number',
         options: { provider: 'AIOZ', 'from-chain': 'eth' },
       }),
@@ -96,7 +96,7 @@ describe('topup action', () => {
     it('throws MissingCLIArgsError if --from-chain is missing', async () => {
       process.env.OMNIPIN_PK = DUMMY_PK
       await expect(
-        topupAction({
+        bridgeAction({
           amount: '1',
           options: { provider: 'Filecoin', 'from-token': 'USDC' },
         }),
@@ -106,7 +106,7 @@ describe('topup action', () => {
     it('throws MissingCLIArgsError for an unsupported --from-chain', async () => {
       process.env.OMNIPIN_PK = DUMMY_PK
       await expect(
-        topupAction({
+        bridgeAction({
           amount: '1',
           options: {
             provider: 'Filecoin',
@@ -120,7 +120,7 @@ describe('topup action', () => {
     it('throws MissingCLIArgsError if --from-token is missing', async () => {
       process.env.OMNIPIN_PK = DUMMY_PK
       await expect(
-        topupAction({
+        bridgeAction({
           amount: '1',
           options: { provider: 'Filecoin', 'from-chain': 'arb' },
         }),
@@ -130,7 +130,7 @@ describe('topup action', () => {
     it('rejects an out-of-range --fil-ratio', async () => {
       process.env.OMNIPIN_PK = DUMMY_PK
       await expect(
-        topupAction({
+        bridgeAction({
           amount: '1',
           options: {
             provider: 'Filecoin',
@@ -145,7 +145,7 @@ describe('topup action', () => {
     it('rejects a non-numeric --fil-ratio', async () => {
       process.env.OMNIPIN_PK = DUMMY_PK
       await expect(
-        topupAction({
+        bridgeAction({
           amount: '1',
           options: {
             provider: 'Filecoin',
@@ -160,7 +160,7 @@ describe('topup action', () => {
     it('rejects a non-positive --slippage', async () => {
       process.env.OMNIPIN_PK = DUMMY_PK
       await expect(
-        topupAction({
+        bridgeAction({
           amount: '1',
           options: {
             provider: 'Filecoin',
@@ -175,7 +175,7 @@ describe('topup action', () => {
     it('rejects a --slippage above the cap', async () => {
       process.env.OMNIPIN_PK = DUMMY_PK
       await expect(
-        topupAction({
+        bridgeAction({
           amount: '1',
           options: {
             provider: 'Filecoin',

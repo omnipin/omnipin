@@ -147,13 +147,28 @@ OMNIPIN_FILECOIN_TOKEN=0xdeadbeef
 
 Top up the wallet with a bit of FIL and USDfc.
 
-Buy FIL and USDfc via
+The easiest path is the built-in `bridge` command, which routes a source
+token (e.g. USDC on Arbitrum) into both FIL (gas) and USDfc (storage payment)
+on Filecoin via [Squid Router](https://app.squidrouter.com):
+
+```sh
+omnipin bridge --provider=Filecoin \
+  --from-chain=arb --from-token=USDC 10
+omnipin deposit --provider=Filecoin 9
+```
+
+`bridge` lands the funds in your Filecoin wallet; `deposit` then moves the
+USDfc into Filecoin Pay so the storage provider can spend it. See
+[`omnipin bridge`](../cli/bridge) and [`omnipin deposit`](../cli/deposit) for
+details.
+
+Alternatively, buy FIL and USDfc manually via
 [Squid Router](https://app.squidrouter.com/?chains=137%2C314&tokens=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359%2C0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee)
 or
 [SushiSwap](https://www.sushi.com/filecoin/swap?token0=NATIVE&token1=0x80b98d3aa09ffff255c3ba4a241111ff1262f045).
-It is recommended to bridge a bit of FIL first, and then swap a portion of it to
-USDfc, since cross-chain swaps for USDfc have low liquidity in pools. For most
-(<10GB) uploads, $1 of USDfc and 0.1 FIL should be enough.
+For most (<10GB) uploads, $1 of USDfc and 0.1 FIL should be enough. If you
+buy USDfc manually, you can still call `omnipin deposit --provider=Filecoin`
+to move it into Filecoin Pay.
 
 If using the calibration testnet, you can get USDfc through a faucet as well
 [here](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc).
@@ -301,18 +316,18 @@ OMNIPIN_AIOZ_TOKEN=your_api_key:your_api_secret
 ### Top-up
 
 AIOZ requires a balance on AIOZ Network (chain 168) to pin content. Use the
-`topup` command to bridge AIOZ tokens from a source chain:
+`bridge` command to bridge AIOZ tokens from a source chain:
 
 ```sh
-omnipin topup --provider=AIOZ \
+omnipin bridge --provider=AIOZ \
   --from-chain=eth \
   --to=0xYOUR_AIOZ_PIN_ACCOUNT \
   0.5
 ```
 
-Supported source chains: `eth`, `arb`, `opt`, `bsc`, `base`, `polygon`,
-`avalanche`. The command bridges AIOZ from the source chain to AIOZ Network,
-then forwards the funds to your AIOZ-Pin account.
+Supported source chains: `eth`, `bsc`. The command bridges AIOZ from the
+source chain to AIOZ Network, then forwards the funds to your AIOZ-Pin
+account. See [`omnipin bridge`](../cli/bridge) for details.
 
 ## Blockfrost
 

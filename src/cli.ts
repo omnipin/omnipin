@@ -3,14 +3,15 @@
 import type { Address } from 'ox/Address'
 import { CLI } from 'spektr'
 import { colorPlugin } from 'spektr/plugins/color.js'
+import { type BridgeActionArgs, bridgeAction } from './actions/bridge.js'
 import { type DeployActionArgs, deployAction } from './actions/deploy.js'
+import { type DepositActionArgs, depositAction } from './actions/deposit.js'
 import { dnsLinkAction } from './actions/dnslink.js'
 import { type EnsActionArgs, ensAction } from './actions/ens.js'
 import { packAction } from './actions/pack.js'
 import { pinAction } from './actions/pin.js'
 import { pingAction } from './actions/ping.js'
 import { statusAction } from './actions/status.js'
-import { type TopupActionArgs, topupAction } from './actions/topup.js'
 import { zodiacAction } from './actions/zodiac.js'
 import { isTTY } from './constants.js'
 
@@ -267,18 +268,19 @@ cli.command<[string]>('pin', ([cid], options) => pinAction({ cid, options }), {
 })
 
 cli.command<[string]>(
-  'topup',
+  'bridge',
   ([amount], options) =>
-    topupAction({
+    bridgeAction({
       amount: amount as string,
-      options: options as TopupActionArgs,
+      options: options as BridgeActionArgs,
     }),
   {
-    description: 'Bridge and top up native tokens for a provider',
+    description:
+      'Bridge native tokens to a provider chain. Stops once the funds land in the destination wallet.',
     options: [
       {
         name: 'provider',
-        description: 'Provider to top up (AIOZ or Filecoin)',
+        description: 'Provider to bridge to (AIOZ or Filecoin)',
         type: 'string',
       },
       {
@@ -319,6 +321,38 @@ cli.command<[string]>(
         name: 'slippage',
         description:
           'Maximum acceptable slippage in percent for Squid swaps. Filecoin only. Default 1.',
+        type: 'string',
+      },
+      {
+        name: 'verbose',
+        description: 'More verbose logs',
+        type: 'boolean',
+        short: 'v',
+      },
+    ] as const,
+  },
+)
+
+cli.command<[string]>(
+  'deposit',
+  ([amount], options) =>
+    depositAction({
+      amount: amount as string,
+      options: options as DepositActionArgs,
+    }),
+  {
+    description:
+      'Deposit already-held tokens into a provider payment contract (Filecoin: USDfc → Filecoin Pay).',
+    options: [
+      {
+        name: 'provider',
+        description: 'Provider to deposit for (Filecoin)',
+        type: 'string',
+      },
+      {
+        name: 'from',
+        description:
+          'Wallet address holding the tokens. Defaults to the signer address.',
         type: 'string',
       },
       {

@@ -9,15 +9,15 @@ import {
 import {
   SOURCE_CHAINS as AIOZ_SOURCE_CHAINS,
   type SourceChain as AiozSourceChain,
-  topupAioz,
+  bridgeAioz,
 } from '../utils/aioz-bridge.js'
 import {
+  bridgeFilecoin,
   isSourceChainKey as isFilecoinSourceChainKey,
-  topupFilecoin,
-} from '../utils/filecoin-topup.js'
+} from '../utils/filecoin-bridge.js'
 import { logger } from '../utils/logger.js'
 
-export type TopupActionArgs = Partial<{
+export type BridgeActionArgs = Partial<{
   provider: string
   'from-chain': string
   'from-token': string
@@ -34,12 +34,12 @@ const SUPPORTED_PROVIDERS = new Set(['AIOZ', 'Filecoin'])
 const isAiozSourceChain = (v: string | undefined): v is AiozSourceChain =>
   typeof v === 'string' && v in AIOZ_SOURCE_CHAINS
 
-export const topupAction = async ({
+export const bridgeAction = async ({
   amount,
   options = {},
 }: {
   amount: string
-  options: TopupActionArgs
+  options: BridgeActionArgs
 }) => {
   if (!amount) throw new MissingCLIArgsError(['amount'])
 
@@ -64,9 +64,9 @@ export const topupAction = async ({
     }
     if (amountWei <= 0n) throw new Error(`Amount must be positive: ${amount}`)
 
-    logger.start(`Top-up ${amount} AIOZ via ${provider} bridge`)
+    logger.start(`Bridge ${amount} AIOZ via ${provider} bridge`)
 
-    const result = await topupAioz({
+    const result = await bridgeAioz({
       privateKey: pk,
       fromChain,
       amountWei,
@@ -76,7 +76,7 @@ export const topupAction = async ({
       aiozRpcUrl: options['aioz-rpc-url'],
     })
 
-    logger.success('Top-up complete')
+    logger.success('Bridge complete')
     if (options.verbose) {
       logger.text(JSON.stringify(result, null, 2))
     }
@@ -109,7 +109,7 @@ export const topupAction = async ({
       )
     }
 
-    const result = await topupFilecoin({
+    const result = await bridgeFilecoin({
       privateKey: pk,
       fromChain,
       fromToken,
