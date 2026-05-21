@@ -40,6 +40,21 @@ export const estimateGas = async ({
   )
 }
 
+export const getBalance = async ({
+  provider,
+  address,
+}: {
+  provider: Provider
+  address: Address
+}): Promise<bigint> => {
+  return toBigInt(
+    await provider.request({
+      method: 'eth_getBalance',
+      params: [address, 'latest'],
+    }),
+  )
+}
+
 export const simulateTransaction = async ({
   provider,
   to,
@@ -72,6 +87,7 @@ export const sendTransaction = async ({
   to,
   data,
   from,
+  value = 0n,
 }: {
   provider: Provider
   chainId: number
@@ -79,8 +95,15 @@ export const sendTransaction = async ({
   to: Address
   data: Hex
   from: Address
+  value?: bigint
 }) => {
-  const estimatedGas = await estimateGas({ provider, from, to, data })
+  const estimatedGas = await estimateGas({
+    provider,
+    from,
+    to,
+    data,
+    value: value === 0n ? '0x0' : fromNumber(value),
+  })
 
   logger.info(`Estimated gas: ${estimatedGas}`)
 
@@ -117,7 +140,7 @@ export const sendTransaction = async ({
     maxPriorityFeePerGas,
     to,
     data,
-    value: 0n,
+    value,
     gas: estimatedGas,
     nonce,
   })
