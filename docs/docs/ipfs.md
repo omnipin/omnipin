@@ -51,6 +51,14 @@ Omnipin supports a wide range of different IPFS providers.
       <td>✅</td>
     </tr>
     <tr>
+      <td><a href="#aioz">AIOZ</a></td>
+      <td><a href="https://docs.aiozpin.network">Docs</a></td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>✅ (~$0.00002/MB)</td>
+      <td>❌</td>
+    </tr>
+    <tr>
       <td><a href="#pinata">Pinata</a></td>
       <td><a href="https://docs.pinata.cloud/files/uploading-files">Docs</a></td>
       <td>❌</td>
@@ -218,6 +226,21 @@ OMNIPIN_IPFS_NINJA_TOKEN=bws_your_api_key_here
 
 Maximum CAR upload size is **100 MB** per request. Larger sites need to be
 split across multiple imports or use a different provider.
+
+## AIOZ
+
+- API env variables: `OMNIPIN_AIOZ_TOKEN`
+
+[AIOZ](https://aiozpin.network) is a pay-per-pin IPFS service backed by the
+AIOZ Network.
+
+Sign up at [aiozpin.network](https://aiozpin.network), top up your account
+balance, then create a key pair on the API Keys page. AIOZ issues two values —
+a public key and a secret key — which Omnipin expects concatenated with a colon:
+
+```sh
+OMNIPIN_AIOZ_TOKEN=<api_key>:<api_secret>
+```
 
 ## Pinata
 
