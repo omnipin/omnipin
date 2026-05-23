@@ -56,12 +56,13 @@ export const deployAction = async ({
     return PROVIDERS[envVarName]
   })
 
-  const ipfsProviders = allProviders.filter((p) => p.protocol === 'ipfs')
+  let ipfsProviders = allProviders.filter((p) => p.protocol === 'ipfs')
   const swarmProviders = allProviders.filter((p) => p.protocol === 'swarm')
 
-  ipfsProviders.sort((a) => {
-    if (a.supported === 'both' || a.supported === 'upload') return -1
-    else return 1
+  ipfsProviders = ipfsProviders.toSorted((a, b) => {
+    const aPrio = a.supported === 'both' || a.supported === 'upload' ? 0 : 1
+    const bPrio = b.supported === 'both' || b.supported === 'upload' ? 0 : 1
+    return aPrio - bPrio
   })
 
   if (!allProviders.length) throw new NoProvidersError()

@@ -8,9 +8,7 @@ import {
 } from '../../src/providers/ipfs/ipfs-ninja.js'
 
 const { upload, status } = PROVIDERS.IPFS_NINJA_TOKEN
-const token = Bun.env.OMNIPIN_IPFS_NINJA_TOKEN
-
-if (!token) throw new Error('Missing OMNIPIN_IPFS_NINJA_TOKEN')
+const token = Bun.env.OMNIPIN_IPFS_NINJA_TOKEN!
 
 describe('IPFSNinja', () => {
   it('is registered in PROVIDERS with both upload and status', () => {

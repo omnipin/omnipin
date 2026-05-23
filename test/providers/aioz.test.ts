@@ -2,8 +2,6 @@ import { describe, expect, it } from 'bun:test'
 import { UploadNotSupportedError } from '../../src/errors.js'
 import { pinOnAioz } from '../../src/providers/ipfs/aioz.js'
 
-const hasAiozToken = Boolean(Bun.env.OMNIPIN_AIOZ_TOKEN)
-
 describe('AIOZ', () => {
   describe('pin', () => {
     it('should throw if pinning was chosen as a first provider', async () => {
@@ -11,9 +9,9 @@ describe('AIOZ', () => {
         pinOnAioz({
           first: true,
           token: 'key:secret',
-          cid: 'QmTest',
+          cid: 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdq',
           name: 'test',
-          car: new Blob(),
+          bytes: new Uint8Array(),
           size: 0,
         }),
       ).rejects.toThrow(UploadNotSupportedError)
@@ -24,19 +22,18 @@ describe('AIOZ', () => {
         pinOnAioz({
           first: false,
           token: 'onlykey',
-          cid: 'QmTest',
+          cid: 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdq',
           name: 'test',
-          car: new Blob(),
+          bytes: new Uint8Array(),
           size: 0,
         }),
       ).rejects.toThrow('Invalid token format')
     })
 
-    it.skipIf(!hasAiozToken)(
+    it(
       'should pin a CID on AIOZ successfully',
       async () => {
         const token = Bun.env.OMNIPIN_AIOZ_TOKEN!
-
         const cid =
           'bafybeibvc3eg46ysr4k6vvuvpykarmk3eq2b3zdbdvaxahjwi47k3rnaom'
 
@@ -46,21 +43,18 @@ describe('AIOZ', () => {
             token,
             cid,
             name: 'Omnipin test',
-            car: new Blob(),
+            bytes: new Uint8Array(),
             size: 0,
           })
 
           expect(result.cid).toEqual(cid)
-        } catch (e: any) {
-          // The shared test account may have already pinned this CID on a
-          // previous CI run. AIOZ rejects duplicate pinByHash calls, which is
-          // fine for our purposes — the desired end state (pin exists) holds.
-          if (e.message?.includes('already exists')) {
-            console.log('⚠️  Skipping: AIOZ already has this CID pinned')
-            return
-          }
-          if (e.message?.includes('not enough balance')) {
-            console.log('⚠️  Skipping: AIOZ account has no balance')
+        } catch (e) {
+          if (
+            e instanceof Error &&
+            (e.message?.includes('already exists') ||
+              e.message?.includes('not enough balance'))
+          ) {
+            console.log(`Skipping: AIOZ ${e.message}`)
             return
           }
           throw e
