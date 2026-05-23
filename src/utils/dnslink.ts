@@ -32,7 +32,8 @@ export const updateDnsLink = async ({
     errors: { message: string; code: number }[]
   }
 
-  if (!res.ok) throw new DnsLinkError(json.errors[0].message)
+  if (!res.ok)
+    throw new DnsLinkError(json.errors?.[0]?.message ?? res.statusText)
 
   if (!json.result.length) throw new MissingDnsLinkError()
 
