@@ -20,28 +20,24 @@ export const proposeTransaction = async ({
   senderSignature: Hex
   chainId: number
 }): Promise<void> => {
-  // In order to serialize BigInt
-  Object.defineProperty(BigInt.prototype, 'toJSON', {
-    get() {
-      return () => String(this)
-    },
-  })
-
   const res = await fetch(
     `${chainToSafeApiUrl(chainName)}/api/v1/safes/${safeAddress}/multisig-transactions/`,
     {
       method: 'POST',
-      body: JSON.stringify({
-        ...txData,
-        contractTransactionHash: safeTxHash,
-        sender: checksum(address),
-        signature: senderSignature,
-        origin: 'Omnipin',
-        value: 0n,
-        baseGas: txData.baseGas ?? 0n,
-        gasPrice: txData.gasPrice ?? 0n,
-        safeTxGas: txData.safeTxGas ?? 0n,
-      }),
+      body: JSON.stringify(
+        {
+          ...txData,
+          contractTransactionHash: safeTxHash,
+          sender: checksum(address),
+          signature: senderSignature,
+          origin: 'Omnipin',
+          value: 0n,
+          baseGas: txData.baseGas ?? 0n,
+          gasPrice: txData.gasPrice ?? 0n,
+          safeTxGas: txData.safeTxGas ?? 0n,
+        },
+        (_, v) => (typeof v === 'bigint' ? v.toString() : v),
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
