@@ -1,6 +1,11 @@
 import { base64pad } from 'multiformats/bases/base64'
 import { DeployError } from '../../errors.js'
-import type { PinStatus, StatusFunction, UploadFunction } from '../../types.js'
+import type {
+  PinStatus,
+  StatusFunction,
+  UnpinFunction,
+  UploadFunction,
+} from '../../types.js'
 import { logger } from '../../utils/logger.js'
 
 const providerName = 'IPFSNinja'
@@ -98,4 +103,22 @@ export const statusOnIpfsNinja: StatusFunction = async ({
           : 'unknown'
 
   return { pin }
+}
+
+export const unpinOnIpfsNinja: UnpinFunction = async ({ token, cid }) => {
+  const res = await fetch(`${API_URL}/pin/${cid}`, {
+    method: 'DELETE',
+    headers: { 'X-Api-Key': token },
+  })
+
+  if (res.status === 404) return { success: true, cid }
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new DeployError(
+      providerName,
+      json.error?.message || json.error || 'Unknown error',
+    )
+  }
+
+  return { success: true, cid }
 }

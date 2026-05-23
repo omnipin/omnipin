@@ -1,5 +1,10 @@
 import { DeployError, MissingKeyError } from '../../errors.js'
-import type { PinFunction, PinStatus, StatusFunction } from '../../types.js'
+import type {
+  PinFunction,
+  PinStatus,
+  StatusFunction,
+  UnpinFunction,
+} from '../../types.js'
 
 const baseURL = 'https://ipfs.blockfrost.io/api/v0'
 const providerName = 'Blockfrost'
@@ -27,6 +32,19 @@ type Pin = {
   size: string
   state: PinStatus
   filecoin: boolean
+}
+
+export const unpinOnBlockfrost: UnpinFunction = async ({ token, cid }) => {
+  const res = await fetch(`${baseURL}/ipfs/pin/remove/${cid}`, {
+    method: 'POST',
+    headers: {
+      project_id: token,
+    },
+  })
+  const json = await res.json()
+  if (!res.ok) throw new DeployError(providerName, json.error?.details)
+
+  return { success: json.state === 'unpinned', cid: json.ipfs_hash }
 }
 
 export const statusOnBlockfrost: StatusFunction = async ({

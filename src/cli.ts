@@ -11,6 +11,7 @@ import { type EnsActionArgs, ensAction } from './actions/ens.js'
 import { packAction } from './actions/pack.js'
 import { pinAction } from './actions/pin.js'
 import { statusAction } from './actions/status.js'
+import { unpinAction } from './actions/unpin.js'
 import { zodiacAction } from './actions/zodiac.js'
 import { isTTY } from './constants.js'
 import { AllProvidersFailedError } from './errors.js'
@@ -231,6 +232,27 @@ cli.command<[string]>('pin', ([cid], options) => pinAction({ cid, options }), {
   ] as const,
   description: 'Pin an IPFS CID on multiple providers',
 })
+
+cli.command<[string]>(
+  'unpin',
+  ([cid], options) => unpinAction({ cid, options }),
+  {
+    options: [
+      {
+        name: 'providers',
+        description: 'List providers to unpin from',
+        type: 'string',
+      },
+      {
+        name: 'verbose',
+        description: 'More verbose logs',
+        type: 'boolean',
+        short: 'v',
+      },
+    ] as const,
+    description: 'Unpin an IPFS CID from providers',
+  },
+)
 
 cli.command<[string]>(
   'bridge',

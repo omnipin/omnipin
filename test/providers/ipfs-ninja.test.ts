@@ -4,16 +4,19 @@ import { PROVIDERS } from '../../src/constants.js'
 import { packCAR, walk } from '../../src/index.js'
 import {
   statusOnIpfsNinja,
+  unpinOnIpfsNinja,
   uploadOnIpfsNinja,
 } from '../../src/providers/ipfs/ipfs-ninja.js'
 
 const { upload, status } = PROVIDERS.IPFS_NINJA_TOKEN
+const { unpin } = PROVIDERS.IPFS_NINJA_TOKEN
 const token = Bun.env.OMNIPIN_IPFS_NINJA_TOKEN!
 
 describe('IPFSNinja', () => {
-  it('is registered in PROVIDERS with both upload and status', () => {
+  it('is registered in PROVIDERS with upload, status, and unpin', () => {
     expect(upload).toBe(uploadOnIpfsNinja)
     expect(status).toBe(statusOnIpfsNinja)
+    expect(unpin).toBe(unpinOnIpfsNinja)
     expect(PROVIDERS.IPFS_NINJA_TOKEN.supported).toBe('both')
     expect(PROVIDERS.IPFS_NINJA_TOKEN.protocol).toBe('ipfs')
     expect(PROVIDERS.IPFS_NINJA_TOKEN.name).toBe('IPFSNinja')
@@ -78,6 +81,21 @@ describe('IPFSNinja', () => {
         expect(result.status).toBe('queued')
       },
       { timeout: 30_000 },
+    )
+  })
+
+  describe('unpin', () => {
+    it(
+      'should unpin a CID via DELETE /pin/{cid}',
+      async () => {
+        const cid =
+          'bafybeiehlvkyfqt3wpfof27bcrhb4wklk7nwouadp7rq5djos2avoaciu4'
+
+        const result = await unpinOnIpfsNinja({ token, cid })
+        expect(result.success).toBe(true)
+        expect(result.cid).toBe(cid)
+      },
+      { timeout: 15_000 },
     )
   })
 })
