@@ -34,9 +34,10 @@ export const pinAction = async ({
   const providers = providerNames
     .map((providerName) => PROVIDERS[findEnvVarProviderName(providerName)!])
     .filter((p) => p.supported === 'both' || p.supported === 'pin')
-    .sort((a) => {
-      if (a.supported === 'both' || a.supported === 'upload') return -1
-      else return 1
+    .toSorted((a, b) => {
+      const aPrio = a.supported === 'both' || a.supported === 'upload' ? 0 : 1
+      const bPrio = b.supported === 'both' || b.supported === 'upload' ? 0 : 1
+      return aPrio - bPrio
     })
 
   if (!providers.length) throw new NoProvidersError()
