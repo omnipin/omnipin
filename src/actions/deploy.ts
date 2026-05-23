@@ -5,7 +5,7 @@ import {
   findEnvVarProviderName,
   parseTokensFromEnv,
   tokensToProviderNames,
-} from '../index.js'
+} from '../utils/env.js'
 import { deployMessage, logger } from '../utils/logger.js'
 import { dnsLinkAction } from './dnslink.js'
 import { type EnsActionArgs, ensAction } from './ens.js'

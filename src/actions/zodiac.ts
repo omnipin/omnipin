@@ -14,7 +14,8 @@ import {
 import { ENS_DEPLOYER_ROLE } from '../utils/zodiac-roles/init.js'
 import type { DeployActionArgs } from './deploy.js'
 
-type ZodiacActionOptions = Pick<DeployActionArgs, 'safe' | 'chain' | 'ens'>
+type ZodiacActionOptions = Pick<DeployActionArgs, 'safe' | 'chain' | 'ens'> &
+  Partial<{ verbose: boolean }>
 
 export const zodiacAction = async ({
   rolesModAddress,
@@ -28,6 +29,7 @@ export const zodiacAction = async ({
   if (!resolverAddress) throw new MissingCLIArgsError(['resolverAddress'])
   if (!rolesModAddress) throw new MissingCLIArgsError(['rolesModAddress'])
 
+  const { verbose } = options
   const safe = options.safe
 
   if (!safe) throw new MissingCLIArgsError(['safe'])
@@ -43,17 +45,28 @@ export const zodiacAction = async ({
   }
   const roleAddress = fromPublicKey(getPublicKey({ privateKey: pk }))
 
+  const chainName = options.chain ?? 'mainnet'
   const safeAddress = getEip3770Address({
     fullAddress: options.safe as EIP3770Address,
-    chainId: chains[options.chain || 'mainnet'].id,
+    chainId: chains[chainName].id,
   })
+
+  if (verbose) {
+    logger.info(`Chain: ${chainName} (id ${chains[chainName].id})`)
+    logger.info(`Role address: ${roleAddress}`)
+    logger.info(
+      `Safe: ${safeAddress.prefix ? `${safeAddress.prefix}:` : ''}${safeAddress.address}`,
+    )
+    logger.info(`Roles module: ${rolesModAddress}`)
+    logger.info(`Resolver: ${resolverAddress}`)
+  }
 
   await writeFile(
     'zodiac.json',
     JSON.stringify(
       {
         version: '1.0',
-        chainId: chains[options.chain ?? 'mainnet'].id.toString(),
+        chainId: chains[chainName].id.toString(),
         meta: {
           name: 'Setup Zodiac Roles',
           txBuilderVersion: '1.18.2',

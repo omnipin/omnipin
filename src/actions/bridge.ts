@@ -64,8 +64,6 @@ export const bridgeAction = async ({
     }
     if (amountWei <= 0n) throw new Error(`Amount must be positive: ${amount}`)
 
-    logger.start(`Bridge ${amount} AIOZ via ${provider} bridge`)
-
     const result = await bridgeAioz({
       privateKey: pk,
       fromChain,

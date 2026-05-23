@@ -218,8 +218,8 @@ export const bridgeAioz = async ({
     throw new Error(`Chain ${fromChain} has no AIOZ token mapping`)
   }
 
-  logger.info(
-    `Bridging ${amountWei} (wei) AIOZ from ${sourceChain.name} → ${AIOZ_MAINNET.name}`,
+  logger.start(
+    `Bridge to AIOZ Network: ${amountWei} (wei) AIOZ from ${sourceChain.name} → ${destination}`,
   )
 
   // 1. Resolve pool address LIVE.
