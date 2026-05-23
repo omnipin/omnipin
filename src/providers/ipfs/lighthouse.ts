@@ -17,9 +17,7 @@ export const uploadOnLighthouse: UploadFunction = async ({
 
     fd.append(
       'file',
-      new Blob([Uint8Array.from(bytes).buffer], {
-        type: 'application/vnd.ipld.car',
-      }),
+      new Blob([bytes], { type: 'application/vnd.ipld.car' }),
       `${name}.car`,
     )
 

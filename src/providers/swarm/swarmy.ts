@@ -13,7 +13,7 @@ export const uploadOnSwarmy: UploadFunction = async ({
 }) => {
   if (!first) throw new PinningNotSupportedError(providerName)
   const body = new FormData()
-  body.append('file', new Blob([bytes.buffer as ArrayBuffer]))
+  body.append('file', new Blob([bytes]))
   const res = await fetch('https://api.swarmy.cloud/api/files?website=true', {
     body,
     headers: {
