@@ -1,10 +1,6 @@
 # `omnipin bridge`
 
-Bridge native tokens from a source chain into a provider's chain. Supports
-**AIOZ** (chain 168) and **Filecoin** (chain 314). `bridge` stops once the
-bridged funds land in the destination wallet — for Filecoin you typically
-follow up with [`omnipin deposit`](./deposit) to move the bridged USDfc into
-Filecoin Pay.
+Bridge native tokens from a source chain into a provider's chain. Supports **AIOZ** (chain 168) and **Filecoin** (chain 314).
 
 ```sh
 # AIOZ: bridge native AIOZ from Ethereum or BSC into an AIOZ Network address.
@@ -15,31 +11,9 @@ OMNIPIN_PK=0x... omnipin bridge --provider=Filecoin \
   --from-chain=arb --from-token=USDC <amount> --to=<filecoin_address>
 ```
 
-For AIOZ, `<amount>` is in whole AIOZ tokens (e.g. `1.5`, parsed as an
-18-decimal value).
+For AIOZ, `<amount>` is in whole AIOZ tokens (e.g. `1.5`). For Filecoin, `<amount>` is in `--from-token` units, decoded against the token's on-chain `decimals()`.
 
-For Filecoin, `<amount>` is in `--from-token` units, decoded against the
-token's on-chain `decimals()` (e.g. `10` with `--from-token=USDC` means
-10 USDC).
-
-## How it works (AIOZ)
-
-The AIOZ bridge is a deposit-address / hot-wallet design — there is no
-contract on the deposit side, no approval, no event ABI. The full bridge
-runs in three steps:
-
-1. Look up the live pool address for the chosen direction from the AIOZ
-   bridge API (`https://api-bridge.aioz.network/swap-directions`).
-2. Send a plain ERC-20 / BEP-20 `transfer(pool, amount)` on the source
-   chain, signed by `OMNIPIN_PK`.
-3. Poll `https://api-bridge.aioz.network/swap/{tx}` until the relayer
-   reports `status: sent`. The relayer credits native AIOZ to the
-   **signer's address** on AIOZ Network (chain 168).
-4. If `--to` differs from the signer's address, send a native AIOZ
-   transfer on chain 168 to `--to`.
-
-The signer is responsible for gas on both the source chain and on AIOZ
-mainnet for the optional forward step.
+For Filecoin, the bridged USDfc lands in the destination wallet but is not yet spendable by the `Filecoin` IPFS provider — follow up with [`omnipin deposit`](./deposit) to move it into Filecoin Pay.
 
 ## Options
 
@@ -56,11 +30,7 @@ Source chain for the bridge.
 
 ### `from-token` (Filecoin only)
 
-Source token to spend on the bridge. Accepts either:
-
-- A known symbol on the source chain (e.g. `USDC`, `USDT`, `ETH`, `BNB`,
-  `MATIC`, `AVAX`, `WETH`, `USDC.e`), resolved against a per-chain table.
-- A raw `0x…` token address (escape hatch for anything not in the table).
+Source token to spend on the bridge. Accepts either a known symbol on the source chain (e.g. `USDC`, `USDT`, `ETH`, `BNB`, `MATIC`, `AVAX`, `WETH`, `USDC.e`) or a raw `0x…` token address.
 
 ### `to`
 
@@ -72,93 +42,25 @@ Custom RPC endpoint. Defaults to public nodes.
 
 ### `aioz-rpc-url`
 
-Custom RPC endpoint for AIOZ Network (chain 168). Default:
-`https://eth-dataseed.aioz.network`.
+Custom RPC endpoint for AIOZ Network (chain 168). Default: `https://eth-dataseed.aioz.network`.
 
 ### `fil-ratio` (Filecoin only)
 
-Fraction in `[0, 1]` of `<amount>` to bridge into native FIL (gas). The
-rest goes to USDfc (storage payment). Default: `0.1` (10% FIL, 90% USDfc).
+Default: `0.1`
+
+Fraction in `[0, 1]` of `<amount>` to bridge into native FIL (gas). The rest goes to USDfc (storage payment).
 
 ### `slippage` (Filecoin only)
 
-Maximum acceptable slippage for the Squid swap legs, in percent. Default:
-`1`.
+Default: `1`
+
+Maximum acceptable slippage for the Squid swap legs, in percent.
 
 ### `verbose`
 
-More verbose logs, including per-poll status updates from the relayer.
-
-## How it works (Filecoin)
-
-Filecoin bridging goes through [Squid Router](https://app.squidrouter.com),
-which wraps Axelar's cross-chain bridge with destination-side gas payment
-and an on-chain DEX swap on Filecoin (Sushiswap V3 against the
-`axlUSDC` / `USDfc` / `WFIL` pools). This means a single source-chain
-transaction can deliver native FIL **and** USDfc on Filecoin without the
-recipient needing FIL for destination gas.
-
-For each invocation:
-
-1. Two Squid `/v2/route` quotes are requested in parallel — one for
-   `<amount> * fil-ratio` → FIL, one for `<amount> * (1 - fil-ratio)` →
-   USDfc.
-2. If `--from-token` is an ERC-20, the Squid router is approved once for
-   the cumulative amount.
-3. The FIL leg is executed and polled on Squid's `/v2/status` until
-   `success`.
-4. The USDfc leg is executed and polled the same way.
-
-After `bridge` returns, the bridged USDfc sits in the destination wallet
-on Filecoin. To make it spendable by the `Filecoin` IPFS provider, run
-[`omnipin deposit`](./deposit) to move it into Filecoin Pay:
-
-```sh
-OMNIPIN_PK=0x... omnipin deposit --provider=Filecoin <usdfc-amount>
-```
-
-If Squid's API returns a non-2xx, the error includes a deeplink to the
-Squid web UI (`https://app.squidrouter.com/?chains=…&tokens=…`) preserving
-the requested parameters, so the user has a manual fallback path.
-
-### Squid integrator ID
-
-Omnipin uses the public `squid-swap-widget` integrator ID by default — the
-same identity the official Squid front-end at
-[v2.app.squidrouter.com](https://app.squidrouter.com) sends with every
-request. No registration required.
-
-Power users can override via `OMNIPIN_SQUID_INTEGRATOR_ID` to use their
-own integrator ID:
-
-```sh
-export OMNIPIN_SQUID_INTEGRATOR_ID=your-integrator-id
-```
-
-This is useful when running many bridges from the same address (Squid
-rate-limits quote requests per `fromAddress`).
+More verbose logs.
 
 ## Environment
 
-- `OMNIPIN_PK` — private key (hex, `0x`-prefixed) used to sign all
-  source-chain transactions.
-- `OMNIPIN_SQUID_INTEGRATOR_ID` — optional Squid integrator ID
-  (Filecoin only).
-
-## Notes
-
-### AIOZ
-
-- The bridge pool addresses are EOAs and can rotate. Omnipin always
-  re-fetches them from `/swap-directions` before sending.
-- The relayer typically credits the destination within 30 seconds to a
-  few minutes. The poll waits up to ~10 minutes total.
-
-### Filecoin
-
-- Bridge legs typically settle within 1–3 minutes. The poll waits up to
-  ~10 minutes per leg.
-- Squid's per-`fromAddress` quote rate limit can produce transient
-  errors during heavy use. Omnipin retries with exponential backoff.
-- USDfc is the canonical USD-pegged storage payment token used by the
-  `Filecoin` IPFS provider (see [docs/docs/filecoin.md](../docs/filecoin)).
+- `OMNIPIN_PK` — private key (hex, `0x`-prefixed) used to sign all source-chain transactions.
+- `OMNIPIN_SQUID_INTEGRATOR_ID` — optional [Squid](https://app.squidrouter.com) integrator ID (Filecoin only). Defaults to the public `squid-swap-widget` ID. Override when running many bridges from the same address to avoid Squid's per-`fromAddress` quote rate limit.
