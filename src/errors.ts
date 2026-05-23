@@ -53,6 +53,18 @@ export class NoProvidersError extends Error {
   }
 }
 
+export class AllProvidersFailedError extends AggregateError {
+  name = 'AllProvidersFailedError'
+  operation: 'deploy' | 'pin'
+  constructor(operation: 'deploy' | 'pin', errors: Error[]) {
+    super(
+      errors,
+      `${operation === 'deploy' ? 'Deploy' : 'Pinning'} failed on all providers.`,
+    )
+    this.operation = operation
+  }
+}
+
 export class MissingKeyError extends Error {
   name = 'MissingKeyError'
   constructor(key: string) {

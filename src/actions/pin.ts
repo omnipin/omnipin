@@ -1,6 +1,6 @@
 import { isTTY, PROVIDERS } from '../constants.js'
 import { AsciiBar } from '../deps.js'
-import { NoProvidersError } from '../errors.js'
+import { AllProvidersFailedError, NoProvidersError } from '../errors.js'
 import {
   findEnvVarProviderName,
   parseTokensFromEnv,
@@ -86,7 +86,7 @@ export const pinAction = async ({
     errors.forEach((e) => {
       logger.error(e)
     })
-    return
+    throw new AllProvidersFailedError('pin', errors)
   } else if (errors.length) {
     logger.warn('There were some problems with pinning')
     errors.forEach((e) => {
