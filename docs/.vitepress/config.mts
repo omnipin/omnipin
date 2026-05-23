@@ -282,10 +282,6 @@ export default withMermaid({
             link: '/cli/ens',
           },
           {
-            text: 'Ping',
-            link: '/cli/ping',
-          },
-          {
             text: 'DNSLink',
             link: '/cli/dnslink',
           },
