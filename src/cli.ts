@@ -14,6 +14,8 @@ import { pingAction } from './actions/ping.js'
 import { statusAction } from './actions/status.js'
 import { zodiacAction } from './actions/zodiac.js'
 import { isTTY } from './constants.js'
+import { AllProvidersFailedError } from './errors.js'
+import { logger } from './utils/logger.js'
 
 const cli = new CLI({ name: 'omnipin', plugins: isTTY ? [colorPlugin] : [] })
 
@@ -375,4 +377,19 @@ cli.command<[Address, Address]>(
 )
 
 cli.help()
-cli.handle(process.argv.slice(2))
+
+// Surface action errors as a non-zero exit code without dumping an
+// "UnhandledPromiseRejection" traceback. AllProvidersFailedError has already
+// logged each underlying error in the action itself; for anything else, log
+// the message before exiting.
+process.on('unhandledRejection', (err) => {
+  if (!(err instanceof AllProvidersFailedError)) logger.error(err)
+  process.exitCode = 1
+})
+
+try {
+  cli.handle(process.argv.slice(2))
+} catch (err) {
+  if (!(err instanceof AllProvidersFailedError)) logger.error(err)
+  process.exitCode = 1
+}

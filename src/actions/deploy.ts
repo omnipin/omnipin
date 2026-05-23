@@ -1,6 +1,6 @@
 import { isTTY, PROVIDERS } from '../constants.js'
 import { AsciiBar, styleText } from '../deps.js'
-import { NoProvidersError } from '../errors.js'
+import { AllProvidersFailedError, NoProvidersError } from '../errors.js'
 import {
   findEnvVarProviderName,
   parseTokensFromEnv,
@@ -189,7 +189,7 @@ export const deployAction = async ({
     errors.forEach((e) => {
       logger.error(e)
     })
-    return
+    throw new AllProvidersFailedError('deploy', errors)
   } else if (errors.length) {
     logger.warn('There were some problems with deploying')
     errors.forEach((e) => {
