@@ -10,7 +10,6 @@ import { dnsLinkAction } from './actions/dnslink.js'
 import { type EnsActionArgs, ensAction } from './actions/ens.js'
 import { packAction } from './actions/pack.js'
 import { pinAction } from './actions/pin.js'
-import { pingAction } from './actions/ping.js'
 import { statusAction } from './actions/status.js'
 import { zodiacAction } from './actions/zodiac.js'
 import { isTTY } from './constants.js'
@@ -151,42 +150,6 @@ cli.command<[string, string]>(
   {
     description: 'Update ENS domain Content-Hash with an IFPS CID',
     options: ensOptions,
-  },
-)
-
-cli.command<[string, string]>(
-  'ping',
-  ([cid, endpoint], options) =>
-    pingAction({
-      cid,
-      endpoint,
-      options: Object.fromEntries(
-        Object.entries(options).map(([k, v]) => [
-          k,
-          Number.parseInt(v as string, 10),
-        ]),
-      ),
-    }),
-  {
-    description: 'Ping an endpoint until it resolves content',
-    options: [
-      {
-        name: 'max-retries',
-        description: 'Max retries',
-        type: 'string',
-      },
-      {
-        name: 'retry-interval',
-        description: 'Interval between retries (in ms)',
-        type: 'string',
-      },
-      {
-        name: 'timeout',
-        description: 'Request timeout until next attempt (in ms)',
-        type: 'string',
-        short: 't',
-      },
-    ] as const,
   },
 )
 
