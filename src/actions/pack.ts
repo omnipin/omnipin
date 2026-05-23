@@ -34,7 +34,10 @@ export const packAction = async ({
     else if (await exists('.vitepress/dist')) dir = '.vitepress/dist'
     else dir = '.'
   }
-  const normalizedPath = path.join(process.cwd(), dir)
+  // `path.resolve` correctly handles both absolute and relative inputs,
+  // unlike `path.join(cwd, dir)` which clobbers absolute `dir` into
+  // nonsense like `${cwd}${dir}` (e.g. `/tmp` + `/home/u/site` → `/tmp/home/u/site`).
+  const normalizedPath = path.resolve(dir)
   const name = customName || path.basename(normalizedPath)
   const [size, files] = await walk(normalizedPath, verbose && !onlyHash)
 

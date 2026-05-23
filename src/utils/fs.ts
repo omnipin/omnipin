@@ -11,18 +11,23 @@ export const walk = async (
 ): Promise<[number, FileEntry[]]> => {
   let total = 0
   const files: FileEntry[] = []
-  for (const path of await glob(dir, {
+  // Use `cwd` + a `**/*` pattern instead of passing `dir` as the pattern.
+  // The latter silently returns an empty list when the directory path
+  // contains glob metacharacters such as `(`, `)`, `[`, `]`, `!`, `{`, `*`,
+  // or `?`, because tinyglobby then interprets them as pattern syntax.
+  for (const absPath of await glob('**/*', {
+    cwd: dir,
     ignore: ['**/node_modules'],
     onlyFiles: true,
-    absolute: false,
+    absolute: true,
   })) {
-    const size = (await stat(path)).size
-    const name = relative(dir, path)
+    const size = (await stat(absPath)).size
+    const name = relative(dir, absPath)
     if (verbose) logger.text(`${name} (${fileSize(size, 2)})`)
     total += size
     files.push({
       path: name,
-      content: createReadStream(path),
+      content: createReadStream(absPath),
       size,
     })
   }
