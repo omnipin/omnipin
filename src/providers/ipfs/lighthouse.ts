@@ -1,5 +1,5 @@
 import { DeployError } from '../../errors.js'
-import type { UploadFunction } from '../../types.js'
+import type { UnpinFunction, UploadFunction } from '../../types.js'
 import { logger } from '../../utils/logger.js'
 
 const providerName = 'Lighthouse'
@@ -74,4 +74,61 @@ export const uploadOnLighthouse: UploadFunction = async ({
   }
 
   return { cid, status: 'queued' }
+}
+
+type LighthouseFileEntry = {
+  id: string
+  cid: string
+  fileName: string
+  fileSizeInBytes: string
+  createdAt: number
+  lastUpdate: number
+}
+
+type LighthouseUploadsResponse = {
+  fileList: LighthouseFileEntry[]
+  totalFiles: number
+}
+
+const lighthouseListUploads = async (
+  token: string,
+  lastKey?: string,
+): Promise<LighthouseUploadsResponse> => {
+  const url = new URL('https://api.lighthouse.storage/api/user/files_uploaded')
+  if (lastKey) url.searchParams.set('lastKey', lastKey)
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  return res.json()
+}
+
+export const unpinOnLighthouse: UnpinFunction = async ({ token, cid }) => {
+  let lastKey: string | undefined
+
+  for (let page = 0; page < 100; page++) {
+    const json = await lighthouseListUploads(token, lastKey)
+    const files = json.fileList ?? []
+
+    for (const file of files) {
+      if (file.cid === cid) {
+        const del = await fetch(
+          `https://api.lighthouse.storage/api/user/delete_file?id=${file.id}`,
+          {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        )
+        const delJson = await del.json()
+        if (!del.ok) throw new DeployError(providerName, delJson.message)
+        return { success: true, cid }
+      }
+    }
+
+    if (files.length === 0) break
+    lastKey = files[files.length - 1].id
+  }
+
+  throw new DeployError(providerName, `CID ${cid} not found`)
 }

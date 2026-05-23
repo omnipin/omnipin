@@ -7,6 +7,7 @@ import { pinToAleph } from './providers/ipfs/aleph.js'
 import {
   pinOnBlockfrost,
   statusOnBlockfrost,
+  unpinOnBlockfrost,
 } from './providers/ipfs/blockfrost.js'
 import {
   statusOnFilebase,
@@ -15,9 +16,13 @@ import {
 import { uploadToFilecoin } from './providers/ipfs/filecoin.js'
 import {
   statusOnIpfsNinja,
+  unpinOnIpfsNinja,
   uploadOnIpfsNinja,
 } from './providers/ipfs/ipfs-ninja.js'
-import { uploadOnLighthouse } from './providers/ipfs/lighthouse.js'
+import {
+  unpinOnLighthouse,
+  uploadOnLighthouse,
+} from './providers/ipfs/lighthouse.js'
 import { statusOnPinata, uploadOnPinata } from './providers/ipfs/pinata.js'
 import { pinOnQuicknode } from './providers/ipfs/quicknode.js'
 import { uploadToSimplePage } from './providers/ipfs/simplepage.js'
@@ -27,6 +32,7 @@ import { uploadOnSwarmy } from './providers/swarm/swarmy.js'
 import type {
   StatusFunction,
   SupportedMethods,
+  UnpinFunction,
   UploadFunction,
 } from './types.js'
 
@@ -36,6 +42,7 @@ export const PROVIDERS: Record<
     name: string
     upload: UploadFunction<any>
     status?: StatusFunction<any>
+    unpin?: UnpinFunction
     supported: SupportedMethods
     protocol: 'ipfs' | 'swarm'
   }
@@ -82,6 +89,7 @@ export const PROVIDERS: Record<
   LIGHTHOUSE_TOKEN: {
     name: 'Lighthouse',
     upload: uploadOnLighthouse,
+    unpin: unpinOnLighthouse,
     supported: 'both',
     protocol: 'ipfs',
   },
@@ -89,6 +97,7 @@ export const PROVIDERS: Record<
     name: 'IPFSNinja',
     upload: uploadOnIpfsNinja,
     status: statusOnIpfsNinja,
+    unpin: unpinOnIpfsNinja,
     supported: 'both',
     protocol: 'ipfs',
   },
@@ -108,6 +117,7 @@ export const PROVIDERS: Record<
     name: 'Blockfrost',
     upload: pinOnBlockfrost,
     status: statusOnBlockfrost,
+    unpin: unpinOnBlockfrost,
     supported: 'pin',
     protocol: 'ipfs',
   },

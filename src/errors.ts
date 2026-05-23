@@ -53,13 +53,22 @@ export class NoProvidersError extends Error {
   }
 }
 
+export class UnpinNotSupportedError extends Error {
+  name = 'UnpinNotSupportedError'
+  providerName: string
+  constructor(providerName: string) {
+    super(`Provider ${providerName} unpin API is not supported yet.`)
+    this.providerName = providerName
+  }
+}
+
 export class AllProvidersFailedError extends AggregateError {
   name = 'AllProvidersFailedError'
-  operation: 'deploy' | 'pin'
-  constructor(operation: 'deploy' | 'pin', errors: Error[]) {
+  operation: 'deploy' | 'pin' | 'unpin'
+  constructor(operation: 'deploy' | 'pin' | 'unpin', errors: Error[]) {
     super(
       errors,
-      `${operation === 'deploy' ? 'Deploy' : 'Pinning'} failed on all providers.`,
+      `${operation === 'deploy' ? 'Deploy' : operation === 'pin' ? 'Pinning' : 'Unpinning'} failed on all providers.`,
     )
     this.operation = operation
   }

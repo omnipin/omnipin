@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'bun:test'
 
 import { PROVIDERS } from '../../src/constants.js'
+import { unpinOnLighthouse } from '../../src/providers/ipfs/lighthouse.js'
 
 const { upload: uploadOnLighthouse } = PROVIDERS.LIGHTHOUSE_TOKEN
 const _hasLighthouseToken = Boolean(Bun.env.OMNIPIN_LIGHTHOUSE_TOKEN)
@@ -46,6 +47,26 @@ describe('Lighthouse', () => {
 
       expect(result.cid).toEqual(cid)
       expect(result.status).toEqual('queued')
+    })
+  })
+
+  describe('unpin', () => {
+    it('should throw if CID not found in uploads list', async () => {
+      await expect(
+        unpinOnLighthouse({
+          token: 'bad-token',
+          cid: 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
+        }),
+      ).rejects.toThrow('Failed to deploy on Lighthouse')
+    })
+
+    it.skip('should unpin an uploaded CID successfully', async () => {
+      const token = Bun.env.OMNIPIN_LIGHTHOUSE_TOKEN!
+      const cid = 'bafybeibvc3eg46ysr4k6vvuvpykarmk3eq2b3zdbdvaxahjwi47k3rnaom'
+
+      const result = await unpinOnLighthouse({ token, cid })
+      expect(result.success).toBe(true)
+      expect(result.cid).toBe(cid)
     })
   })
 })
