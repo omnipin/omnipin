@@ -55,6 +55,6 @@ export const updateDnsLink = async ({
       }),
     },
   )
-  if (verbose) logger.request('POST', res.url, res.status)
+  if (verbose) logger.request('PATCH', res2.url, res2.status)
   return res2.json()
 }

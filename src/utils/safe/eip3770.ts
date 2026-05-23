@@ -4,6 +4,11 @@ export function parseEip3770Address(
   fullAddress: EIP3770Address | Address,
 ): Eip3770AddressInterface {
   const parts = fullAddress.split(':')
+  if (parts.length > 2) {
+    throw new Error(
+      `Invalid EIP-3770 address: expected at most one ":" separator, got "${fullAddress}"`,
+    )
+  }
   const address = checksum(parts.length > 1 ? parts[1] : parts[0])
   const prefix = parts.length > 1 ? parts[0] : ''
   return { prefix, address }

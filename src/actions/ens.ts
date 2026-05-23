@@ -125,6 +125,12 @@ export const ensAction = async ({
       chainId: chain.id,
     })
 
+    // Surface revert reasons (wrong resolver, wrong chain, self-destructed
+    // contract, etc.) before the user signs anything, matching the EOA
+    // path below. `from` is the Safe address, so the simulation sees the
+    // call exactly as the multi-sig will eventually execute it.
+    await simulateTransaction({ provider, to: resolverAddress, data, from })
+
     const nonce = toBigInt(
       await provider.request({
         method: 'eth_call',
@@ -150,9 +156,6 @@ export const ensAction = async ({
     }
 
     if (rolesModAddress && !dryRun) {
-      if (!safeAddress) {
-        throw new MissingCLIArgsError(['safe'])
-      }
       logger.info(`Using Zodiac Roles module`)
 
       await execTransactionWithRole({

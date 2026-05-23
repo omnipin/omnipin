@@ -1,10 +1,7 @@
 import { PROVIDERS } from '../constants.js'
 import { NoProvidersError, UnknownProviderError } from '../errors.js'
-import {
-  assertCID,
-  findEnvVarProviderName,
-  parseTokensFromEnv,
-} from '../index.js'
+import { findEnvVarProviderName, parseTokensFromEnv } from '../utils/env.js'
+import { assertCID } from '../utils/ipfs.js'
 import { pinStatus } from '../utils/pin.js'
 
 export const statusAction = async ({

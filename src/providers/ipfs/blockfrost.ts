@@ -33,7 +33,7 @@ export const statusOnBlockfrost: StatusFunction = async ({
   auth: { token },
   cid,
 }) => {
-  if (!token) throw new MissingKeyError(providerName)
+  if (!token) throw new MissingKeyError('BLOCKFROST_TOKEN')
   const res = await fetch(`${baseURL}/ipfs/pin/list/${cid}`, {
     method: 'GET',
     headers: {

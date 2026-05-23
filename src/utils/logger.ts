@@ -24,7 +24,11 @@ export const logger = {
   success(...args: unknown[]) {
     console.log('✔', ...args)
   },
-  request(method: 'GET' | 'POST' | 'PUT', url: string, status: number) {
+  request(
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+    url: string,
+    status: number,
+  ) {
     if (isTTY)
       console.log(
         '\n',
