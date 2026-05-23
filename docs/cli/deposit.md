@@ -7,8 +7,8 @@ contract used by the `Filecoin` IPFS provider).
 
 Use `deposit` when:
 
-- You bought USDfc directly on Filecoin (via SushiSwap, a faucet on
-  calibnet, an OTC transfer, etc.) and want to skip the bridge.
+- You want to skip the auto-fund flow of `omnipin deploy --providers=Filecoin`
+- You bought USDfc directly on Filecoin network and want to skip the bridge.
 - You have leftover USDfc in your wallet from a previous bridge and want
   to top up your storage allowance without bridging again.
 
@@ -45,8 +45,7 @@ After this, the deposited USDfc is credited inside Filecoin Pay and the
 
 ### `provider`
 
-Provider to deposit for. Currently only `Filecoin` is supported. AIOZ
-does not have a separate deposit step — `bridge` is the whole flow there.
+Provider to deposit for. Currently only `Filecoin` is supported.
 
 ### `from`
 
@@ -67,12 +66,7 @@ More verbose logs.
 
 ## Notes
 
-- Filecoin EVM chain ID is `314` (hex `0x13a`). Default RPC:
-  `https://api.node.glif.io/rpc/v1`. Explorer: `https://filfox.info`.
 - USDfc on Filecoin: `0x80b98d3aa09ffff255c3ba4a241111ff1262f045`.
-- The deposit goes into Filecoin Pay, which is the same payment rail used
-  by the official Synapse SDK; balances deposited here are visible to
-  any tool that reads from Filecoin Pay.
 - First-time deposits cost slightly more gas because they also set
   operator approval. Subsequent deposits use the cheaper
   `depositWithPermit` path automatically.

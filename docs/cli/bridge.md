@@ -64,14 +64,11 @@ Source token to spend on the bridge. Accepts either:
 
 ### `to`
 
-- **AIOZ:** destination address on AIOZ Network (chain 168). Defaults to
-  the signer's own address.
-- **Filecoin:** destination address on Filecoin EVM (chain 314). Defaults
-  to the signer's own address.
+Destination address.
 
 ### `rpc-url`
 
-Custom RPC endpoint for the source chain. Defaults to public nodes.
+Custom RPC endpoint. Defaults to public nodes.
 
 ### `aioz-rpc-url`
 
@@ -156,9 +153,6 @@ rate-limits quote requests per `fromAddress`).
   re-fetches them from `/swap-directions` before sending.
 - The relayer typically credits the destination within 30 seconds to a
   few minutes. The poll waits up to ~10 minutes total.
-- AIOZ Network may not be added to your wallet by default. Use chain ID
-  `168` (hex `0xa8`), RPC `https://eth-dataseed.aioz.network`, explorer
-  `https://explorer.aioz.network`.
 
 ### Filecoin
 
@@ -168,5 +162,3 @@ rate-limits quote requests per `fromAddress`).
   errors during heavy use. Omnipin retries with exponential backoff.
 - USDfc is the canonical USD-pegged storage payment token used by the
   `Filecoin` IPFS provider (see [docs/docs/filecoin.md](../docs/filecoin)).
-- Filecoin EVM chain ID is `314` (hex `0x13a`). Default RPC:
-  `https://api.node.glif.io/rpc/v1`. Explorer: `https://filfox.info`.

@@ -33,7 +33,7 @@ omnipin ens bafybeibp54tslsez36quqptgzwyda3vo66za3rraujksmsb3d5q247uht4 v1rtl.et
 
 ### `rpc-url`
 
-Use a custom Ethereum RPC for transactions. By default, [Public nodes](https://ethereum-rpc.publicnode.com) are used.
+Custom Ethereum RPC. By default, [Public nodes](https://ethereum-rpc.publicnode.com) are used.
 
 ### `roles-mod-address`
 
