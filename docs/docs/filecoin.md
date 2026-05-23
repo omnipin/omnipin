@@ -16,3 +16,17 @@ Obtain the URL and the provider address and save it to the following environment
 OMNIPIN_FILECOIN_SP_URL=https://pdp-dev.kubuxu.com # Service provider URL
 OMNIPIN_FILECOIN_SP_ADDRESS=0x8c8c7a9BE47ed491B33B941fBc0276BD2ec25E7e # Service provider address
 ```
+
+## Pre-deposit
+
+Automatic deposits to Filecoin Pay are known to have been causing issues. It's possible to deposit USDfc into Filecoin Pay before triggering a deployment, using [`omnipin deposit`](../cli/deposit):
+
+```sh
+# Pre-deposit 5 USDfc into Filecoin Pay
+OMNIPIN_PK=0x... omnipin deposit --provider=Filecoin 5
+
+# Then deploy as usual — the Filecoin provider will use the pre-deposited USDfc
+OMNIPIN_PK=0x... omnipin deploy --providers=Filecoin
+```
+
+If you don't already hold USDfc on Filecoin, use [`omnipin bridge`](../cli/bridge) first to bridge from another chain.
