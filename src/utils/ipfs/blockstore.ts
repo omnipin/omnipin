@@ -8,16 +8,19 @@ import type {
 import { NotFoundError } from 'interface-store'
 import all from 'it-all'
 import { base32 } from 'multiformats/bases/base32'
-import { CID } from 'multiformats/cid'
-import * as raw from 'multiformats/codecs/raw'
-import * as Digest from 'multiformats/hashes/digest'
+import type { CID } from 'multiformats/cid'
 
 function isPromise<T>(p?: any): p is Promise<T> {
   return typeof p?.then === 'function'
 }
 
+type Entry = {
+  cid: CID
+  bytes: Uint8Array[]
+}
+
 export class MemoryBlockstore implements Blockstore {
-  private readonly data: Map<string, Uint8Array[]>
+  private readonly data: Map<string, Entry>
 
   constructor() {
     this.data = new Map()
@@ -88,20 +91,20 @@ export class MemoryBlockstore implements Blockstore {
   ): Await<CID> {
     options?.signal?.throwIfAborted()
 
-    this.data.set(base32.encode(key.multihash.bytes), val)
+    this.data.set(base32.encode(key.multihash.bytes), { cid: key, bytes: val })
 
     return key
   }
 
   *get(key: CID, options?: AbortOptions): AwaitGenerator<Uint8Array> {
     options?.signal?.throwIfAborted()
-    const buf = this.data.get(base32.encode(key.multihash.bytes))
+    const entry = this.data.get(base32.encode(key.multihash.bytes))
 
-    if (buf == null) {
+    if (entry == null) {
       throw new NotFoundError()
     }
 
-    yield* buf
+    yield* entry.bytes
   }
 
   has(key: CID, options?: AbortOptions): Await<boolean> {
@@ -121,11 +124,11 @@ export class MemoryBlockstore implements Blockstore {
   *getAll(options?: AbortOptions): AwaitGenerator<Pair> {
     options?.signal?.throwIfAborted()
 
-    for (const [key, value] of this.data.entries()) {
+    for (const { cid, bytes } of this.data.values()) {
       yield {
-        cid: CID.createV1(raw.code, Digest.decode(base32.decode(key))),
+        cid,
         bytes: (async function* () {
-          yield* value
+          yield* bytes
         })(),
       }
       options?.signal?.throwIfAborted()
