@@ -20,7 +20,7 @@ Omnipin supports a wide range of different IPFS providers.
   <tbody>
     <tr>
       <td><a href="#filecoin">Filecoin</a></td>
-      <td><a href="https://synapse.filecoin.services">Docs</a></td>
+      <td><a href="https://docs.filoz.org">Docs</a></td>
       <td>✅</td>
       <td>✅</td>
       <td>❌</td>
@@ -32,7 +32,7 @@ Omnipin supports a wide range of different IPFS providers.
       <td>❌</td>
       <td>❌</td>
       <td>✅</td>
-      <td>❌</td>
+      <td>✅</td>
     </tr>
     <tr>
       <td><a href="#filebase">Filebase</a></td>
@@ -89,14 +89,6 @@ Omnipin supports a wide range of different IPFS providers.
       <td>❌</td>
       <td>✅</td>
       <td>❌</td>
-    </tr>
-    <tr>
-      <td><a href="#aioz">AIOZ</a></td>
-      <td><a href="https://aioz.network">Docs</a></td>
-      <td>❌</td>
-      <td>✅</td>
-      <td>✅</td>
-      <td>✅</td>
     </tr>
     <tr>
       <td><a href="#blockfrost">Blockfrost</a></td>
@@ -206,24 +198,37 @@ A few services provide a pinning service API:
 
 ## Filebase
 
-- API env variables: `OMNIPIN_FILEBASE_TOKEN` for pinning (if not the first
-  provider), additionally `OMNIPIN_FILEBASE_BUCKET_NAME` for upload + pin.
+- API env variables: `OMNIPIN_FILEBASE_TOKEN` (required), `OMNIPIN_FILEBASE_BUCKET_NAME` (required only when Filebase is the upload provider).
 
-### Upload
+Filebase uses two different APIs depending on how Omnipin talks to it, but both
+reuse the same `OMNIPIN_FILEBASE_TOKEN` env var:
 
-`OMNIPIN_FILEBASE_TOKEN` for upload + pin is obtained by encoding access key and
-access secret to base64. Access key and access secret could be found in the
-Filebase console.
+- **Upload** (Filebase is the first provider in the deploy) — Omnipin uploads
+  via the Filebase S3 API. The token must be a base64-encoded
+  `accessKey:accessSecret` pair, and `OMNIPIN_FILEBASE_BUCKET_NAME` must be set.
+- **Pin** (Filebase is a fallback provider re-pinning an existing CID) — Omnipin
+  talks to the Filebase IPFS RPC API. The token must be an IPFS RPC API key.
+
+Pick the variant that matches how you intend to use Filebase. If you need both,
+you'll have to swap the value depending on the run.
+
+### Upload (S3 API)
+
+Encode your access key and access secret to base64. Access key and access secret
+can be found in the Filebase console.
 
 ![Filebase console](/filebase.png)
 
-The easiest way to generate an S3 API token is using the `base64` command:
+The easiest way to produce the base64 token is:
 
 ```sh
 echo "$accessKey:$accessSecret" | base64
 ```
 
-### Pin
+Save the result as `OMNIPIN_FILEBASE_TOKEN` and set `OMNIPIN_FILEBASE_BUCKET_NAME`
+to the bucket you want to upload into.
+
+### Pin (IPFS RPC API)
 
 Filebase provides an RPC API which can be used for pinning.
 
@@ -257,13 +262,27 @@ split across multiple imports or use a different provider.
 [AIOZ](https://aiozpin.network) is a pay-per-pin IPFS service backed by the
 AIOZ Network.
 
-Sign up at [aiozpin.network](https://aiozpin.network), top up your account
-balance, then create a key pair on the API Keys page. AIOZ issues two values —
-a public key and a secret key — which Omnipin expects concatenated with a colon:
+Sign up at [aiozpin.network](https://aiozpin.network) then create a key pair on the API Keys page. AIOZ issues two values — a public key and a secret key — which Omnipin expects concatenated with a colon:
 
 ```sh
 OMNIPIN_AIOZ_TOKEN=<api_key>:<api_secret>
 ```
+
+### Top-up
+
+AIOZ requires a balance on AIOZ Network (chain 168) to pin content. Use the
+`bridge` command to bridge AIOZ tokens from a source chain:
+
+```sh
+omnipin bridge --provider=AIOZ \
+  --from-chain=eth \
+  --to=0xYOUR_AIOZ_PIN_ACCOUNT \
+  0.5
+```
+
+Supported source chains: `eth`, `bsc`. The command bridges AIOZ from the
+source chain to AIOZ Network, then forwards the funds to your AIOZ-Pin
+account. See [`omnipin bridge`](../cli/bridge) for details.
 
 ## Pinata
 
@@ -300,34 +319,6 @@ Key". In the "Applications" modal choose only "IPFS_REST".
 - API env variables: `OMNIPIN_LIGHTHOUSE_TOKEN`
 
 Go to "API Key", enter "Omnipin" in the input box and click "Generate".
-
-## AIOZ
-
-- API env variables: `OMNIPIN_AIOZ_TOKEN`
-
-`OMNIPIN_AIOZ_TOKEN` is an API key and secret pair in the format
-`api_key:api_secret`. Register on the [AIOZ Network](https://aioz.network) and
-create an API key from the dashboard.
-
-```
-OMNIPIN_AIOZ_TOKEN=your_api_key:your_api_secret
-```
-
-### Top-up
-
-AIOZ requires a balance on AIOZ Network (chain 168) to pin content. Use the
-`bridge` command to bridge AIOZ tokens from a source chain:
-
-```sh
-omnipin bridge --provider=AIOZ \
-  --from-chain=eth \
-  --to=0xYOUR_AIOZ_PIN_ACCOUNT \
-  0.5
-```
-
-Supported source chains: `eth`, `bsc`. The command bridges AIOZ from the
-source chain to AIOZ Network, then forwards the funds to your AIOZ-Pin
-account. See [`omnipin bridge`](../cli/bridge) for details.
 
 ## Blockfrost
 

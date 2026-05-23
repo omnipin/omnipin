@@ -39,8 +39,8 @@ ipfs config --json AutoTLS.Enabled true
 Omnipin has a command that will only generate a CAR archive without uploading it anywhere called `omnipin pack`:
 
 ```sh
- omnipin pack <dir> --dist .
- ```
+omnipin pack <dir> --dist .
+```
 
 This will generate a .car distribution archive in a current directory.
 

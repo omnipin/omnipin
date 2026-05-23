@@ -45,7 +45,7 @@ Any website may be updated at any time by pushing a new version without much not
 
 While this is indeed very convenient, such approach is not good for security. In case of developer machine compromise, there are almost no barriers for publishing an exploited version of the web app without anyone being able to stop the attacker before the damage is done. This is exactly what happened during the [Safe front-end hack](https://www.ledger.com/blog-learning-from-the-bybit-safe-attack).
 
-Such status quo should not apply to dApps, especially financially sensitive ones where security is of utmost importance. That is the primary reason why Omnipin integrates with the [Safe Proposer Flow](https://help.safe.global/en/articles/235770-proposers) for ENS update management.
+Such status quo should not apply to dApps, especially financially sensitive ones where security is of utmost importance. That is the primary reason why Omnipin integrates with the [Safe Delegate Flow](https://help.safe.global/en/articles/235770-proposers) for ENS update management.
 
 With a multi-sig wallet sitting on top of an ENS name it is possible to add a multi-factor authorization layer for website updates. It is also not required to be one of the wallet owners to propose ENS updates, which significantly minimizes potential damage from an owner account getting compromised.
 
