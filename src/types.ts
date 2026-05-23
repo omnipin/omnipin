@@ -13,7 +13,9 @@ type AuthArgs = {
 export type UploadArgs<T = object> = {
   name: string
   verbose?: boolean
-  bytes: Uint8Array
+  // Pin to `ArrayBuffer` (not `ArrayBufferLike`) so the buffer is usable
+  // directly as a `BlobPart` / `BodyInit` without casts.
+  bytes: Uint8Array<ArrayBuffer>
   first: boolean
   size: number
   cid: string

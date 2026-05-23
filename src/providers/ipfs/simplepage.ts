@@ -11,7 +11,7 @@ export const uploadToSimplePage: UploadFunction = async ({
   const fd = new FormData()
   fd.append(
     'file',
-    new File([bytes.buffer as ArrayBuffer], `${name}.car`, {
+    new File([bytes], `${name}.car`, {
       type: 'application/vnd.ipld.car',
     }),
   )

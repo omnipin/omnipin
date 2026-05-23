@@ -29,7 +29,7 @@ export const packCAR = async (
   files: FileCandidate[],
   name: string,
   dir = tmp,
-): Promise<{ bytes: Uint8Array; rootCID: CID }> => {
+): Promise<{ bytes: Uint8Array<ArrayBuffer>; rootCID: CID }> => {
   const output = `${dir}/${name}.car`
 
   const blockstore = new MemoryBlockstore()
@@ -76,7 +76,11 @@ export const packCAR = async (
   await new Promise<void>((resolve) => writeStream.on('close', resolve))
 
   const file = await readFile(output)
-  const bytes = file as Uint8Array
+  // `readFile` returns a Node `Buffer` whose underlying type widens to
+  // `Uint8Array<ArrayBufferLike>`. We know the returned buffer is backed by
+  // a plain ArrayBuffer (not SharedArrayBuffer), so narrow it explicitly so
+  // callers can hand `bytes` to `Blob` / `File` without extra casts.
+  const bytes = file as Uint8Array<ArrayBuffer>
 
   blockstore.clear()
 

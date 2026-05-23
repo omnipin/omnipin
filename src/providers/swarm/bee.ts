@@ -16,7 +16,7 @@ export const uploadOnBee: UploadFunction<{ beeURL?: string }> = async ({
 }) => {
   if (!first) throw new PinningNotSupportedError(providerName)
   const res = await fetch(`${beeURL}/bzz`, {
-    body: new Blob([bytes.buffer as ArrayBuffer]),
+    body: new Blob([bytes]),
     headers: {
       'Swarm-Postage-Batch-Id': token,
       'Content-Type': 'application/x-tar',

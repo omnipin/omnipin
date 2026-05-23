@@ -20,12 +20,7 @@ export const uploadOnPinata: UploadFunction = async ({
   if (first) {
     const fd = new FormData()
 
-    fd.append(
-      'file',
-      new Blob([bytes.buffer as ArrayBuffer], {
-        type: 'application/vnd.ipld.car',
-      }),
-    )
+    fd.append('file', new Blob([bytes], { type: 'application/vnd.ipld.car' }))
     fd.append('network', 'public')
 
     fd.append('name', `${name}.car`)

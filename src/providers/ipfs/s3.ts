@@ -19,7 +19,7 @@ export const uploadOnS3 = async ({
   }>,
   'first' | 'cid'
 >): Promise<Response> => {
-  const file = new File([bytes.buffer as ArrayBuffer], name, {
+  const file = new File([bytes], name, {
     type: 'application/vnd.ipld.car',
   })
 
