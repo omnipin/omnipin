@@ -10,8 +10,8 @@ The skill knows:
 
 - which environment variables each [IPFS](/docs/ipfs) and [Swarm](/docs/swarm) provider requires
 - the constraint that Swarm and IPFS providers cannot be combined in a single deploy
-- how to ask whether to update an [ENS](/cli/ens) contenthash
-- how to ask whether to sign with an EOA, a [Safe](/docs/how-it-works) delegate, or a [Zodiac Roles](/docs/how-it-works#zodiac-roles) module
+- how to ask whether to update an [ENS](/docs/how-it-works#ens-updates) contenthash
+- how to ask whether to sign with an EOA, a [Safe](/docs/how-it-works#delegate) delegate, or a [Zodiac Roles](/docs/how-it-works#zodiac-roles) module
 - how to optionally update [DNSLink](/docs/dnslink) via Cloudflare
 
 When invoked, the agent walks the user through provider selection, collects the required `OMNIPIN_*` variables into `.env`, and composes the right `omnipin deploy` command.

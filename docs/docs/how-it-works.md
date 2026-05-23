@@ -17,7 +17,7 @@ flowchart TD
   H --> H1["Uses Cloudflare API Token to update DNS record"]
   I --> J{ENS Update Method}
   J --> J1["EOA Transaction"]
-  J --> J2["Safe Proposer Flow"]
+  J --> J2["Safe Delegate Flow"]
   J --> J3["Safe Zodiac Role Flow"]
 
   %% Subgraphs for grouping
@@ -96,7 +96,7 @@ Omnipin has multiple ways of updating ENS, varying in security and UX properties
 |  Type | Name theft protection  | Multi Factor Authorization | Restricted access | Complexity
 |---|---|---|---|---|
 | EOA | No 🚨 | No | No | Low
-| Proposer | Yes | Yes | No | High
+| Delegate | Yes | Yes | No | High
 | Zodiac Roles | Yes | No | Yes | Medium
 
 ### EOA
@@ -107,25 +107,25 @@ In case of a key compromise, it is possible to steal all the assets held by the 
 
 A transaction is signed by a private key provided via `OMNIPIN_PK` and is immediately pushed onchain. There are no barriers or restrictions put on the account, so it is the least secure option. The only benefit of using an EOA is not requiring any custom setup.
 
-In case EOA is still required and neither Proposer nor Zodiac Roles options are available, it is recommended to take a list of security measures to minimize the potential risks of using an EOA for managing the ENS name:
+In case EOA is still required and neither Delegate nor Zodiac Roles options are available, it is recommended to take a list of security measures to minimize the potential risks of using an EOA for managing the ENS name:
 
 * Don't use the account for storing any assets other than a tiny portion of ETH required to pay the transaction fees
 * Save the private key in CI secrets to not be able to retrieve it from elsewhere
 * If an ENS name is wrapped, unwrap it and set an owner to a different Ethereum account. In case the private key gets leaked, it is still possible to revoke access by changing the manager address.
 
-### Proposer
+### Delegate
 
-An account derived from the private key provided via `OMNIPIN_PK` is not used to update ENS directly. It is only able to submit transaction proposals to a Safe wallet through Safe Transaction Service. It is a centralized API run by Safe which allows enqueuing transactions while not being one of the owners. Proposers have zero access to the ENS name and therefore are not able to perform ENS name theft or other malicious actions. Each transaction proposed by Safe requires manual review and approval from owners.
+An account derived from the private key provided via `OMNIPIN_PK` is not used to update ENS directly. It is only able to submit transaction proposals to a Safe wallet through Safe Transaction Service. It is a centralized API run by Safe which allows enqueuing transactions while not being one of the owners. Delegates have zero access to the ENS name and therefore are not able to perform ENS name theft or other malicious actions. Each transaction proposed by Safe requires manual review and approval from owners.
 
-While the Proposer flow is the safest and is the most secure, it is also the most complex in management and requires manual approving every time a new transaction proposal is pushed.
+While the Delegate flow is the most secure option, it is also the most complex in management and requires manual approval every time a new transaction proposal is pushed.
 
 #### Setup
 
 1. Head over to the [Safe app](https://app.safe.global) and create a new wallet, if you don't have one yet.
 2. Create a new Ethereum account that will be used for proposing transactions, save its private key to `OMNIPIN_PK`.
-3. To add a proposer, go to the Safe app > Settings > Setup. Scroll down to "Proposers" and click "Add Proposer". You can add multiple proposers to your Safe, but only one can be used at a time.
+3. To add a delegate, go to the Safe app > Settings > Setup. Scroll down to "Delegates" and click "Add Delegate".
 
-![Proposer UI](/proposer.png)
+![Delegate UI](/proposer.png)
 
 ### Zodiac Roles
 
