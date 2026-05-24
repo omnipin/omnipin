@@ -6,7 +6,7 @@ Omnipin supports a wide range of different IPFS providers.
   <thead>
     <tr>
       <th colspan="3">Provider</th>
-      <th colspan="3">Supported by Omnipin</th>
+      <th colspan="4">Supported by Omnipin</th>
     </tr>
     <tr>
       <th>Name</th>
@@ -14,6 +14,7 @@ Omnipin supports a wide range of different IPFS providers.
       <th>Permissionless</th>
       <th>Upload</th>
       <th>Pin by CID</th>
+      <th>Unpin</th>
       <th>Status</th>
     </tr>
   </thead>
@@ -25,12 +26,14 @@ Omnipin supports a wide range of different IPFS providers.
       <td>✅</td>
       <td>❌</td>
       <td>❌</td>
+      <td>❌</td>
     </tr>
     <tr>
       <td><a href="#spec-compliant-pinning-service">Spec</a></td>
       <td><a href="https://ipfs.github.io/pinning-services-api-spec">Docs</a></td>
       <td>❌</td>
       <td>❌</td>
+      <td>✅</td>
       <td>✅</td>
       <td>✅</td>
     </tr>
@@ -40,12 +43,14 @@ Omnipin supports a wide range of different IPFS providers.
       <td>❌</td>
       <td>✅ ($20/mo)</td>
       <td>✅</td>
+      <td>❌</td>
       <td>✅</td>
     </tr>
     <tr>
       <td><a href="#ipfs-ninja">IPFS.NINJA</a></td>
       <td><a href="https://ipfs.ninja/docs/api/pinning">Docs</a></td>
       <td>❌</td>
+      <td>✅</td>
       <td>✅</td>
       <td>✅</td>
       <td>✅</td>
@@ -57,6 +62,7 @@ Omnipin supports a wide range of different IPFS providers.
       <td>❌</td>
       <td>✅ (~$0.00002/MB)</td>
       <td>❌</td>
+      <td>❌</td>
     </tr>
     <tr>
       <td><a href="#pinata">Pinata</a></td>
@@ -65,12 +71,14 @@ Omnipin supports a wide range of different IPFS providers.
       <td>✅ ($20/mo)</td>
       <td>✅ ($20/mo)</td>
       <td>✅</td>
+      <td>✅</td>
     </tr>
     <tr>
       <td><a href="#4everland">4EVERLAND</a></td>
       <td><a href="https://docs.4everland.org/">Docs</a></td>
       <td>❌</td>
       <td>❌</td>
+      <td>✅</td>
       <td>✅</td>
       <td>✅</td>
     </tr>
@@ -81,12 +89,14 @@ Omnipin supports a wide range of different IPFS providers.
       <td>❌</td>
       <td>✅ ($49/mo)</td>
       <td>❌</td>
+      <td>❌</td>
     </tr>
     <tr>
       <td><a href="#lighthouse">Lighthouse</a></td>
       <td><a href="https://docs.lighthouse.storage/lighthouse-1/how-to/pin-cid">Docs</a></td>
       <td>❌</td>
       <td>❌</td>
+      <td>✅</td>
       <td>✅</td>
       <td>❌</td>
     </tr>
@@ -97,6 +107,7 @@ Omnipin supports a wide range of different IPFS providers.
       <td>❌</td>
       <td>✅</td>
       <td>✅</td>
+      <td>✅</td>
     </tr>
     <tr>
       <td><a href="#aleph">Aleph</a></td>
@@ -105,12 +116,14 @@ Omnipin supports a wide range of different IPFS providers.
       <td>❌</td>
       <td>✅</td>
       <td>❌</td>
+      <td>❌</td>
     </tr>
     <tr>
       <td><a href="#simplepage">SimplePage</a></td>
       <td><a href="https://simplepage.eth.limo/architecture">Docs</a></td>
       <td>✅</td>
       <td>✅</td>
+      <td>❌</td>
       <td>❌</td>
       <td>❌</td>
     </tr>
