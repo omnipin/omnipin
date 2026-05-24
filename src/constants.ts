@@ -23,7 +23,11 @@ import {
   unpinOnLighthouse,
   uploadOnLighthouse,
 } from './providers/ipfs/lighthouse.js'
-import { statusOnPinata, uploadOnPinata } from './providers/ipfs/pinata.js'
+import {
+  statusOnPinata,
+  unpinOnPinata,
+  uploadOnPinata,
+} from './providers/ipfs/pinata.js'
 import { pinOnQuicknode } from './providers/ipfs/quicknode.js'
 import { uploadToSimplePage } from './providers/ipfs/simplepage.js'
 import { specPin, specStatus } from './providers/ipfs/spec.js'
@@ -65,6 +69,7 @@ export const PROVIDERS: Record<
     name: 'Pinata',
     upload: uploadOnPinata,
     status: statusOnPinata,
+    unpin: unpinOnPinata,
     supported: 'both',
     protocol: 'ipfs',
   },
