@@ -46,7 +46,7 @@ export const PROVIDERS: Record<
     name: string
     upload: UploadFunction<any>
     status?: StatusFunction<any>
-    unpin?: UnpinFunction
+    unpin?: UnpinFunction<any>
     supported: SupportedMethods
     protocol: 'ipfs' | 'swarm'
   }
@@ -86,10 +86,19 @@ export const PROVIDERS: Record<
         baseURL,
       }),
     status: ({ baseURL, ...args }) => specStatus({ ...args, baseURL }),
-    unpin: specUnpin({
-      baseURL: process.env.OMNIPIN_SPEC_URL || '',
-      providerName: 'Spec-compliant Pinning Service',
-    }),
+    unpin: ({
+      baseURL,
+      ...args
+    }: {
+      cid: string
+      token: string
+      verbose?: boolean
+      baseURL: string
+    }) =>
+      specUnpin({
+        baseURL,
+        providerName: 'Spec-compliant Pinning Service',
+      })(args),
     supported: 'pin',
     protocol: 'ipfs',
   },

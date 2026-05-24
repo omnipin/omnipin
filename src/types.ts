@@ -59,11 +59,15 @@ type StatusArgs<T> = {
   verbose?: boolean
 } & T
 
-export type UnpinFunction = (args: {
+type UnpinArgs<T = object> = {
   cid: string
   token: string
   verbose?: boolean
-}) => Promise<{ success: boolean; cid: string }>
+} & T
+
+export type UnpinFunction<T = object> = (
+  args: UnpinArgs<T>,
+) => Promise<{ success: boolean; cid: string }>
 
 export type StatusFunction<T = object> = (args: StatusArgs<T>) => Promise<{
   pin: PinStatus
