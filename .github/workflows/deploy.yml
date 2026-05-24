@@ -12,6 +12,7 @@ jobs:
     env:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      OMNIPIN_BEE_TOKEN: ${{ secrets.OMNIPIN_BEE_TOKEN }}
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
@@ -41,8 +42,10 @@ jobs:
             ${DEPLOY_USER}@${DEPLOY_HOST}:/home/${DEPLOY_USER}/dist.tar
       - name: Deploy on server
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${DEPLOY_USER}@${DEPLOY_HOST} bash -se <<'EOF'
+          ssh -i ~/.ssh/id_ed25519 ${DEPLOY_USER}@${DEPLOY_HOST} bash -se <<EOF
           set -euo pipefail
+
+          echo "OMNIPIN_BEE_TOKEN=${OMNIPIN_BEE_TOKEN}" >> "$HOME/.omnipin.env"
           set -a; source "$HOME/.omnipin.env"; set +a
 
           rm -rf "$HOME/dist"
