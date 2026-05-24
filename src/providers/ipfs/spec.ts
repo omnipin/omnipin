@@ -1,5 +1,5 @@
 import { DeployError, UploadNotSupportedError } from '../../errors.js'
-import type { PinFunction, StatusFunction } from '../../types.js'
+import type { PinFunction, StatusFunction, UnpinFunction } from '../../types.js'
 import { logger } from '../../utils/logger.js'
 
 type SpecPinFunction = PinFunction<{ baseURL: string; providerName: string }>
@@ -57,5 +57,50 @@ export const specStatus: StatusFunction<{ baseURL: string }> = async ({
 
   return {
     pin: json.results[0].status,
+  }
+}
+
+export const specUnpin = (config: {
+  baseURL: string
+  providerName: string
+}): UnpinFunction => {
+  return async ({ cid, token, verbose }) => {
+    const listRes = await fetch(`${config.baseURL}/pins?cid=${cid}&limit=1`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+
+    if (verbose) logger.request('GET', listRes.url, listRes.status)
+
+    if (listRes.status === 404) return { success: true, cid }
+
+    const listJson = await listRes.json()
+
+    if (!listRes.ok)
+      throw new DeployError(
+        config.providerName,
+        listJson.error?.details ?? 'List pins failed',
+      )
+
+    if (listJson.count === 0) return { success: true, cid }
+
+    const requestId = listJson.results[0].requestid
+
+    const delRes = await fetch(`${config.baseURL}/pins/${requestId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+
+    if (verbose) logger.request('DELETE', delRes.url, delRes.status)
+
+    if (delRes.status === 404) return { success: true, cid }
+    if (!delRes.ok) {
+      const delJson = await delRes.json().catch(() => ({}))
+      throw new DeployError(
+        config.providerName,
+        delJson.error?.details ?? 'Unpin failed',
+      )
+    }
+
+    return { success: true, cid }
   }
 }

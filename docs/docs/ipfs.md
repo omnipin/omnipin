@@ -34,7 +34,7 @@ Omnipin supports a wide range of different IPFS providers.
       <td>❌</td>
       <td>❌</td>
       <td>✅</td>
-      <td>❌</td>
+      <td>✅</td>
       <td>✅</td>
     </tr>
     <tr>
@@ -79,7 +79,7 @@ Omnipin supports a wide range of different IPFS providers.
       <td>❌</td>
       <td>❌</td>
       <td>✅</td>
-      <td>❌</td>
+      <td>✅</td>
       <td>✅</td>
     </tr>
     <tr>

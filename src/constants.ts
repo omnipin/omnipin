@@ -30,7 +30,7 @@ import {
 } from './providers/ipfs/pinata.js'
 import { pinOnQuicknode } from './providers/ipfs/quicknode.js'
 import { uploadToSimplePage } from './providers/ipfs/simplepage.js'
-import { specPin, specStatus } from './providers/ipfs/spec.js'
+import { specPin, specStatus, specUnpin } from './providers/ipfs/spec.js'
 import { uploadOnBee } from './providers/swarm/bee.js'
 import { uploadOnSwarmy } from './providers/swarm/swarmy.js'
 import type {
@@ -62,6 +62,10 @@ export const PROVIDERS: Record<
     name: '4EVERLAND',
     upload: uploadOn4everland,
     status: statusOn4everland,
+    unpin: specUnpin({
+      baseURL: 'https://api.4everland.dev',
+      providerName: '4EVERLAND',
+    }),
     supported: 'pin',
     protocol: 'ipfs',
   },
@@ -82,6 +86,10 @@ export const PROVIDERS: Record<
         baseURL,
       }),
     status: ({ baseURL, ...args }) => specStatus({ ...args, baseURL }),
+    unpin: specUnpin({
+      baseURL: process.env.OMNIPIN_SPEC_URL || '',
+      providerName: 'Spec-compliant Pinning Service',
+    }),
     supported: 'pin',
     protocol: 'ipfs',
   },
