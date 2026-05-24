@@ -46,7 +46,12 @@ export const unpinAction = async ({
     const token = apiTokens.get(envVar)!
 
     try {
-      await provider.unpin?.({ cid, token, verbose })
+      await provider.unpin?.({
+        cid,
+        token,
+        verbose,
+        baseURL: apiTokens.get('SPEC_URL'),
+      })
       logger.success(`Unpinned on ${provider.name}`)
     } catch (e) {
       logger.error(`Failed to unpin on ${provider.name}`)
