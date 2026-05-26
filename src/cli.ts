@@ -3,6 +3,7 @@
 import type { Address } from 'ox/Address'
 import { CLI } from 'spektr'
 import { colorPlugin } from 'spektr/plugins/color.js'
+import { type BatchActionArgs, batchAction } from './actions/batch.js'
 import { type BridgeActionArgs, bridgeAction } from './actions/bridge.js'
 import { type DeployActionArgs, deployAction } from './actions/deploy.js'
 import { type DepositActionArgs, depositAction } from './actions/deposit.js'
@@ -340,6 +341,60 @@ cli.command<[string]>(
         name: 'from',
         description:
           'Wallet address holding the tokens. Defaults to the signer address.',
+        type: 'string',
+      },
+      {
+        name: 'verbose',
+        description: 'More verbose logs',
+        type: 'boolean',
+        short: 'v',
+      },
+    ] as const,
+  },
+)
+
+cli.command<[]>(
+  'batch',
+  (_positionals, options) =>
+    batchAction({
+      options: options as BatchActionArgs,
+    }),
+  {
+    description:
+      'Purchase an immutable Swarm postage batch (Beeport: native xDAI swap; Bee: BZZ via canonical PostageStamp).',
+    options: [
+      {
+        name: 'provider',
+        description: 'Provider to purchase the batch through (Beeport or Bee)',
+        type: 'string',
+      },
+      {
+        name: 'size',
+        description:
+          'Storage capacity for the batch (e.g. 110MB, 1GB). Drives the postage-stamp depth. Default 110MB.',
+        type: 'string',
+      },
+      {
+        name: 'duration',
+        description:
+          'How long the batch must remain valid (e.g. 30d, 12h). Default 30d.',
+        type: 'string',
+      },
+      {
+        name: 'node-address',
+        description:
+          'Bee node address recorded with the batch. Defaults to the signer.',
+        type: 'string',
+      },
+      {
+        name: 'rpc-url',
+        description: 'Custom Gnosis RPC URL',
+        type: 'string',
+      },
+      {
+        name: 'slippage',
+        description:
+          'Slippage fraction for the Beeport swap (0–1). Default 0.2 (20%).',
         type: 'string',
       },
       {
