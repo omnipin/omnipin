@@ -32,6 +32,7 @@ import { pinOnQuicknode } from './providers/ipfs/quicknode.js'
 import { uploadToSimplePage } from './providers/ipfs/simplepage.js'
 import { specPin, specStatus, specUnpin } from './providers/ipfs/spec.js'
 import { uploadOnBee } from './providers/swarm/bee.js'
+import { uploadOnBeeport } from './providers/swarm/beeport.js'
 import { uploadOnSwarmy } from './providers/swarm/swarmy.js'
 import type {
   StatusFunction,
@@ -132,6 +133,12 @@ export const PROVIDERS: Record<
   BEE_TOKEN: {
     name: 'Bee',
     upload: uploadOnBee,
+    supported: 'upload',
+    protocol: 'swarm',
+  },
+  BEEPORT_TOKEN: {
+    name: 'Beeport',
+    upload: uploadOnBeeport,
     supported: 'upload',
     protocol: 'swarm',
   },
