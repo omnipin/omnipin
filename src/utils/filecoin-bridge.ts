@@ -1,4 +1,4 @@
-import { encodeData } from 'ox/AbiFunction'
+import { decodeResult, encodeData } from 'ox/AbiFunction'
 import { type Address, fromPublicKey } from 'ox/Address'
 import { type Hex, toBigInt } from 'ox/Hex'
 import * as Provider from 'ox/Provider'
@@ -34,6 +34,30 @@ export const FILECOIN_AXL_USDC: Address =
 /** WFIL on Filecoin. */
 export const FILECOIN_WFIL: Address =
   '0x60e1773636cf5e4a227d9ac24f20feca034ee25a'
+
+/**
+ * Canonical Uniswap Permit2 contract. Deterministically deployed at the same
+ * address on every EVM chain we bridge from (Ethereum, Optimism, BSC, Polygon,
+ * Base, Arbitrum, Avalanche).
+ *
+ * Squid's router pulls ERC-20 inputs through Permit2's `AllowanceTransfer`
+ * module rather than a plain `transferFrom`, so spending requires both an
+ * ERC-20 approval to Permit2 *and* a Permit2 allowance for the router. See
+ * {@link ensurePermit2Allowance}.
+ */
+export const PERMIT2_ADDRESS: Address =
+  '0x000000000022D473030F116dDEE9F6B43aC78BA3'
+
+/** Permit2 `AllowanceTransfer` infinite-amount sentinel (no per-pull decrement). */
+const MAX_UINT160 = 2n ** 160n - 1n
+/**
+ * Max Permit2 expiration (uint48); a far-future timestamp so it never expires.
+ * A plain `number` because uint48 fits in a JS safe integer, which is how the
+ * ABI codec represents it.
+ */
+const MAX_UINT48 = 2 ** 48 - 1
+/** Standard "infinite" ERC-20 allowance. */
+const MAX_UINT256 = 2n ** 256n - 1n
 
 export type SourceChainId = 1 | 10 | 56 | 137 | 8453 | 42161 | 43114
 
@@ -178,6 +202,37 @@ const erc20Decimals = {
   outputs: [{ type: 'uint8' }],
 } as const
 
+/** Permit2 `AllowanceTransfer.approve(token, spender, amount, expiration)`. */
+const permit2Approve = {
+  name: 'approve',
+  type: 'function',
+  stateMutability: 'nonpayable',
+  inputs: [
+    { name: 'token', type: 'address' },
+    { name: 'spender', type: 'address' },
+    { name: 'amount', type: 'uint160' },
+    { name: 'expiration', type: 'uint48' },
+  ],
+  outputs: [],
+} as const
+
+/** Permit2 `AllowanceTransfer.allowance(owner, token, spender)`. */
+const permit2Allowance = {
+  name: 'allowance',
+  type: 'function',
+  stateMutability: 'view',
+  inputs: [
+    { name: 'owner', type: 'address' },
+    { name: 'token', type: 'address' },
+    { name: 'spender', type: 'address' },
+  ],
+  outputs: [
+    { name: 'amount', type: 'uint160' },
+    { name: 'expiration', type: 'uint48' },
+    { name: 'nonce', type: 'uint48' },
+  ],
+} as const
+
 /**
  * Resolve `--from-token` (either a known symbol on the given chain, or a raw
  * 0x address) to an ERC-20 contract address. Throws when the symbol is
@@ -223,8 +278,74 @@ const fetchTokenDecimals = async ({
   return Number(toBigInt(raw as Hex))
 }
 
-/** Ensure the Squid router has an allowance >= amount; approve max if not. */
-const ensureAllowance = async ({
+/** Read an ERC-20 `allowance(owner, spender)`. */
+const readErc20Allowance = async ({
+  provider,
+  token,
+  owner,
+  spender,
+}: {
+  provider: Provider.Provider
+  token: Address
+  owner: Address
+  spender: Address
+}): Promise<bigint> => {
+  const raw = await provider.request({
+    method: 'eth_call',
+    params: [
+      { to: token, data: encodeData(erc20Allowance, [owner, spender]) },
+      'latest',
+    ],
+  })
+  return toBigInt(raw as Hex)
+}
+
+/** Read a Permit2 `allowance(owner, token, spender)` → packed amount/expiration. */
+const readPermit2Allowance = async ({
+  provider,
+  token,
+  owner,
+  spender,
+}: {
+  provider: Provider.Provider
+  token: Address
+  owner: Address
+  spender: Address
+}): Promise<{ amount: bigint; expiration: number }> => {
+  const raw = await provider.request({
+    method: 'eth_call',
+    params: [
+      {
+        to: PERMIT2_ADDRESS,
+        data: encodeData(permit2Allowance, [owner, token, spender]),
+      },
+      'latest',
+    ],
+  })
+  // Returns (uint160 amount, uint48 expiration, uint48 nonce); uint48 fits in
+  // a JS number, so the codec yields a bigint amount and number expiration.
+  const [amount, expiration] = decodeResult(permit2Allowance, raw as Hex)
+  return { amount, expiration }
+}
+
+/**
+ * Authorize `spender` (the Squid router) to pull `amount` of `token` from
+ * `owner` via Permit2.
+ *
+ * Squid's router pulls ERC-20 inputs through Permit2's `AllowanceTransfer`
+ * module, not a plain `transferFrom`. That needs two distinct approvals:
+ *
+ *   1. ERC-20 `approve(PERMIT2, max)` — lets the Permit2 contract move the
+ *      token on the owner's behalf.
+ *   2. Permit2 `approve(token, spender, amount, expiration)` — authorizes the
+ *      router to spend through Permit2 until `expiration`.
+ *
+ * Approving the router directly on the ERC-20 (the pre-Permit2 pattern) leaves
+ * the Permit2 allowance unset, so the router's `Permit2.transferFrom` reverts
+ * with `AllowanceExpired(0)`. Both approvals are issued at the infinite
+ * sentinel once and skipped on subsequent runs when already in place.
+ */
+export const ensurePermit2Allowance = async ({
   provider,
   privateKey,
   owner,
@@ -241,29 +362,53 @@ const ensureAllowance = async ({
   amount: bigint
   chainId: number
 }): Promise<void> => {
-  const raw = await provider.request({
-    method: 'eth_call',
-    params: [
-      { to: token, data: encodeData(erc20Allowance, [owner, spender]) },
-      'latest',
-    ],
-  })
-  const current = toBigInt(raw as Hex)
-  if (current >= amount) return
-
-  logger.info(`Approving ${spender} to spend the source token`)
-  // Approve max uint256 once to avoid repeated approvals for split topups.
-  const max = 2n ** 256n - 1n
-  const data = encodeData(erc20Approve, [spender, max])
-  const txHash = (await sendTransaction({
+  // Step 1: ERC-20 → Permit2. Permit2 itself needs to be able to pull the
+  // token, so the owner approves the Permit2 contract (not the router).
+  const erc20Allowed = await readErc20Allowance({
     provider,
-    chainId,
-    privateKey,
-    to: token,
-    data,
-    from: owner,
-  })) as Hex
-  await waitForTransaction(provider, txHash)
+    token,
+    owner,
+    spender: PERMIT2_ADDRESS,
+  })
+  if (erc20Allowed < amount) {
+    logger.info('Approving Permit2 to spend the source token')
+    const txHash = (await sendTransaction({
+      provider,
+      chainId,
+      privateKey,
+      to: token,
+      data: encodeData(erc20Approve, [PERMIT2_ADDRESS, MAX_UINT256]),
+      from: owner,
+    })) as Hex
+    await waitForTransaction(provider, txHash)
+  }
+
+  // Step 2: Permit2 → router. Authorize the Squid router to spend via Permit2.
+  // Re-approve when the stored allowance is too small or already expired.
+  const nowSeconds = Math.floor(Date.now() / 1000)
+  const permit2 = await readPermit2Allowance({
+    provider,
+    token,
+    owner,
+    spender,
+  })
+  if (permit2.amount < amount || permit2.expiration <= nowSeconds) {
+    logger.info(`Authorizing ${spender} to spend via Permit2`)
+    const txHash = (await sendTransaction({
+      provider,
+      chainId,
+      privateKey,
+      to: PERMIT2_ADDRESS,
+      data: encodeData(permit2Approve, [
+        token,
+        spender,
+        MAX_UINT160,
+        MAX_UINT48,
+      ]),
+      from: owner,
+    })) as Hex
+    await waitForTransaction(provider, txHash)
+  }
 }
 
 export type FilecoinBridgeResult = {
@@ -385,12 +530,14 @@ export const bridgeFilecoin = async ({
     if (usdfcRoute) logRouteSummary('USDfc', usdfcRoute)
   }
 
-  // For ERC-20 inputs, approve the Squid router for the *total* once.
+  // For ERC-20 inputs, set up Permit2 for the Squid router for the *total*
+  // once. Squid pulls funds via Permit2, so a plain ERC-20 approval to the
+  // router is not enough (see ensurePermit2Allowance).
   const isNative = sourceToken.toLowerCase() === NATIVE_TOKEN.toLowerCase()
   if (!isNative) {
     const spender = (filRoute?.transactionRequest.target ??
       usdfcRoute?.transactionRequest.target) as Address
-    await ensureAllowance({
+    await ensurePermit2Allowance({
       provider,
       privateKey,
       owner: signer,
