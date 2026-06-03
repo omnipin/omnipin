@@ -3,6 +3,7 @@ import type * as Provider from 'ox/Provider'
 import {
   ensurePermit2Allowance,
   FILECOIN_USDFC,
+  fetchSourceBalance,
   isSourceChainKey,
   PERMIT2_ADDRESS,
   resolveSourceToken,
@@ -265,5 +266,61 @@ describe('ensurePermit2Allowance', () => {
     expect(sent).toHaveLength(1)
     expect(sent[0].to.toLowerCase()).toBe(PERMIT2_ADDRESS.toLowerCase())
     expect(sent[0].data.slice(0, 10)).toBe(PERMIT2_APPROVE)
+  })
+})
+
+describe('fetchSourceBalance', () => {
+  const OWNER = '0x972a34a8a7b9e19da849921f8d9d58f3d2df568b' as const
+  const USDC = SOURCE_CHAINS.eth.tokens.USDC
+
+  it('reads an ERC-20 balance via balanceOf(account)', async () => {
+    let seen: { to: string; data: string } | undefined
+    const provider = {
+      request: async ({
+        method,
+        params,
+      }: {
+        method: string
+        params?: readonly unknown[]
+      }): Promise<unknown> => {
+        if (method !== 'eth_call') throw new Error(`unexpected ${method}`)
+        seen = (params?.[0] ?? {}) as { to: string; data: string }
+        // balanceOf → 250000 (0.25 USDC at 6 decimals)
+        return `0x${250_000n.toString(16).padStart(64, '0')}`
+      },
+    } as unknown as Provider.Provider
+
+    const balance = await fetchSourceBalance({
+      provider,
+      token: USDC,
+      owner: OWNER,
+    })
+
+    expect(balance).toBe(250_000n)
+    expect(seen?.to.toLowerCase()).toBe(USDC.toLowerCase())
+    expect(seen?.data.slice(0, 10)).toBe('0x70a08231') // balanceOf(address)
+    expect(`0x${seen?.data.slice(-40)}`.toLowerCase()).toBe(OWNER)
+  })
+
+  it('reads the native balance via eth_getBalance for the native sentinel', async () => {
+    let method: string | undefined
+    const provider = {
+      request: async (args: {
+        method: string
+        params?: readonly unknown[]
+      }): Promise<unknown> => {
+        method = args.method
+        return `0x${(1_000_000_000_000_000_000n).toString(16)}` // 1 ETH
+      },
+    } as unknown as Provider.Provider
+
+    const balance = await fetchSourceBalance({
+      provider,
+      token: NATIVE_TOKEN,
+      owner: OWNER,
+    })
+
+    expect(balance).toBe(1_000_000_000_000_000_000n)
+    expect(method).toBe('eth_getBalance')
   })
 })

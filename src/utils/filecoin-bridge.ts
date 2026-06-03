@@ -13,7 +13,7 @@ import {
   type SquidRoute,
   type SquidRouteParams,
 } from './squid.js'
-import { sendTransaction, waitForTransaction } from './tx.js'
+import { getBalance, sendTransaction, waitForTransaction } from './tx.js'
 
 /** Filecoin EVM mainnet (chain 314) constants. */
 export const FILECOIN_MAINNET = {
@@ -202,6 +202,14 @@ const erc20Decimals = {
   outputs: [{ type: 'uint8' }],
 } as const
 
+const erc20BalanceOf = {
+  name: 'balanceOf',
+  type: 'function',
+  stateMutability: 'view',
+  inputs: [{ name: 'account', type: 'address' }],
+  outputs: [{ type: 'uint256' }],
+} as const
+
 /** Permit2 `AllowanceTransfer.approve(token, spender, amount, expiration)`. */
 const permit2Approve = {
   name: 'approve',
@@ -276,6 +284,29 @@ const fetchTokenDecimals = async ({
   })
   // decimals() returns uint8 padded to 32 bytes.
   return Number(toBigInt(raw as Hex))
+}
+
+/** Read the owner's balance of the source token (native sentinel or ERC-20). */
+export const fetchSourceBalance = async ({
+  provider,
+  token,
+  owner,
+}: {
+  provider: Provider.Provider
+  token: Address
+  owner: Address
+}): Promise<bigint> => {
+  if (token.toLowerCase() === NATIVE_TOKEN.toLowerCase()) {
+    return getBalance({ provider, address: owner })
+  }
+  const raw = await provider.request({
+    method: 'eth_call',
+    params: [
+      { to: token, data: encodeData(erc20BalanceOf, [owner]) },
+      'latest',
+    ],
+  })
+  return toBigInt(raw as Hex)
 }
 
 /** Read an ERC-20 `allowance(owner, spender)`. */
@@ -487,6 +518,18 @@ export const bridgeFilecoin = async ({
   logger.info(
     `Split: ${Value.format(filAtomic, decimals)} ${fromToken} → FIL + ${Value.format(usdfcAtomic, decimals)} ${fromToken} → USDfc`,
   )
+
+  // Fail fast if the wallet can't cover the bridge amount. Otherwise the
+  // Squid router's Permit2.transferFrom reverts on-chain with an opaque
+  // TRANSFER_FROM_FAILED — but only after we've spent gas on approvals.
+  const sourceBalance = await fetchSourceBalance({
+    provider,
+    token: sourceToken,
+    owner: signer,
+  })
+  if (sourceBalance < totalAmountAtomic) {
+    throw new Error(`Insufficient ${fromToken} on ${chainConfig.name}`)
+  }
 
   // Quote both legs ahead of time so we surface route errors before any
   // on-chain action.
