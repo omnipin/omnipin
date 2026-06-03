@@ -250,7 +250,7 @@ export const pollSquidStatus = async ({
   }
 
   throw new Error(
-    `Squid bridge poll timed out after ${maxAttempts} attempts for tx ${transactionId}`,
+    `Squid bridge poll timed out after ${maxAttempts} attempts; it may still complete — track: https://axelarscan.io/gmp/${transactionId}`,
   )
 }
 

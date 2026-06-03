@@ -452,6 +452,32 @@ export type FilecoinBridgeResult = {
   filStatus?: unknown
 }
 
+/** Axelar GMP explorer URL for a Squid source tx (Squid bridges via Axelar). */
+const axelarGmpUrl = (txHash: Hex): string =>
+  `https://axelarscan.io/gmp/${txHash}`
+
+// Per-leg relayer poll budget. Axelar GMP to Filecoin routinely takes
+// 10–30 min, well past pollSquidStatus's 10-min default, so wait ~30 min.
+const LEG_POLL_MAX_ATTEMPTS = 120
+const LEG_POLL_INTERVAL_MS = 15_000
+
+/**
+ * Build a poll progress logger. Verbose mode logs every attempt; otherwise it
+ * emits a heartbeat roughly once a minute so the wait never looks frozen.
+ */
+const legProgress =
+  (label: string, startedAt: number, verbose?: boolean) =>
+  (n: number, s: string | null): void => {
+    if (verbose) {
+      logger.info(`  ${label} poll #${n}: status=${s ?? '<none>'}`)
+    } else if (n % 4 === 0) {
+      const elapsed = Math.round((Date.now() - startedAt) / 1000)
+      logger.info(
+        `Still bridging ${label} leg… ${elapsed}s elapsed (relayer: ${s ?? 'pending'})`,
+      )
+    }
+  }
+
 /**
  * Bridge a portion of the input token to native FIL (gas) and the rest to
  * USDfc (storage payment) on Filecoin via Squid Router.
@@ -605,14 +631,15 @@ export const bridgeFilecoin = async ({
     logger.info(`FIL leg tx: ${chainConfig.explorer}/tx/${txHash}`)
     await waitForTransaction(provider, txHash)
     logger.info('FIL leg source tx confirmed; polling relayer…')
+    logger.info(`Track: ${axelarGmpUrl(txHash)}`)
     const status = await pollSquidStatus({
       transactionId: txHash,
       requestId: filRoute.params?.requestId,
       fromChainId: String(chainConfig.id),
       toChainId: String(FILECOIN_MAINNET.id),
-      onAttempt: (n, s) => {
-        if (verbose) logger.info(`  FIL poll #${n}: status=${s ?? '<none>'}`)
-      },
+      maxAttempts: LEG_POLL_MAX_ATTEMPTS,
+      intervalMs: LEG_POLL_INTERVAL_MS,
+      onAttempt: legProgress('FIL', Date.now(), verbose),
     })
     logger.success('FIL leg bridged')
     result.filTxHash = txHash
@@ -631,14 +658,15 @@ export const bridgeFilecoin = async ({
     logger.info(`USDfc leg tx: ${chainConfig.explorer}/tx/${txHash}`)
     await waitForTransaction(provider, txHash)
     logger.info('USDfc leg source tx confirmed; polling relayer…')
+    logger.info(`Track: ${axelarGmpUrl(txHash)}`)
     const status = await pollSquidStatus({
       transactionId: txHash,
       requestId: usdfcRoute.params?.requestId,
       fromChainId: String(chainConfig.id),
       toChainId: String(FILECOIN_MAINNET.id),
-      onAttempt: (n, s) => {
-        if (verbose) logger.info(`  USDfc poll #${n}: status=${s ?? '<none>'}`)
-      },
+      maxAttempts: LEG_POLL_MAX_ATTEMPTS,
+      intervalMs: LEG_POLL_INTERVAL_MS,
+      onAttempt: legProgress('USDfc', Date.now(), verbose),
     })
     logger.success('USDfc leg bridged')
     result.usdfcTxHash = txHash
