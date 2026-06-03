@@ -485,7 +485,7 @@ export const bridgeFilecoin = async ({
     `Bridge to Filecoin: ${amount} ${fromToken} from ${chainConfig.name} → ${destination}`,
   )
   logger.info(
-    `Split: ${filAtomic} (FIL leg) + ${usdfcAtomic} (USDfc leg), source-token atomic units`,
+    `Split: ${Value.format(filAtomic, decimals)} ${fromToken} → FIL + ${Value.format(usdfcAtomic, decimals)} ${fromToken} → USDfc`,
   )
 
   // Quote both legs ahead of time so we surface route errors before any
