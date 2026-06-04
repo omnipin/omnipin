@@ -30,7 +30,7 @@ export const unpinAction = async ({
     : tokensToProviderNames(apiTokens.keys())
 
   const providers = providerNames
-    .map((providerName) => PROVIDERS[findEnvVarProviderName(providerName)!])
+    .map((providerName) => PROVIDERS[findEnvVarProviderName(providerName)])
     .filter((p) => p?.unpin)
 
   if (!providers.length) throw new NoProvidersError()
@@ -42,7 +42,7 @@ export const unpinAction = async ({
   const errors: Error[] = []
 
   for (const provider of providers) {
-    const envVar = findEnvVarProviderName(provider.name)!
+    const envVar = findEnvVarProviderName(provider.name)
     const token = apiTokens.get(envVar)!
 
     try {

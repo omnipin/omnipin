@@ -52,7 +52,7 @@ export const deployAction = async ({
     : tokensToProviderNames(apiTokens.keys())
 
   const allProviders = providerNames.map((providerName) => {
-    const envVarName = findEnvVarProviderName(providerName)!
+    const envVarName = findEnvVarProviderName(providerName)
     return PROVIDERS[envVarName]
   })
 
@@ -115,7 +115,7 @@ export const deployAction = async ({
   if (swarmProviders.length !== 0) {
     for (const provider of swarmProviders) {
       bar?.update(total++, deployMessage(provider.name, provider.supported))
-      const envVar = findEnvVarProviderName(provider.name)!
+      const envVar = findEnvVarProviderName(provider.name)
       try {
         const result = await provider.upload({
           bytes,
@@ -136,7 +136,7 @@ export const deployAction = async ({
     }
   } else {
     for (const provider of ipfsProviders) {
-      const envVar = findEnvVarProviderName(provider.name)!
+      const envVar = findEnvVarProviderName(provider.name)
       const token = apiTokens.get(envVar)!
 
       bar?.update(total++, deployMessage(provider.name, provider.supported))
