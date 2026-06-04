@@ -1,3 +1,10 @@
+import {
+  DEFAULT_MINIMUM_NEW_DATASET_LOCKUP,
+  filecoinMainnet,
+  LOCKUP_PERIOD,
+  USDFC_SYBIL_FEE,
+} from '@omnipin/foc/utils'
+import { getServicePricing } from '@omnipin/foc/warm-storage'
 import { decodeResult, encodeData } from 'ox/AbiFunction'
 import { type Address, fromPublicKey } from 'ox/Address'
 import { type Hex, toBigInt } from 'ox/Hex'
@@ -479,6 +486,35 @@ const legProgress =
   }
 
 /**
+ * Filecoin Pay / FWSS minimum deposit for a new dataset:
+ * `(minimumPricePerMonth * LOCKUP_PERIOD) / epochsPerMonth + sybil fee`.
+ * Mirrors `FilecoinWarmStorageService.validatePayerOperatorApprovalAndFunds`.
+ * Bridging less USDfc than this yields funds that can't pay for storage.
+ */
+export const computeFwssFloor = (
+  minimumPricePerMonth: bigint,
+  epochsPerMonth: bigint,
+): bigint =>
+  (minimumPricePerMonth * LOCKUP_PERIOD) / epochsPerMonth + USDFC_SYBIL_FEE
+
+/**
+ * Live FWSS minimum deposit on Filecoin mainnet (the owner can raise the
+ * floor up to 0.24 USDfc/mo). Falls back to the package default (~0.16 USDfc)
+ * if the on-chain pricing read fails.
+ */
+const fwssMinimumDeposit = async (): Promise<bigint> => {
+  try {
+    const pricing = await getServicePricing({ chain: filecoinMainnet })
+    return computeFwssFloor(
+      pricing.minimumPricePerMonth,
+      pricing.epochsPerMonth,
+    )
+  } catch {
+    return DEFAULT_MINIMUM_NEW_DATASET_LOCKUP
+  }
+}
+
+/**
  * Bridge a portion of the input token to native FIL (gas) and the rest to
  * USDfc (storage payment) on Filecoin via Squid Router.
  *
@@ -587,11 +623,32 @@ export const bridgeFilecoin = async ({
         }
       : undefined
 
-  const filRoute = filParams
-    ? await getRouteWithRetry({ params: filParams })
-    : undefined
+  // Quote the USDfc leg first and enforce the storage floor before quoting the
+  // FIL leg or touching the chain, so an under-funded top-up fails as fast as
+  // possible (one quote, not two).
   const usdfcRoute = usdfcParams
     ? await getRouteWithRetry({ params: usdfcParams })
+    : undefined
+
+  // Don't bridge USDfc that can't clear Filecoin Pay's minimum deposit — the
+  // funds would be unusable for storage.
+  if (usdfcRoute && usdfcParams) {
+    const floor = await fwssMinimumDeposit()
+    const expectedOut = BigInt(
+      usdfcRoute.estimate.toAmountMin ?? usdfcRoute.estimate.toAmount ?? '0',
+    )
+    if (expectedOut < floor) {
+      throw new Error(
+        `USDfc leg would deliver ~${Value.format(expectedOut, 18)} USDfc, below Filecoin Pay's minimum deposit of ${Value.format(
+          floor,
+          18,
+        )} USDfc. Bridge a larger amount (or lower --fil-ratio) so the USDfc portion clears the storage floor.`,
+      )
+    }
+  }
+
+  const filRoute = filParams
+    ? await getRouteWithRetry({ params: filParams })
     : undefined
 
   if (verbose) {
@@ -650,9 +707,9 @@ export const bridgeFilecoin = async ({
     logger.info(`Executing USDfc leg on ${chainConfig.name}`)
     // Re-quote right before executing. The up-front quote is stale by now —
     // the FIL leg's relayer wait (~16 min from Ethereum) outlives Squid's
-    // quote, so the route's embedded minimum-output no longer holds and the
-    // source swap reverts with `CallFailed(_, "Too little received")`. A fresh
-    // quote restores a valid slippage bound for current prices.
+    // quote, so its embedded minimum-output no longer holds and the source
+    // swap reverts with `CallFailed(_, "Too little received")`. A fresh quote
+    // restores a valid slippage bound for current prices.
     const freshRoute = await getRouteWithRetry({ params: usdfcParams })
     const txHash = await executeRoute({
       provider,

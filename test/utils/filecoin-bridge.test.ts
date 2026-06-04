@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import type * as Provider from 'ox/Provider'
 import {
+  computeFwssFloor,
   ensurePermit2Allowance,
   FILECOIN_USDFC,
   fetchSourceBalance,
@@ -322,5 +323,24 @@ describe('fetchSourceBalance', () => {
 
     expect(balance).toBe(1_000_000_000_000_000_000n)
     expect(method).toBe('eth_getBalance')
+  })
+})
+
+describe('computeFwssFloor', () => {
+  // FWSS minimum deposit = minPricePerMonth * LOCKUP_PERIOD / epochsPerMonth
+  // + USDFC_SYBIL_FEE (0.1). At the default 30-day lockup, LOCKUP_PERIOD ==
+  // epochsPerMonth, so the lockup term reduces to minPricePerMonth.
+  it('equals the FWSS new-dataset minimum at initial pricing (0.16 USDfc)', () => {
+    // 0.06 USDfc/mo floor + 0.1 USDfc sybil fee = 0.16 USDfc.
+    expect(computeFwssFloor(60_000_000_000_000_000n, 86_400n)).toBe(
+      160_000_000_000_000_000n,
+    )
+  })
+
+  it('scales with a raised minimum monthly price', () => {
+    // 0.12 USDfc/mo + 0.1 sybil = 0.22 USDfc.
+    expect(computeFwssFloor(120_000_000_000_000_000n, 86_400n)).toBe(
+      220_000_000_000_000_000n,
+    )
   })
 })
