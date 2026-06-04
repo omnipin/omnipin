@@ -648,12 +648,18 @@ export const bridgeFilecoin = async ({
 
   if (usdfcRoute && usdfcParams) {
     logger.info(`Executing USDfc leg on ${chainConfig.name}`)
+    // Re-quote right before executing. The up-front quote is stale by now —
+    // the FIL leg's relayer wait (~16 min from Ethereum) outlives Squid's
+    // quote, so the route's embedded minimum-output no longer holds and the
+    // source swap reverts with `CallFailed(_, "Too little received")`. A fresh
+    // quote restores a valid slippage bound for current prices.
+    const freshRoute = await getRouteWithRetry({ params: usdfcParams })
     const txHash = await executeRoute({
       provider,
       privateKey,
       chainId: chainConfig.id,
       signer,
-      route: usdfcRoute,
+      route: freshRoute,
     })
     logger.info(`USDfc leg tx: ${chainConfig.explorer}/tx/${txHash}`)
     await waitForTransaction(provider, txHash)
@@ -661,7 +667,7 @@ export const bridgeFilecoin = async ({
     logger.info(`Track: ${axelarGmpUrl(txHash)}`)
     const status = await pollSquidStatus({
       transactionId: txHash,
-      requestId: usdfcRoute.params?.requestId,
+      requestId: freshRoute.params?.requestId,
       fromChainId: String(chainConfig.id),
       toChainId: String(FILECOIN_MAINNET.id),
       maxAttempts: LEG_POLL_MAX_ATTEMPTS,
