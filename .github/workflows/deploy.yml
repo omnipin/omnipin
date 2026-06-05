@@ -1,4 +1,19 @@
-name: Deploy with Omnipin (Swarm)
+name: Deploy docs to Swarm (isheika)
+
+# Build the docs, pack them with omnipin, upload to Swarm directly via the
+# isheika micro-client (no bee node, no remote server — fully in CI), then
+# propose the ENS content-hash update to the Safe with `omnipin ens`.
+#
+# Required repo secrets:
+#   SWARM_KEY        Postage batch owner's signer (hex, 32 bytes). isheika uses
+#                    it as --identity (daemon) and --key (upload).
+#   SWARM_BATCH      Postage batch ID (hex, 32 bytes) the chunks are stamped with.
+#   SWARM_NONCE      Overlay nonce (hex, 32 bytes). Generate once with
+#                    `isheika vanity-overlay --key $SWARM_KEY` — treat like an
+#                    identity secret (see the isheika README).
+#   OMNIPIN_PK       Proposer key (a Safe owner) that signs the ENS content-hash
+#                    update proposed to safe.omnipin.eth.
+
 on:
   push:
     branches: [main]
@@ -9,53 +24,82 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-      OMNIPIN_BEE_TOKEN: ${{ secrets.OMNIPIN_BEE_TOKEN }}
     steps:
       - uses: actions/checkout@v6
+
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.5
+
       - name: Install Omnipin
         run: bun i -g omnipin@2.2.5
-      - name: Install deps
-        run: cd docs && bun i
+
       - name: Build website
-        run: cd docs && bun docs:build
-      - name: Pack dist as tar
+        run: |
+          cd docs
+          bun i
+          bun docs:build
+
+      - name: Pack dist as a tar collection
         working-directory: docs/.vitepress
         run: omnipin pack --tar --name dist --dist .
-      - name: Configure SSH
+
+      - name: Fetch isheika
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOYER_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          echo "${{ secrets.DEPLOYER_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-      - name: Rsync tarball to server
+          # Latest release's Linux x86_64 tarball bundles the binary,
+          # peers.seed.json, README and LICENSE.
+          gh release download -R omnipin/isheika \
+            -p 'isheika-*-x86_64-unknown-linux-gnu.tar.gz'
+          tar -xzf isheika-*-x86_64-unknown-linux-gnu.tar.gz --strip-components=1
+          mv peers.seed.json peers.json
+          printf "%s" "${{ secrets.SWARM_NONCE }}" > overlay-nonce
+
+      - name: Start isheika daemon
         run: |
-          rsync -avz --progress \
-            -e "ssh -i ~/.ssh/id_ed25519" \
-            docs/.vitepress/dist.tar \
-            ${DEPLOY_USER}@${DEPLOY_HOST}:/home/${DEPLOY_USER}/dist.tar
-      - name: Update postage stamp on server
+          nohup ./isheika daemon \
+            --socket /tmp/isheika.sock \
+            --pool-size 256 \
+            --listen /ip4/0.0.0.0/tcp/1635 \
+            --identity "${{ secrets.SWARM_KEY }}" \
+            --discover-rounds 3 \
+            > /tmp/daemon.log 2>&1 &
+
+      - name: Wait for warm pool
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${DEPLOY_USER}@${DEPLOY_HOST} \
-            "echo 'OMNIPIN_BEE_TOKEN=${OMNIPIN_BEE_TOKEN}' >> \$HOME/.omnipin.env"
-      - name: Deploy on server
+          for i in $(seq 1 96); do
+            grep -q "warm pool" /tmp/daemon.log && exit 0
+            sleep 5
+          done
+          echo "::warning::pool did not warm in 8 min; proceeding anyway"
+
+      - name: Upload to Swarm via isheika
+        id: upload
+        env:
+          SWARM_KEY: ${{ secrets.SWARM_KEY }}
+          SWARM_BATCH: ${{ secrets.SWARM_BATCH }}
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${DEPLOY_USER}@${DEPLOY_HOST} bash -se <<'EOF'
           set -euo pipefail
-          set -a; source "$HOME/.omnipin.env"; set +a
+          # `.tar` is auto-treated as a collection (index.html as the index
+          # document), so the manifest root resolves to the browsable site.
+          ./isheika upload \
+            --daemon /tmp/isheika.sock \
+            --batch "$SWARM_BATCH" \
+            --key "$SWARM_KEY" \
+            docs/.vitepress/dist.tar | tee /tmp/upload.log
+          root="$(grep -oiE 'manifest root: [0-9a-f]{64}' /tmp/upload.log | head -1 | grep -oiE '[0-9a-f]{64}' || true)"
+          if [ -z "$root" ]; then
+            echo "::error::could not parse the Swarm manifest root from isheika output"
+            echo "--- daemon log ---"; cat /tmp/daemon.log || true
+            exit 1
+          fi
+          echo "Swarm manifest root: $root"
+          echo "root=$root" >> "$GITHUB_OUTPUT"
 
-          rm -rf "$HOME/dist"
-          mkdir -p "$HOME/dist" "$HOME/tmp"
-          tar -xf "$HOME/dist.tar" -C "$HOME/dist"
-          rm -f "$HOME/dist.tar"
-
-          export TMPDIR="$HOME/tmp"
-          cd "$HOME/dist"
-          omnipin deploy --safe safe.omnipin.eth --ens omnipin.eth
-          EOF
+      - name: Propose ENS content-hash update on the Safe
+        env:
+          OMNIPIN_PK: ${{ secrets.OMNIPIN_PK }}
+        run: |
+          omnipin ens "${{ steps.upload.outputs.root }}" omnipin.eth \
+            --safe safe.omnipin.eth
