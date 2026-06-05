@@ -82,9 +82,11 @@ describe('env utils', () => {
       expect(findEnvVarProviderName('Pinata')).toBe('PINATA_TOKEN')
     })
 
-    it('returns undefined for unknown provider', () => {
-      expect(findEnvVarProviderName('NonExistent')).toBeUndefined()
-      expect(findEnvVarProviderName('')).toBeUndefined()
+    it('throws for an unknown provider', () => {
+      expect(() => findEnvVarProviderName('NonExistent')).toThrow(
+        /Unknown provider/,
+      )
+      expect(() => findEnvVarProviderName('')).toThrow(/Unknown provider/)
     })
   })
 })
