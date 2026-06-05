@@ -56,24 +56,6 @@ jobs:
           mv peers.seed.json peers.json
           printf "%s" "${{ secrets.SWARM_NONCE }}" > overlay-nonce
 
-      - name: Start isheika daemon
-        run: |
-          nohup ./isheika daemon \
-            --socket /tmp/isheika.sock \
-            --pool-size 256 \
-            --listen /ip4/0.0.0.0/tcp/1635 \
-            --identity "${{ secrets.SWARM_KEY }}" \
-            --discover-rounds 3 \
-            > /tmp/daemon.log 2>&1 &
-
-      - name: Wait for warm pool
-        run: |
-          for i in $(seq 1 96); do
-            grep -q "warm pool" /tmp/daemon.log && exit 0
-            sleep 5
-          done
-          echo "::warning::pool did not warm in 8 min; proceeding anyway"
-
       - name: Upload to Swarm via isheika
         id: upload
         env:
@@ -81,17 +63,19 @@ jobs:
           SWARM_BATCH: ${{ secrets.SWARM_BATCH }}
         run: |
           set -euo pipefail
-          # `.tar` is auto-treated as a collection (index.html as the index
-          # document), so the manifest root resolves to the browsable site.
+          # One-shot upload — no daemon. A single deploy is one upload, so the
+          # daemon's long warm-pool fill (~80s for 256 sessions) isn't worth it;
+          # a one-shot fills a small pool in a few seconds. peers.json (the
+          # curated seed) and overlay-nonce (the vanity nonce) are picked up
+          # from the cwd by default. `.tar` is auto-treated as a collection
+          # (index.html as the index document), so the root resolves to the site.
           ./isheika upload \
-            --daemon /tmp/isheika.sock \
             --batch "$SWARM_BATCH" \
             --key "$SWARM_KEY" \
             docs/.vitepress/dist.tar | tee /tmp/upload.log
           root="$(grep -oiE 'manifest root: [0-9a-f]{64}' /tmp/upload.log | head -1 | grep -oiE '[0-9a-f]{64}' || true)"
           if [ -z "$root" ]; then
             echo "::error::could not parse the Swarm manifest root from isheika output"
-            echo "--- daemon log ---"; cat /tmp/daemon.log || true
             exit 1
           fi
           echo "Swarm manifest root: $root"
