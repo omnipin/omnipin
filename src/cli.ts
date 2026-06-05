@@ -285,7 +285,7 @@ cli.command<[string]>(
       {
         name: 'to',
         description:
-          'Destination address on the provider chain. Defaults to the signer address.',
+          'Destination address on the provider chain. Defaults to the signer address. For Filecoin it must be the signer (the destination swap is signed locally).',
         type: 'string',
       },
       {
@@ -301,7 +301,7 @@ cli.command<[string]>(
       {
         name: 'fil-ratio',
         description:
-          'Fraction of the input split to FIL (rest to USDfc). Filecoin only. Default 0.1.',
+          'Fraction of the bridged FIL kept for gas; the rest is swapped to USDfc on Filecoin. Filecoin only. Default 0.1.',
         type: 'string',
       },
       {

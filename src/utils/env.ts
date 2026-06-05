@@ -26,10 +26,12 @@ export const tokensToProviderNames = (
 /**
  * Estuary => ESTUARY_TOKEN
  */
-export const findEnvVarProviderName = (
-  provider: string,
-): string | undefined => {
+export const findEnvVarProviderName = (provider: string): string => {
   for (const [token, { name }] of Object.entries(PROVIDERS)) {
     if (provider === name) return token
   }
+  const known = Object.values(PROVIDERS)
+    .map((p) => p.name)
+    .join(', ')
+  throw new Error(`Unknown provider: '${provider}'. Known providers: ${known}`)
 }

@@ -32,7 +32,7 @@ export const pinAction = async ({
     : tokensToProviderNames(apiTokens.keys())
 
   const providers = providerNames
-    .map((providerName) => PROVIDERS[findEnvVarProviderName(providerName)!])
+    .map((providerName) => PROVIDERS[findEnvVarProviderName(providerName)])
     .filter((p) => p.supported === 'both' || p.supported === 'pin')
     .toSorted((a, b) => {
       const aPrio = a.supported === 'both' || a.supported === 'upload' ? 0 : 1
@@ -60,7 +60,7 @@ export const pinAction = async ({
   const errors: Error[] = []
 
   for (const provider of providers) {
-    const envVar = findEnvVarProviderName(provider.name)!
+    const envVar = findEnvVarProviderName(provider.name)
     const token = apiTokens.get(envVar)!
 
     bar?.update(total++, deployMessage(provider.name, 'pin'))

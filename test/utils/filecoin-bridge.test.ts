@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 import type * as Provider from 'ox/Provider'
 import {
-  ensurePermit2Allowance,
+  computeFwssFloor,
+  ensureRouterAllowances,
   FILECOIN_USDFC,
   fetchSourceBalance,
   isSourceChainKey,
@@ -105,10 +106,11 @@ describe('filecoin-bridge utils', () => {
   })
 })
 
-describe('ensurePermit2Allowance', () => {
+describe('ensureRouterAllowances', () => {
   const TEST_PK = `0x${'11'.repeat(32)}` as const
   const OWNER = '0x972a34a8a7b9e19da849921f8d9d58f3d2df568b' as const
-  // Squid's router target — the Permit2 spender that pulls the source token.
+  // Squid's router target — the spender that pulls the source token, either
+  // via a direct transferFrom or through Permit2.
   const SQUID_ROUTER = '0xce16F69375520ab01377ce7B88f5BA8C48F8D666' as const
   const USDC = SOURCE_CHAINS.eth.tokens.USDC
 
@@ -128,7 +130,7 @@ describe('ensurePermit2Allowance', () => {
    * `eth_estimateGas` step, which `sendTransaction` runs per tx).
    */
   const makeProvider = (state: {
-    erc20ToPermit2: bigint
+    erc20Allowance: bigint
     permit2Amount: bigint
     permit2Expiration: number
   }) => {
@@ -152,7 +154,7 @@ describe('ensurePermit2Allowance', () => {
             )}${word(0)}`
           }
           // ERC-20 allowance(owner, spender) → single uint256
-          return `0x${word(state.erc20ToPermit2)}`
+          return `0x${word(state.erc20Allowance)}`
         }
         case 'eth_estimateGas': {
           const call = (params?.[0] ?? {}) as { to: string; data: string }
@@ -183,7 +185,7 @@ describe('ensurePermit2Allowance', () => {
   }
 
   const run = (provider: Provider.Provider, amount = 100_000n) =>
-    ensurePermit2Allowance({
+    ensureRouterAllowances({
       provider,
       privateKey: TEST_PK,
       owner: OWNER,
@@ -193,38 +195,48 @@ describe('ensurePermit2Allowance', () => {
       chainId: SOURCE_CHAINS.eth.id,
     })
 
-  it('approves Permit2 on the token, then authorizes the router via Permit2', async () => {
+  it('approves the router directly, then sets up the Permit2 path', async () => {
     const { provider, sent, reads } = makeProvider({
-      erc20ToPermit2: 0n,
+      erc20Allowance: 0n,
       permit2Amount: 0n,
       permit2Expiration: 0,
     })
 
     await run(provider)
 
-    // Regression guard: the ERC-20 allowance must be checked against the
-    // Permit2 contract, NOT the router (the old bug approved the router and
-    // tripped Permit2's AllowanceExpired(0)).
-    const erc20Read = reads.find(
-      (r) => r.to.toLowerCase() === USDC.toLowerCase(),
+    // The ERC-20 allowance is checked against BOTH the router (direct
+    // transferFrom path — the case that regressed Base→Filecoin) and Permit2.
+    const erc20Reads = reads.filter(
+      (r) =>
+        r.to.toLowerCase() === USDC.toLowerCase() &&
+        r.data.slice(0, 10) === ERC20_ALLOWANCE,
     )
-    expect(erc20Read?.data.slice(0, 10)).toBe(ERC20_ALLOWANCE)
-    expect(addrInWord(erc20Read?.data.slice(-64) ?? '')).toBe(
+    const erc20ReadSpenders = erc20Reads.map((r) =>
+      addrInWord(r.data.slice(-64)),
+    )
+    expect(erc20ReadSpenders).toContain(SQUID_ROUTER.toLowerCase())
+    expect(erc20ReadSpenders).toContain(PERMIT2_ADDRESS.toLowerCase())
+
+    expect(sent).toHaveLength(3)
+    const [approveRouter, approvePermit2Erc20, approvePermit2] = sent
+
+    // 1) ERC-20 approve(router, maxUint256) — direct transferFrom path
+    expect(approveRouter.to.toLowerCase()).toBe(USDC.toLowerCase())
+    expect(approveRouter.data.slice(0, 10)).toBe(ERC20_APPROVE)
+    expect(addrInWord(approveRouter.data.slice(10, 74))).toBe(
+      SQUID_ROUTER.toLowerCase(),
+    )
+    expect(approveRouter.data.slice(74, 138)).toBe('f'.repeat(64))
+
+    // 2) ERC-20 approve(PERMIT2, maxUint256)
+    expect(approvePermit2Erc20.to.toLowerCase()).toBe(USDC.toLowerCase())
+    expect(approvePermit2Erc20.data.slice(0, 10)).toBe(ERC20_APPROVE)
+    expect(addrInWord(approvePermit2Erc20.data.slice(10, 74))).toBe(
       PERMIT2_ADDRESS.toLowerCase(),
     )
+    expect(approvePermit2Erc20.data.slice(74, 138)).toBe('f'.repeat(64))
 
-    expect(sent).toHaveLength(2)
-    const [approveErc20, approvePermit2] = sent
-
-    // 1) ERC-20 approve(PERMIT2, maxUint256)
-    expect(approveErc20.to.toLowerCase()).toBe(USDC.toLowerCase())
-    expect(approveErc20.data.slice(0, 10)).toBe(ERC20_APPROVE)
-    expect(addrInWord(approveErc20.data.slice(10, 74))).toBe(
-      PERMIT2_ADDRESS.toLowerCase(),
-    )
-    expect(approveErc20.data.slice(74, 138)).toBe('f'.repeat(64))
-
-    // 2) Permit2 approve(token, router, maxUint160, maxUint48)
+    // 3) Permit2 approve(token, router, maxUint160, maxUint48)
     expect(approvePermit2.to.toLowerCase()).toBe(PERMIT2_ADDRESS.toLowerCase())
     expect(approvePermit2.data.slice(0, 10)).toBe(PERMIT2_APPROVE)
     expect(addrInWord(approvePermit2.data.slice(10, 74))).toBe(
@@ -244,7 +256,7 @@ describe('ensurePermit2Allowance', () => {
 
   it('issues no transactions when both allowances already cover the amount', async () => {
     const { provider, sent } = makeProvider({
-      erc20ToPermit2: 2n ** 256n - 1n,
+      erc20Allowance: 2n ** 256n - 1n,
       permit2Amount: 2n ** 160n - 1n,
       permit2Expiration: Math.floor(Date.now() / 1000) + 86_400,
     })
@@ -256,7 +268,7 @@ describe('ensurePermit2Allowance', () => {
 
   it('re-authorizes via Permit2 when the stored allowance is expired', async () => {
     const { provider, sent } = makeProvider({
-      erc20ToPermit2: 2n ** 256n - 1n, // ERC-20 → Permit2 already in place
+      erc20Allowance: 2n ** 256n - 1n, // ERC-20 → Permit2 already in place
       permit2Amount: 2n ** 160n - 1n, // amount is sufficient…
       permit2Expiration: 1, // …but expired (this is the AllowanceExpired case)
     })
@@ -322,5 +334,24 @@ describe('fetchSourceBalance', () => {
 
     expect(balance).toBe(1_000_000_000_000_000_000n)
     expect(method).toBe('eth_getBalance')
+  })
+})
+
+describe('computeFwssFloor', () => {
+  // FWSS minimum deposit = minPricePerMonth * LOCKUP_PERIOD / epochsPerMonth
+  // + USDFC_SYBIL_FEE (0.1). At the default 30-day lockup, LOCKUP_PERIOD ==
+  // epochsPerMonth, so the lockup term reduces to minPricePerMonth.
+  it('equals the FWSS new-dataset minimum at initial pricing (0.16 USDfc)', () => {
+    // 0.06 USDfc/mo floor + 0.1 USDfc sybil fee = 0.16 USDfc.
+    expect(computeFwssFloor(60_000_000_000_000_000n, 86_400n)).toBe(
+      160_000_000_000_000_000n,
+    )
+  })
+
+  it('scales with a raised minimum monthly price', () => {
+    // 0.12 USDfc/mo + 0.1 sybil = 0.22 USDfc.
+    expect(computeFwssFloor(120_000_000_000_000_000n, 86_400n)).toBe(
+      220_000_000_000_000_000n,
+    )
   })
 })

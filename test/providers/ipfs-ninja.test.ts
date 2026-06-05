@@ -13,6 +13,12 @@ const { unpin } = PROVIDERS.IPFS_NINJA_TOKEN
 const token = Bun.env.OMNIPIN_IPFS_NINJA_TOKEN!
 
 describe('IPFSNinja', () => {
+  // CID uploaded by the `upload` test and reused by `pin` / `unpin`. The
+  // `unpin` test removes it at the end, so the suite cleans up after itself
+  // and doesn't slowly fill the account up to its pin limit — no separate
+  // cleanup step needed.
+  let uploadedCid = ''
+
   it('is registered in PROVIDERS with upload, status, and unpin', () => {
     expect(upload).toBe(uploadOnIpfsNinja)
     expect(status).toBe(statusOnIpfsNinja)
@@ -53,6 +59,7 @@ describe('IPFSNinja', () => {
         })
 
         expect(cid).toBe(car.rootCID.toString())
+        uploadedCid = cid
       },
       { timeout: 60_000 },
     )
@@ -60,24 +67,23 @@ describe('IPFSNinja', () => {
 
   describe('pin', () => {
     it(
-      're-pins an existing CID via the /pin endpoint',
+      're-pins the uploaded CID via the /pin endpoint',
       async () => {
-        // ipfs.ninja's /pin endpoint requires CIDs that start with Qm or bafy
-        // (dag-pb). This is a CID we previously uploaded from the omnipin
-        // smoke test, so re-pinning is a no-op (`deduped: true`).
-        const cid =
-          'bafybeiehlvkyfqt3wpfof27bcrhb4wklk7nwouadp7rq5djos2avoaciu4'
+        // Re-pinning a CID already on the account is a dedupe no-op
+        // (`deduped: true`). The /pin endpoint needs a dag-pb CID (Qm/bafy),
+        // which the uploaded root CID is.
+        expect(uploadedCid).not.toBe('')
 
         const result = await uploadOnIpfsNinja({
           token,
-          cid,
+          cid: uploadedCid,
           name: 'omnipin pin test',
           first: false,
           bytes: new Uint8Array(),
           size: 0,
         })
 
-        expect(result.cid).toBe(cid)
+        expect(result.cid).toBe(uploadedCid)
         expect(result.status).toBe('queued')
       },
       { timeout: 30_000 },
@@ -86,14 +92,13 @@ describe('IPFSNinja', () => {
 
   describe('unpin', () => {
     it(
-      'should unpin a CID via DELETE /pin/{cid}',
+      'unpins the uploaded CID via DELETE /pin/{cid}, cleaning up the upload',
       async () => {
-        const cid =
-          'bafybeiehlvkyfqt3wpfof27bcrhb4wklk7nwouadp7rq5djos2avoaciu4'
+        expect(uploadedCid).not.toBe('')
 
-        const result = await unpinOnIpfsNinja({ token, cid })
+        const result = await unpinOnIpfsNinja({ token, cid: uploadedCid })
         expect(result.success).toBe(true)
-        expect(result.cid).toBe(cid)
+        expect(result.cid).toBe(uploadedCid)
       },
       { timeout: 15_000 },
     )
