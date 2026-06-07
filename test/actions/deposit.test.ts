@@ -11,15 +11,21 @@ const DUMMY_PK =
 
 describe('deposit action', () => {
   let originalPk: string | undefined
+  let originalFilecoinToken: string | undefined
 
   beforeEach(() => {
     originalPk = process.env.OMNIPIN_PK
+    originalFilecoinToken = process.env.OMNIPIN_FILECOIN_TOKEN
     delete process.env.OMNIPIN_PK
+    delete process.env.OMNIPIN_FILECOIN_TOKEN
   })
 
   afterEach(() => {
     if (originalPk === undefined) delete process.env.OMNIPIN_PK
     else process.env.OMNIPIN_PK = originalPk
+    if (originalFilecoinToken === undefined)
+      delete process.env.OMNIPIN_FILECOIN_TOKEN
+    else process.env.OMNIPIN_FILECOIN_TOKEN = originalFilecoinToken
   })
 
   it('throws MissingCLIArgsError if amount is missing', async () => {
@@ -47,10 +53,16 @@ describe('deposit action', () => {
     ).rejects.toBeInstanceOf(UnknownProviderError)
   })
 
-  it('throws MissingKeyError when OMNIPIN_PK is not set', async () => {
+  it('throws MissingKeyError when no signing key is set', async () => {
     await expect(
       depositAction({ amount: '1', options: { provider: 'Filecoin' } }),
     ).rejects.toBeInstanceOf(MissingKeyError)
+  })
+
+  it('names OMNIPIN_FILECOIN_TOKEN in the MissingKeyError for Filecoin', async () => {
+    await expect(
+      depositAction({ amount: '1', options: { provider: 'Filecoin' } }),
+    ).rejects.toThrow(/OMNIPIN_FILECOIN_TOKEN/)
   })
 
   it('rejects non-positive amounts', async () => {

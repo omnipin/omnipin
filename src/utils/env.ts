@@ -1,5 +1,6 @@
+import type { Hex } from 'ox/Hex'
 import { PROVIDERS } from '../constants.js'
-import { UnknownProviderError } from '../errors.js'
+import { MissingKeyError, UnknownProviderError } from '../errors.js'
 
 export const parseTokensFromEnv = (): Map<string, string> => {
   const tokens = new Map<string, string>()
@@ -34,4 +35,29 @@ export const findEnvVarProviderName = (provider: string): string => {
     .map((p) => p.name)
     .join(', ')
   throw new Error(`Unknown provider: '${provider}'. Known providers: ${known}`)
+}
+
+/**
+ * Resolve the signing key for an onchain action (`deposit`, `bridge`).
+ *
+ * Providers whose wallet key is configured under a provider-specific env var
+ * for `deploy` (e.g. Filecoin uses `OMNIPIN_FILECOIN_TOKEN`) reuse that same
+ * variable here so users only manage a single key per provider. The generic
+ * `OMNIPIN_PK` is always accepted as a fallback.
+ *
+ * @param provider - Provider display name (e.g. `Filecoin`).
+ * @returns The resolved private key.
+ * @throws {MissingKeyError} If neither the provider-specific key nor
+ *   `OMNIPIN_PK` is set. The error names the provider-specific variable when
+ *   the provider has one.
+ */
+export const resolveSignerKey = (provider: string): Hex => {
+  const providerEnvKey = `OMNIPIN_${findEnvVarProviderName(provider)}`
+  const providerKey = process.env[providerEnvKey] as Hex | undefined
+  if (providerKey) return providerKey
+
+  const pk = process.env.OMNIPIN_PK as Hex | undefined
+  if (pk) return pk
+
+  throw new MissingKeyError(findEnvVarProviderName(provider))
 }

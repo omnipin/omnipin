@@ -23,10 +23,12 @@ Automatic deposits to Filecoin Pay are known to have been causing issues. It's p
 
 ```sh
 # Pre-deposit 5 USDfc into Filecoin Pay
-OMNIPIN_PK=0x... omnipin deposit --provider=Filecoin 5
+OMNIPIN_FILECOIN_TOKEN=0x... omnipin deposit --provider=Filecoin 5
 
 # Then deploy as usual — the Filecoin provider will use the pre-deposited USDfc
-OMNIPIN_PK=0x... omnipin deploy --providers=Filecoin
+OMNIPIN_FILECOIN_TOKEN=0x... omnipin deploy --providers=Filecoin
 ```
+
+`deposit` and `bridge` read the same `OMNIPIN_FILECOIN_TOKEN` as `deploy` for the `Filecoin` provider, so you only manage one key. (`OMNIPIN_PK` is still accepted as a fallback.)
 
 If you don't already hold USDfc on Filecoin, use [`omnipin bridge`](../cli/bridge) first to bridge from another chain.

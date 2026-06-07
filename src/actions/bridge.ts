@@ -1,16 +1,12 @@
 import type { Address } from 'ox/Address'
-import type { Hex } from 'ox/Hex'
 import { fromEther } from 'ox/Value'
-import {
-  MissingCLIArgsError,
-  MissingKeyError,
-  UnknownProviderError,
-} from '../errors.js'
+import { MissingCLIArgsError, UnknownProviderError } from '../errors.js'
 import {
   SOURCE_CHAINS as AIOZ_SOURCE_CHAINS,
   type SourceChain as AiozSourceChain,
   bridgeAioz,
 } from '../utils/aioz-bridge.js'
+import { resolveSignerKey } from '../utils/env.js'
 import {
   bridgeFilecoin,
   isSourceChainKey as isFilecoinSourceChainKey,
@@ -48,8 +44,7 @@ export const bridgeAction = async ({
   if (!SUPPORTED_PROVIDERS.has(provider))
     throw new UnknownProviderError(provider)
 
-  const pk = process.env.OMNIPIN_PK as Hex | undefined
-  if (!pk) throw new MissingKeyError('PK')
+  const pk = resolveSignerKey(provider)
 
   if (provider === 'AIOZ') {
     const fromChain = options['from-chain']?.toLowerCase()
