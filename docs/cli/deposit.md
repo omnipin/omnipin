@@ -3,7 +3,7 @@
 Deposit already-held tokens into a provider's payment contract. Currently **Filecoin-only** — moves USDfc from the signer's Filecoin wallet into [Filecoin Pay](https://docs.filecoin.io), the storage payment contract used by the `Filecoin` IPFS provider.
 
 ```sh
-OMNIPIN_PK=0x... omnipin deposit --provider=Filecoin <amount>
+OMNIPIN_FILECOIN_TOKEN=0x... omnipin deposit --provider=Filecoin <amount>
 ```
 
 `<amount>` is in whole USDfc tokens (18 decimals), e.g. `5` deposits 5 USDfc.
@@ -18,7 +18,7 @@ Provider to deposit for. Currently only `Filecoin` is supported.
 
 ### `from`
 
-Wallet address holding the USDfc on Filecoin. Defaults to the signer's address (derived from `OMNIPIN_PK`).
+Wallet address holding the USDfc on Filecoin. Defaults to the signer's address (derived from the signing key).
 
 ### `verbose`
 
@@ -26,4 +26,7 @@ More verbose logs.
 
 ## Environment
 
-- `OMNIPIN_PK` — private key (hex, `0x`-prefixed) used to sign the EIP-2612 permit and broadcast the deposit transaction.
+The signing key (hex, `0x`-prefixed) is used to sign the EIP-2612 permit and broadcast the deposit transaction. For `--provider=Filecoin`, Omnipin reads `OMNIPIN_FILECOIN_TOKEN` first — the same variable the `Filecoin` provider uses for `omnipin deploy` — so you only manage one key. If it is unset, Omnipin falls back to `OMNIPIN_PK`.
+
+- `OMNIPIN_FILECOIN_TOKEN` — preferred for Filecoin; the Filecoin wallet's private key.
+- `OMNIPIN_PK` — generic fallback used when no provider-specific key is set.

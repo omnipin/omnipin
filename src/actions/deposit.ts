@@ -1,10 +1,6 @@
 import type { Address } from 'ox/Address'
-import type { Hex } from 'ox/Hex'
-import {
-  MissingCLIArgsError,
-  MissingKeyError,
-  UnknownProviderError,
-} from '../errors.js'
+import { MissingCLIArgsError, UnknownProviderError } from '../errors.js'
+import { resolveSignerKey } from '../utils/env.js'
 import { depositFilecoinUsdfc } from '../utils/filecoin-deposit.js'
 import { logger } from '../utils/logger.js'
 
@@ -36,8 +32,7 @@ export const depositAction = async ({
   if (!SUPPORTED_PROVIDERS.has(provider))
     throw new UnknownProviderError(provider)
 
-  const pk = process.env.OMNIPIN_PK as Hex | undefined
-  if (!pk) throw new MissingKeyError('PK')
+  const pk = resolveSignerKey(provider)
 
   if (provider === 'Filecoin') {
     logger.start(`Deposit ${amount} USDfc to Filecoin Pay`)

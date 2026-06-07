@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it } from 'bun:test'
+import { MissingKeyError } from '../../src/errors.js'
 import {
   findEnvVarProviderName,
   parseTokensFromEnv,
+  resolveSignerKey,
   tokensToProviderNames,
 } from '../../src/utils/env.js'
 
@@ -87,6 +89,37 @@ describe('env utils', () => {
         /Unknown provider/,
       )
       expect(() => findEnvVarProviderName('')).toThrow(/Unknown provider/)
+    })
+  })
+
+  describe('resolveSignerKey', () => {
+    const PROVIDER_KEY = '0xprovider'
+    const PK = '0xpk'
+
+    it('prefers the provider-specific key over OMNIPIN_PK', () => {
+      process.env = {
+        OMNIPIN_FILECOIN_TOKEN: PROVIDER_KEY,
+        OMNIPIN_PK: PK,
+      }
+      expect(resolveSignerKey('Filecoin')).toBe(PROVIDER_KEY)
+    })
+
+    it('falls back to OMNIPIN_PK when the provider key is unset', () => {
+      process.env = { OMNIPIN_PK: PK }
+      expect(resolveSignerKey('Filecoin')).toBe(PK)
+    })
+
+    it('resolves the AIOZ provider key', () => {
+      process.env = { OMNIPIN_AIOZ_TOKEN: PROVIDER_KEY }
+      expect(resolveSignerKey('AIOZ')).toBe(PROVIDER_KEY)
+    })
+
+    it('throws MissingKeyError naming the provider var when nothing is set', () => {
+      process.env = {}
+      expect(() => resolveSignerKey('Filecoin')).toThrow(MissingKeyError)
+      expect(() => resolveSignerKey('Filecoin')).toThrow(
+        /OMNIPIN_FILECOIN_TOKEN/,
+      )
     })
   })
 })

@@ -11,15 +11,26 @@ const DUMMY_PK =
 
 describe('bridge action', () => {
   let originalPk: string | undefined
+  let originalAiozToken: string | undefined
+  let originalFilecoinToken: string | undefined
 
   beforeEach(() => {
     originalPk = process.env.OMNIPIN_PK
+    originalAiozToken = process.env.OMNIPIN_AIOZ_TOKEN
+    originalFilecoinToken = process.env.OMNIPIN_FILECOIN_TOKEN
     delete process.env.OMNIPIN_PK
+    delete process.env.OMNIPIN_AIOZ_TOKEN
+    delete process.env.OMNIPIN_FILECOIN_TOKEN
   })
 
   afterEach(() => {
     if (originalPk === undefined) delete process.env.OMNIPIN_PK
     else process.env.OMNIPIN_PK = originalPk
+    if (originalAiozToken === undefined) delete process.env.OMNIPIN_AIOZ_TOKEN
+    else process.env.OMNIPIN_AIOZ_TOKEN = originalAiozToken
+    if (originalFilecoinToken === undefined)
+      delete process.env.OMNIPIN_FILECOIN_TOKEN
+    else process.env.OMNIPIN_FILECOIN_TOKEN = originalFilecoinToken
   })
 
   it('throws MissingCLIArgsError if amount is missing', async () => {
@@ -43,7 +54,7 @@ describe('bridge action', () => {
     ).rejects.toBeInstanceOf(UnknownProviderError)
   })
 
-  it('throws MissingKeyError when OMNIPIN_PK is not set', async () => {
+  it('throws MissingKeyError when no signing key is set', async () => {
     await expect(
       bridgeAction({
         amount: '1',

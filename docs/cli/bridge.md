@@ -4,10 +4,10 @@ Bridge native tokens from a source chain into a provider's chain. Supports **AIO
 
 ```sh
 # AIOZ: bridge native AIOZ from Ethereum or BSC into an AIOZ Network address.
-OMNIPIN_PK=0x... omnipin bridge --provider=AIOZ --from-chain=eth <amount> --to=<address>
+OMNIPIN_AIOZ_TOKEN=0x... omnipin bridge --provider=AIOZ --from-chain=eth <amount> --to=<address>
 
 # Filecoin: swap any supported source token into FIL (gas) + USDfc (storage).
-OMNIPIN_PK=0x... omnipin bridge --provider=Filecoin \
+OMNIPIN_FILECOIN_TOKEN=0x... omnipin bridge --provider=Filecoin \
   --from-chain=arb --from-token=USDC <amount> --to=<filecoin_address>
 ```
 
@@ -62,5 +62,9 @@ More verbose logs.
 
 ## Environment
 
-- `OMNIPIN_PK` — private key (hex, `0x`-prefixed) used to sign all source-chain transactions.
+The signing key (hex, `0x`-prefixed) is used to sign all source-chain transactions. Omnipin reads the provider-specific key first — `OMNIPIN_AIOZ_TOKEN` for `--provider=AIOZ`, `OMNIPIN_FILECOIN_TOKEN` for `--provider=Filecoin` — matching the variables those providers use for `omnipin deploy`, so you only manage one key per provider. If the provider-specific key is unset, Omnipin falls back to `OMNIPIN_PK`.
+
+- `OMNIPIN_AIOZ_TOKEN` — preferred for AIOZ; the source-wallet's private key.
+- `OMNIPIN_FILECOIN_TOKEN` — preferred for Filecoin; the source-wallet's private key.
+- `OMNIPIN_PK` — generic fallback used when no provider-specific key is set.
 - `OMNIPIN_SQUID_INTEGRATOR_ID` — optional [Squid](https://app.squidrouter.com) integrator ID (Filecoin only). Defaults to the public `squid-swap-widget` ID. Override when running many bridges from the same address to avoid Squid's per-`fromAddress` quote rate limit.
