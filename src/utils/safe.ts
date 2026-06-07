@@ -13,8 +13,19 @@ import { type EIP3770Address, getEip3770Address } from './safe/eip3770.js'
 import type { SafeTransactionData } from './safe/types.js'
 import { SIMULATION_GAS_LIMIT } from './tx.js'
 
+// EIP-3155 short names used by the Safe Transaction Service gateway.
+const chainNameToSafeShortName: Record<ChainName, string> = {
+  mainnet: 'eth',
+  sepolia: 'sep',
+}
+
+// The legacy `https://safe-transaction-<network>.safe.global` hosts now reply
+// with a 308 redirect to the unified gateway below. `fetch` does not always
+// replay the POST body across that redirect, and the redirect itself serves an
+// HTML page — so callers ended up trying to `JSON.parse("<!DOCTYPE ...")`.
+// Targeting the gateway directly avoids the redirect entirely.
 export const chainToSafeApiUrl = (chainName: ChainName) =>
-  `https://safe-transaction-${chainName}.safe.global`
+  `https://api.safe.global/tx-service/${chainNameToSafeShortName[chainName]}`
 
 const zeroAddress = '0x0000000000000000000000000000000000000000'
 

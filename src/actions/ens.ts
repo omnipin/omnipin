@@ -208,8 +208,10 @@ export const ensAction = async ({
             }`,
           )
         } catch (e) {
-          logger.error('Failed to propose a transaction', e)
-          return
+          // Re-throw so the CLI exits with a non-zero status. Swallowing this
+          // here made `omnipin ens` report success even when the Safe proposal
+          // never went through (e.g. in CI), masking real failures.
+          throw new Error('Failed to propose a transaction', { cause: e })
         }
       }
     }

@@ -43,11 +43,24 @@ export const proposeTransaction = async ({
       },
     },
   )
+  // The Safe Transaction Service normally answers with JSON, but proxy/error
+  // pages (502s, redirects, rate limits) come back as HTML. Read the body as
+  // text first so a non-JSON response surfaces a useful error instead of a
+  // cryptic `Unexpected token '<', "<!DOCTYPE "... is not valid JSON`.
+  const text = await res.text()
+
   if (!res.ok) {
-    const json = await res.json()
-    throw new Error(json.message, { cause: json })
+    let json: { message?: string; detail?: string } | undefined
+    try {
+      json = JSON.parse(text)
+    } catch {
+      throw new Error(
+        `Safe Transaction Service returned ${res.status} ${res.statusText} (non-JSON response)`,
+        { cause: text },
+      )
+    }
+    throw new Error(json?.message ?? json?.detail ?? text, { cause: json })
   }
 
-  const text = await res.text()
   console.log(text)
 }
