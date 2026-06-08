@@ -3,7 +3,7 @@ import {
   uploadOn4everland,
 } from './providers/ipfs/4everland.js'
 import { pinOnAioz } from './providers/ipfs/aioz.js'
-import { pinToAleph } from './providers/ipfs/aleph.js'
+import { pinToAleph, statusOnAleph } from './providers/ipfs/aleph.js'
 import {
   pinOnBlockfrost,
   statusOnBlockfrost,
@@ -146,6 +146,7 @@ export const PROVIDERS: Record<
   ALEPH_TOKEN: {
     name: 'Aleph',
     upload: pinToAleph,
+    status: statusOnAleph,
     supported: 'pin',
     protocol: 'ipfs',
   },
