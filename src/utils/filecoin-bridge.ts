@@ -284,7 +284,7 @@ export const resolveSourceToken = ({
 }
 
 /** Read on-chain decimals for an ERC-20, or return 18 for the native sentinel. */
-const fetchTokenDecimals = async ({
+export const fetchTokenDecimals = async ({
   provider,
   token,
 }: {

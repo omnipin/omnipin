@@ -65,6 +65,15 @@ Omnipin supports a wide range of different IPFS providers.
       <td>❌</td>
     </tr>
     <tr>
+      <td><a href="#fula">Fula</a></td>
+      <td><a href="https://docs.fx.land/pinning-service">Docs</a></td>
+      <td>❌</td>
+      <td>✅ (500 MB free)</td>
+      <td>✅</td>
+      <td>✅</td>
+      <td>✅</td>
+    </tr>
+    <tr>
       <td><a href="#pinata">Pinata</a></td>
       <td><a href="https://docs.pinata.cloud/files/uploading-files">Docs</a></td>
       <td>❌</td>
@@ -207,7 +216,8 @@ OMNIPIN_SPEC_URL=https://pinning-service.example.com
 A few services provide a pinning service API:
 
 - [Filebase](https://filebase.com) (requires a paid plan)
-- [Fula Network](https://api.cloud.fx.land) (free up until 20GB)
+- [Fula](https://cloud.fx.land) — has first-class support, including CAR
+  upload. See [Fula](#fula) below.
 
 ## Filebase
 
@@ -296,6 +306,77 @@ omnipin bridge --provider=AIOZ \
 Supported source chains: `eth`, `bsc`. The command bridges AIOZ from the
 source chain to AIOZ Network, then forwards the funds to your AIOZ-Pin
 account. See [`omnipin bridge`](../cli/bridge) for details.
+
+## Fula
+
+- API env variables: `OMNIPIN_FULA_TOKEN`
+
+[Fula](https://cloud.fx.land) (Functionland Cloud) is a decentralized storage
+pinning service. Every account includes **500 MB free**, with pay-as-you-go
+FULA credits beyond that.
+
+Sign up at [cloud.fx.land](https://cloud.fx.land) (sign in with Google), open
+the **API Keys** page and click **Generate New Key**. The key is a JWT. Save
+it as:
+
+```sh
+OMNIPIN_FULA_TOKEN=<your_api_key>
+```
+
+Pinning by CID, listing, status and unpin use the standard
+[IPFS Pinning Service API](https://ipfs.github.io/pinning-services-api-spec).
+When Fula is the upload (first) provider, Omnipin uploads via the
+`POST /pins/import/car` CAR import endpoint, which preserves the local root CID
+exactly (no re-chunking or re-hashing).
+
+You can also import a DAG manually. Pin or add your data locally first, then
+export its DAG to a CAR and import it:
+
+```sh
+# Export the DAG of a local CID to a CAR file
+ipfs dag export bafybeib32tuqzs2wrc52rdt56cz73sqe3qu2deqdudssspnu4gbezmhig4 > data.car
+
+# Import the CAR into Fula
+curl -X POST "https://api.cloud.fx.land/pins/import/car" \
+  -H "Authorization: Bearer $OMNIPIN_FULA_TOKEN" \
+  -F "file=@data.car" \
+  -F "name=my-dataset"
+```
+
+See the
+[Fula Pinning Service API docs](https://docs.fx.land/pinning-service/pinning-api/endpoints.html)
+for more details.
+
+### Top-up
+
+Every account includes 500 MB free. Beyond that, storage is billed in `$FULA`
+credits (~3 FULA / GB / month). Fula has no chain of its own — `$FULA` is a
+plain ERC-20 deployed on **Ethereum**
+(`0x92217cCaEDBdbc54C76c15feA18823db1558fDc9`) and **Base**
+(`0x9e12735d77c72c5C3670636D428f2F3815d8A4cB`) — so topping up is a token
+transfer to Fula's payment vault, which credits your account.
+
+Acquire `$FULA` by swapping for it on a DEX, then deposit what you hold with
+the `deposit` command. The chain is auto-detected from where you hold `$FULA`
+(override with `--chain`):
+
+```sh
+# Deposit 10 $FULA (chain auto-detected from your balance)
+OMNIPIN_FULA_PK=0x... omnipin deposit --provider=Fula 10
+
+# Force a specific chain
+OMNIPIN_FULA_PK=0x... omnipin deposit --provider=Fula --chain=base 10
+```
+
+:::info
+The deposit signing key is **separate** from the pinning API key.
+`OMNIPIN_FULA_TOKEN` holds the pinning JWT and is never used to sign
+transactions; the wallet key comes from `OMNIPIN_FULA_PK` (or the generic
+`OMNIPIN_PK`).
+:::
+
+See [`omnipin deposit`](../cli/deposit) for all options (`--chain`, `--to`,
+`--rpc-url`).
 
 ## Pinata
 

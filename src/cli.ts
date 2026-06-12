@@ -329,17 +329,34 @@ cli.command<[string]>(
     }),
   {
     description:
-      'Deposit already-held tokens into a provider payment contract (Filecoin: USDfc → Filecoin Pay).',
+      'Deposit already-held tokens into a provider payment contract (Filecoin: USDfc → Filecoin Pay; Fula: $FULA → Fula vault).',
     options: [
       {
         name: 'provider',
-        description: 'Provider to deposit for (Filecoin)',
+        description: 'Provider to deposit for (Filecoin or Fula)',
         type: 'string',
       },
       {
         name: 'from',
         description:
-          'Wallet address holding the tokens. Defaults to the signer address.',
+          'Wallet address holding the tokens. Defaults to the signer address. (Filecoin only.)',
+        type: 'string',
+      },
+      {
+        name: 'chain',
+        description:
+          'Chain holding the $FULA to deposit (eth or base). Fula only; auto-detected from your $FULA balance when omitted.',
+        type: 'string',
+      },
+      {
+        name: 'to',
+        description:
+          'Override the destination vault address. Fula only; defaults to the Fula payment vault.',
+        type: 'string',
+      },
+      {
+        name: 'rpc-url',
+        description: 'Custom RPC for the deposit chain. Fula only.',
         type: 'string',
       },
       {
