@@ -2,8 +2,8 @@
 
 Deposit already-held tokens into a provider's payment contract. Supported for **Filecoin** and **Fula**:
 
-- **Filecoin** — moves USDfc from the signer's Filecoin wallet into [Filecoin Pay](https://docs.filecoin.io), the storage payment contract used by the `Filecoin` IPFS provider.
-- **Fula** — transfers `$FULA` to Fula's payment vault. Fula has no chain of its own; `$FULA` is an ERC-20 on Ethereum and Base, so a deposit is a plain token transfer that credits your Fula account.
+- **Filecoin** — moves USDfc from the signer's Filecoin wallet into [Filecoin Pay](https://docs.filecoin.io).
+- **Fula** — transfers `$FULA` to Fula's payment vault. `$FULA` is an ERC-20 on Ethereum and Base, so a deposit is a plain token transfer.
 
 ```sh
 # Filecoin: deposit 5 USDfc into Filecoin Pay
