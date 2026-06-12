@@ -323,30 +323,6 @@ it as:
 OMNIPIN_FULA_TOKEN=<your_api_key>
 ```
 
-Pinning by CID, listing, status and unpin use the standard
-[IPFS Pinning Service API](https://ipfs.github.io/pinning-services-api-spec).
-When Fula is the upload (first) provider, Omnipin uploads via the
-`POST /pins/import/car` CAR import endpoint, which preserves the local root CID
-exactly (no re-chunking or re-hashing).
-
-You can also import a DAG manually. Pin or add your data locally first, then
-export its DAG to a CAR and import it:
-
-```sh
-# Export the DAG of a local CID to a CAR file
-ipfs dag export bafybeib32tuqzs2wrc52rdt56cz73sqe3qu2deqdudssspnu4gbezmhig4 > data.car
-
-# Import the CAR into Fula
-curl -X POST "https://api.cloud.fx.land/pins/import/car" \
-  -H "Authorization: Bearer $OMNIPIN_FULA_TOKEN" \
-  -F "file=@data.car" \
-  -F "name=my-dataset"
-```
-
-See the
-[Fula Pinning Service API docs](https://docs.fx.land/pinning-service/pinning-api/endpoints.html)
-for more details.
-
 ### Top-up
 
 Every account includes 500 MB free. Beyond that, storage is billed in `$FULA`
