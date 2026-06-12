@@ -61,3 +61,23 @@ export const resolveSignerKey = (provider: string): Hex => {
 
   throw new MissingKeyError(findEnvVarProviderName(provider))
 }
+
+/**
+ * Resolve the signing key for Fula's onchain `deposit`.
+ *
+ * Unlike Filecoin (whose `OMNIPIN_FILECOIN_TOKEN` *is* a private key), Fula's
+ * `OMNIPIN_FULA_TOKEN` holds the pinning-service JWT, not a wallet key — so it
+ * must never be used to sign. The wallet key is read from the dedicated
+ * `OMNIPIN_FULA_PK`, falling back to the generic `OMNIPIN_PK`.
+ *
+ * @throws {MissingKeyError} If neither `OMNIPIN_FULA_PK` nor `OMNIPIN_PK` is set.
+ */
+export const resolveFulaSignerKey = (): Hex => {
+  const fulaPk = process.env.OMNIPIN_FULA_PK as Hex | undefined
+  if (fulaPk) return fulaPk
+
+  const pk = process.env.OMNIPIN_PK as Hex | undefined
+  if (pk) return pk
+
+  throw new MissingKeyError('FULA_PK')
+}

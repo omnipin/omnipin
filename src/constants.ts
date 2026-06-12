@@ -15,6 +15,11 @@ import {
 } from './providers/ipfs/filebase.js'
 import { uploadToFilecoin } from './providers/ipfs/filecoin.js'
 import {
+  statusOnFula,
+  unpinOnFula,
+  uploadOnFula,
+} from './providers/ipfs/fula.js'
+import {
   statusOnIpfsNinja,
   unpinOnIpfsNinja,
   uploadOnIpfsNinja,
@@ -166,6 +171,14 @@ export const PROVIDERS: Record<
     name: 'AIOZ',
     upload: pinOnAioz,
     supported: 'pin',
+    protocol: 'ipfs',
+  },
+  FULA_TOKEN: {
+    name: 'Fula',
+    upload: uploadOnFula,
+    status: statusOnFula,
+    unpin: unpinOnFula,
+    supported: 'both',
     protocol: 'ipfs',
   },
 }
