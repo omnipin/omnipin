@@ -7,7 +7,7 @@
       "devDependencies": {
         "@biomejs/biome": "^2.4.7",
         "@ipld/car": "^5.4.2",
-        "@omnipin/foc": "npm:@jsr/omnipin__foc@0.0.15",
+        "@omnipin/foc": "npm:@jsr/omnipin__foc@0.0.18",
         "@rslib/core": "^0.20.0",
         "@size-limit/file": "^12.0.1",
         "@stauro/filebase-upload": "npm:@jsr/stauro__filebase-upload",
@@ -110,7 +110,7 @@
 
     "@noble/hashes": ["@noble/hashes@2.2.0", "", {}, "sha512-IYqDGiTXab6FniAgnSdZwgWbomxpy9FtYvLKs7wCUs2a8RkITG+DFGO1DM9cr+E3/RgADRpFjrKVaJ1z6sjtEg=="],
 
-    "@omnipin/foc": ["@jsr/omnipin__foc@0.0.15", "https://npm.jsr.io/~/11/@jsr/omnipin__foc/0.0.15.tgz", { "dependencies": { "@noble/hashes": "^2.0.1", "multiformats": "^13.4.2", "ox": "^0.14.8", "varint": "^6.0.0" } }, "sha512-gkmUrvoWXhQ+BN7PrX80esQST2adikjsNDLelF8LhcdDLXgkB+hboGrszTEKzzBGDi5epDtU11b/HIR00EgseQ=="],
+    "@omnipin/foc": ["@jsr/omnipin__foc@0.0.18", "https://npm.jsr.io/~/11/@jsr/omnipin__foc/0.0.18.tgz", { "dependencies": { "@noble/hashes": "^2.0.1", "multiformats": "^13.4.2", "ox": "^0.14.8", "varint": "^6.0.0" } }, "sha512-4t2tYmXdRghbAIt8rGN3qVdCddXg6qSxiLCyrJzqhU6tgYsmQFTJRDSn7IkQH1JoMA8umz1BOR7AeOmmLAzZ3g=="],
 
     "@rsbuild/core": ["@rsbuild/core@2.0.0-rc.0", "", { "dependencies": { "@rspack/core": "2.0.0-rc.0", "@swc/helpers": "^0.5.20" }, "peerDependencies": { "core-js": ">= 3.0.0" }, "optionalPeers": ["core-js"], "bin": { "rsbuild": "bin/rsbuild.js" } }, "sha512-XutQgxd71RyH9jT0x+/F0DiGqk2Q5oofZuzNZFEkSayjO1UG+uVLhK90zB4hW43qRHqGEqcWlVaNPSQ8rHLk6A=="],
 

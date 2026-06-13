@@ -338,20 +338,20 @@ describe('fetchSourceBalance', () => {
 })
 
 describe('computeFwssFloor', () => {
-  // FWSS minimum deposit = minPricePerMonth * LOCKUP_PERIOD / epochsPerMonth
-  // + USDFC_SYBIL_FEE (0.1). At the default 30-day lockup, LOCKUP_PERIOD ==
-  // epochsPerMonth, so the lockup term reduces to minPricePerMonth.
-  it('equals the FWSS new-dataset minimum at initial pricing (0.16 USDfc)', () => {
-    // 0.06 USDfc/mo floor + 0.1 USDfc sybil fee = 0.16 USDfc.
-    expect(computeFwssFloor(60_000_000_000_000_000n, 86_400n)).toBe(
-      160_000_000_000_000_000n,
-    )
+  // FWSS v1.3.0 new-dataset minimum = lifecycleReserveTarget + createDataSetFee
+  // (the fixed funds the contract locks on the PDP rail at creation). The
+  // minimum-rate floor and sybil fee were removed in v1.3.0.
+  it('equals the FWSS new-dataset fixed funds at default pricing (0.125 USDfc)', () => {
+    // 0.10 USDfc lifecycle reserve + 0.025 USDfc create fee = 0.125 USDfc.
+    expect(
+      computeFwssFloor(100_000_000_000_000_000n, 25_000_000_000_000_000n),
+    ).toBe(125_000_000_000_000_000n)
   })
 
-  it('scales with a raised minimum monthly price', () => {
-    // 0.12 USDfc/mo + 0.1 sybil = 0.22 USDfc.
-    expect(computeFwssFloor(120_000_000_000_000_000n, 86_400n)).toBe(
-      220_000_000_000_000_000n,
-    )
+  it('tracks a raised lifecycle reserve or creation fee', () => {
+    // 0.20 USDfc reserve + 0.05 USDfc create fee = 0.25 USDfc.
+    expect(
+      computeFwssFloor(200_000_000_000_000_000n, 50_000_000_000_000_000n),
+    ).toBe(250_000_000_000_000_000n)
   })
 })
