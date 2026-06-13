@@ -1,0 +1,98 @@
+import { createWriteStream } from 'node:fs'
+import { readFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { CarWriter } from '@ipld/car/writer'
+import { type FileCandidate, importer } from 'ipfs-unixfs-importer'
+import { base32 } from 'multiformats/bases/base32'
+import type { CID } from 'multiformats/cid'
+import { InvalidCIDError } from '../errors.js'
+import { MemoryBlockstore } from './ipfs/blockstore.js'
+
+const tmp = tmpdir()
+
+const concatBytes = (chunks: Uint8Array[]): Uint8Array => {
+  let total = 0
+  for (const c of chunks) total += c.byteLength
+
+  const out = new Uint8Array(total)
+  let offset = 0
+
+  for (const c of chunks) {
+    out.set(c, offset)
+    offset += c.byteLength
+  }
+
+  return out
+}
+
+export const packCAR = async (
+  files: FileCandidate[],
+  name: string,
+  dir = tmp,
+): Promise<{ bytes: Uint8Array<ArrayBuffer>; rootCID: CID }> => {
+  const output = `${dir}/${name}.car`
+
+  const blockstore = new MemoryBlockstore()
+  let rootCID: CID | null = null
+
+  for await (const entry of importer(files, blockstore, {
+    wrapWithDirectory: true,
+  })) {
+    rootCID = entry.cid
+  }
+
+  if (!rootCID) {
+    throw new Error('No files were imported')
+  }
+
+  const writeStream = createWriteStream(output)
+  const { writer, out } = CarWriter.create([rootCID])
+
+  const writePromise = (async () => {
+    for await (const chunk of out) {
+      writeStream.write(chunk)
+    }
+  })()
+
+  for await (const { cid, bytes } of blockstore.getAll()) {
+    try {
+      const chunks: Uint8Array[] = []
+      for await (const chunk of bytes) {
+        chunks.push(chunk)
+      }
+      await writer.put({
+        cid,
+        bytes: concatBytes(chunks),
+      })
+    } catch (error) {
+      console.warn(`Failed to add block ${cid.toString()} to CAR:`, error)
+    }
+  }
+
+  await writer.close()
+  await writePromise
+  writeStream.end()
+
+  await new Promise<void>((resolve) => writeStream.on('close', resolve))
+
+  const file = await readFile(output)
+  // `readFile` returns a Node `Buffer` whose underlying type widens to
+  // `Uint8Array<ArrayBufferLike>`. We know the returned buffer is backed by
+  // a plain ArrayBuffer (not SharedArrayBuffer), so narrow it explicitly so
+  // callers can hand `bytes` to `Blob` / `File` without extra casts.
+  const bytes = file as Uint8Array<ArrayBuffer>
+
+  blockstore.clear()
+
+  return { bytes, rootCID }
+}
+
+export const assertCID = (cid: string) => {
+  if (cid.length !== 64) {
+    try {
+      base32.decode(cid)
+    } catch {
+      throw new InvalidCIDError(cid)
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "npm.packageManager": "bun",
+  "editor.formatOnSave": true,
+  "biome.enabled": true,
+  "eslint.enable": false,
+  "prettier.enable": false,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.codeActionsOnSave": {
+    "source.organizeImports.biome": "explicit",
+    "quickfix.biome": "explicit"
+  },
+  "deno.enable": false,
+  "coverage-gutters.coverageReportFileName": "coverage/lcov.info",
+  "[typescript]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "biomejs.biome"
+  }
+}

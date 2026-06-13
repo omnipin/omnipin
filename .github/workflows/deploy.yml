@@ -1,0 +1,102 @@
+name: Deploy docs to Swarm (hoverfly)
+
+# Build the docs, pack them with omnipin, upload to Swarm directly via the
+# hoverfly micro-client (no bee node, no remote server — fully in CI), then
+# propose the ENS content-hash update to the Safe with `omnipin ens`.
+#
+# Required repo secrets:
+#   SWARM_KEY        Postage batch owner's signer (hex, 32 bytes). hoverfly uses
+#                    it as --identity (daemon) and --key (upload).
+#   SWARM_BATCH      Postage batch ID (hex, 32 bytes) the chunks are stamped with.
+#   SWARM_NONCE      Overlay nonce (hex, 32 bytes). Generate once with
+#                    `hoverfly vanity-overlay --key $SWARM_KEY` — treat like an
+#                    identity secret (see the hoverfly README).
+#   OMNIPIN_PK       Proposer key (a Safe owner) that signs the ENS content-hash
+#                    update proposed to safe.omnipin.eth.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.5
+
+      - name: Install Omnipin
+        run: bun i -g omnipin@3.0.3
+
+      - name: Build website
+        run: |
+          cd docs
+          bun i
+          bun docs:build
+
+      - name: Pack dist as a tar collection
+        working-directory: docs/.vitepress
+        run: omnipin pack --tar --name dist --dist .
+
+      - name: Fetch hoverfly
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Latest release's Linux x86_64 tarball bundles the binary,
+          # peers.seed.json, README and LICENSE.
+          gh release download -R omnipin/hoverfly \
+            -p 'hoverfly-*-x86_64-unknown-linux-gnu.tar.gz'
+          tar -xzf hoverfly-*-x86_64-unknown-linux-gnu.tar.gz --strip-components=1
+          # The peers.seed.json bundled in the release tarball is frozen at
+          # release-build time and goes stale (dead peers → tiny live pool →
+          # flaky/under-replicated one-shot uploads). hoverfly's main branch has
+          # an hourly cron that refreshes peers.seed.json, so pull that fresh
+          # copy and fall back to the bundled seed only if the fetch fails.
+          if curl -fsSL -o peers.fresh.json \
+            https://raw.githubusercontent.com/omnipin/hoverfly/main/peers.seed.json \
+            && [ -s peers.fresh.json ]; then
+            echo "Using fresh peers.seed.json from hoverfly@main"
+            mv peers.fresh.json peers.json
+          else
+            echo "WARNING: fresh peerlist fetch failed; falling back to release-bundled seed"
+            mv peers.seed.json peers.json
+          fi
+          printf "%s" "${{ secrets.SWARM_NONCE }}" > overlay-nonce
+
+      - name: Upload to Swarm via hoverfly
+        id: upload
+        env:
+          SWARM_KEY: ${{ secrets.SWARM_KEY }}
+          SWARM_BATCH: ${{ secrets.SWARM_BATCH }}
+        run: |
+          set -euo pipefail
+          # One-shot upload — no daemon. A single deploy is one upload, so the
+          # daemon's long warm-pool fill (~80s for 256 sessions) isn't worth it;
+          # a one-shot fills a small pool in a few seconds. peers.json (the
+          # curated seed) and overlay-nonce (the vanity nonce) are picked up
+          # from the cwd by default. `.tar` is auto-treated as a collection
+          # (index.html as the index document), so the root resolves to the site.
+          ./hoverfly upload \
+            --batch "$SWARM_BATCH" \
+            --key "$SWARM_KEY" \
+            docs/.vitepress/dist.tar | tee /tmp/upload.log
+          root="$(grep -oiE 'manifest root: [0-9a-f]{64}' /tmp/upload.log | head -1 | grep -oiE '[0-9a-f]{64}' || true)"
+          if [ -z "$root" ]; then
+            echo "::error::could not parse the Swarm manifest root from hoverfly output"
+            exit 1
+          fi
+          echo "Swarm manifest root: $root"
+          echo "root=$root" >> "$GITHUB_OUTPUT"
+
+      - name: Propose ENS content-hash update on the Safe
+        env:
+          OMNIPIN_PK: ${{ secrets.OMNIPIN_PK }}
+        run: |
+          omnipin ens "${{ steps.upload.outputs.root }}" omnipin.eth \
+            --safe safe.omnipin.eth

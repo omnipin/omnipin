@@ -1,0 +1,222 @@
+import {
+  statusOn4everland,
+  uploadOn4everland,
+} from './providers/ipfs/4everland.js'
+import { pinOnAioz } from './providers/ipfs/aioz.js'
+import { pinToAleph, statusOnAleph } from './providers/ipfs/aleph.js'
+import {
+  pinOnBlockfrost,
+  statusOnBlockfrost,
+  unpinOnBlockfrost,
+} from './providers/ipfs/blockfrost.js'
+import {
+  statusOnFilebase,
+  uploadOnFilebase,
+} from './providers/ipfs/filebase.js'
+import { uploadToFilecoin } from './providers/ipfs/filecoin.js'
+import {
+  statusOnFula,
+  unpinOnFula,
+  uploadOnFula,
+} from './providers/ipfs/fula.js'
+import {
+  statusOnIpfsNinja,
+  unpinOnIpfsNinja,
+  uploadOnIpfsNinja,
+} from './providers/ipfs/ipfs-ninja.js'
+import {
+  unpinOnLighthouse,
+  uploadOnLighthouse,
+} from './providers/ipfs/lighthouse.js'
+import {
+  statusOnPinata,
+  unpinOnPinata,
+  uploadOnPinata,
+} from './providers/ipfs/pinata.js'
+import { pinOnQuicknode } from './providers/ipfs/quicknode.js'
+import { uploadToSimplePage } from './providers/ipfs/simplepage.js'
+import { specPin, specStatus, specUnpin } from './providers/ipfs/spec.js'
+import { uploadOnBee } from './providers/swarm/bee.js'
+import { uploadOnSwarmy } from './providers/swarm/swarmy.js'
+import type {
+  StatusFunction,
+  SupportedMethods,
+  UnpinFunction,
+  UploadFunction,
+} from './types.js'
+
+export const PROVIDERS: Record<
+  string,
+  {
+    name: string
+    upload: UploadFunction<any>
+    status?: StatusFunction<any>
+    unpin?: UnpinFunction<any>
+    supported: SupportedMethods
+    protocol: 'ipfs' | 'swarm'
+  }
+> = {
+  FILEBASE_TOKEN: {
+    name: 'Filebase',
+    upload: uploadOnFilebase,
+    status: statusOnFilebase,
+    supported: 'both',
+    protocol: 'ipfs',
+  },
+  '4EVERLAND_TOKEN': {
+    name: '4EVERLAND',
+    upload: uploadOn4everland,
+    status: statusOn4everland,
+    unpin: specUnpin({
+      baseURL: 'https://api.4everland.dev',
+      providerName: '4EVERLAND',
+    }),
+    supported: 'pin',
+    protocol: 'ipfs',
+  },
+  PINATA_TOKEN: {
+    name: 'Pinata',
+    upload: uploadOnPinata,
+    status: statusOnPinata,
+    unpin: unpinOnPinata,
+    supported: 'both',
+    protocol: 'ipfs',
+  },
+  SPEC_TOKEN: {
+    name: 'Spec',
+    upload: ({ baseURL, ...args }) =>
+      specPin({
+        ...args,
+        providerName: 'Spec-compliant Pinning Service',
+        baseURL,
+      }),
+    status: ({ baseURL, ...args }) => specStatus({ ...args, baseURL }),
+    unpin: ({
+      baseURL,
+      ...args
+    }: {
+      cid: string
+      token: string
+      verbose?: boolean
+      baseURL: string
+    }) =>
+      specUnpin({
+        baseURL,
+        providerName: 'Spec-compliant Pinning Service',
+      })(args),
+    supported: 'pin',
+    protocol: 'ipfs',
+  },
+  QUICKNODE_TOKEN: {
+    name: 'QuickNode',
+    upload: pinOnQuicknode,
+    supported: 'pin',
+    protocol: 'ipfs',
+  },
+  LIGHTHOUSE_TOKEN: {
+    name: 'Lighthouse',
+    upload: uploadOnLighthouse,
+    unpin: unpinOnLighthouse,
+    supported: 'both',
+    protocol: 'ipfs',
+  },
+  IPFS_NINJA_TOKEN: {
+    name: 'IPFSNinja',
+    upload: uploadOnIpfsNinja,
+    status: statusOnIpfsNinja,
+    unpin: unpinOnIpfsNinja,
+    supported: 'both',
+    protocol: 'ipfs',
+  },
+  SWARMY_TOKEN: {
+    name: 'Swarmy',
+    upload: uploadOnSwarmy,
+    supported: 'upload',
+    protocol: 'swarm',
+  },
+  BEE_TOKEN: {
+    name: 'Bee',
+    upload: uploadOnBee,
+    supported: 'upload',
+    protocol: 'swarm',
+  },
+  BLOCKFROST_TOKEN: {
+    name: 'Blockfrost',
+    upload: pinOnBlockfrost,
+    status: statusOnBlockfrost,
+    unpin: unpinOnBlockfrost,
+    supported: 'pin',
+    protocol: 'ipfs',
+  },
+  ALEPH_TOKEN: {
+    name: 'Aleph',
+    upload: pinToAleph,
+    status: statusOnAleph,
+    supported: 'pin',
+    protocol: 'ipfs',
+  },
+  SIMPLEPAGE_TOKEN: {
+    name: 'SimplePage',
+    upload: uploadToSimplePage,
+    supported: 'upload',
+    protocol: 'ipfs',
+  },
+  FILECOIN_TOKEN: {
+    name: 'Filecoin',
+    upload: uploadToFilecoin,
+    supported: 'both',
+    protocol: 'ipfs',
+  },
+  AIOZ_TOKEN: {
+    name: 'AIOZ',
+    upload: pinOnAioz,
+    supported: 'pin',
+    protocol: 'ipfs',
+  },
+  FULA_TOKEN: {
+    name: 'Fula',
+    upload: uploadOnFula,
+    status: statusOnFula,
+    unpin: unpinOnFula,
+    supported: 'both',
+    protocol: 'ipfs',
+  },
+}
+
+export const isTTY = process.stdout.isTTY
+
+export const CLOUDFLARE_API_URL = 'https://api.cloudflare.com/client/v4'
+
+export type EthereumChain = {
+  id: 1 | 11_155_111
+  name: 'Ethereum' | 'Sepolia'
+  blockExplorers: {
+    default: {
+      name: string
+      url: string
+    }
+  }
+}
+
+export const chains = {
+  mainnet: {
+    id: 1,
+    name: 'Ethereum',
+    blockExplorers: {
+      default: {
+        name: 'Etherscan',
+        url: 'https://etherscan.io',
+      },
+    },
+  },
+  sepolia: {
+    id: 11_155_111,
+    name: 'Sepolia',
+    blockExplorers: {
+      default: {
+        name: 'Etherscan',
+        url: 'https://sepolia.etherscan.io',
+      },
+    },
+  },
+} as const satisfies Record<'mainnet' | 'sepolia', EthereumChain>
