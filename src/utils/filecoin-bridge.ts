@@ -1,11 +1,9 @@
 import {
-  DEFAULT_MINIMUM_NEW_DATASET_LOCKUP,
+  DEFAULT_NEW_DATASET_FIXED_FUNDS,
   filecoinMainnet,
   filProvider,
-  LOCKUP_PERIOD,
-  USDFC_SYBIL_FEE,
 } from '@omnipin/foc/utils'
-import { getServicePricing } from '@omnipin/foc/warm-storage'
+import { getPriceList } from '@omnipin/foc/warm-storage'
 import { decodeResult, encodeData } from 'ox/AbiFunction'
 import { type Address, fromPublicKey } from 'ox/Address'
 import { fromNumber, type Hex, toBigInt } from 'ox/Hex'
@@ -593,31 +591,36 @@ const withFinalityCountdown = async <T>(
 }
 
 /**
- * Filecoin Pay / FWSS minimum deposit for a new dataset:
- * `(minimumPricePerMonth * LOCKUP_PERIOD) / epochsPerMonth + sybil fee`.
- * Mirrors `FilecoinWarmStorageService.validatePayerOperatorApprovalAndFunds`.
- * Bridging less USDfc than this yields funds that can't pay for storage.
+ * Filecoin Pay / FWSS minimum deposit for a new dataset.
+ *
+ * As of FWSS v1.3.0 the minimum-rate floor and sybil fee are gone. Creating a
+ * dataset instead locks a fixed lifecycle reserve on the PDP rail plus a
+ * one-time creation fee, so the up-front floor is simply
+ * `lifecycleReserveTarget + createDataSetFee` (the `lockups`/`fees` from the
+ * on-chain price list). Bridging less USDfc than this yields funds that can't
+ * cover dataset creation.
+ *
+ * @see https://github.com/FilOzone/filecoin-services/releases/tag/v1.3.0
  */
 export const computeFwssFloor = (
-  minimumPricePerMonth: bigint,
-  epochsPerMonth: bigint,
-): bigint =>
-  (minimumPricePerMonth * LOCKUP_PERIOD) / epochsPerMonth + USDFC_SYBIL_FEE
+  lifecycleReserveTarget: bigint,
+  createDataSetFee: bigint,
+): bigint => lifecycleReserveTarget + createDataSetFee
 
 /**
- * Live FWSS minimum deposit on Filecoin mainnet (the owner can raise the
- * floor up to 0.24 USDfc/mo). Falls back to the package default (~0.16 USDfc)
- * if the on-chain pricing read fails.
+ * Live FWSS minimum deposit on Filecoin mainnet, read from the v1.3.0 price
+ * list. Falls back to the package default (~0.125 USDfc) if the on-chain read
+ * fails.
  */
 const fwssMinimumDeposit = async (): Promise<bigint> => {
   try {
-    const pricing = await getServicePricing({ chain: filecoinMainnet })
+    const { lockups, fees } = await getPriceList({ chain: filecoinMainnet })
     return computeFwssFloor(
-      pricing.minimumPricePerMonth,
-      pricing.epochsPerMonth,
+      lockups.lifecycleReserveTarget,
+      fees.createDataSetFee,
     )
   } catch {
-    return DEFAULT_MINIMUM_NEW_DATASET_LOCKUP
+    return DEFAULT_NEW_DATASET_FIXED_FUNDS
   }
 }
 
