@@ -53,7 +53,20 @@ jobs:
           gh release download -R omnipin/hoverfly \
             -p 'hoverfly-*-x86_64-unknown-linux-gnu.tar.gz'
           tar -xzf hoverfly-*-x86_64-unknown-linux-gnu.tar.gz --strip-components=1
-          mv peers.seed.json peers.json
+          # The peers.seed.json bundled in the release tarball is frozen at
+          # release-build time and goes stale (dead peers → tiny live pool →
+          # flaky/under-replicated one-shot uploads). hoverfly's main branch has
+          # an hourly cron that refreshes peers.seed.json, so pull that fresh
+          # copy and fall back to the bundled seed only if the fetch fails.
+          if curl -fsSL -o peers.fresh.json \
+            https://raw.githubusercontent.com/omnipin/hoverfly/main/peers.seed.json \
+            && [ -s peers.fresh.json ]; then
+            echo "Using fresh peers.seed.json from hoverfly@main"
+            mv peers.fresh.json peers.json
+          else
+            echo "WARNING: fresh peerlist fetch failed; falling back to release-bundled seed"
+            mv peers.seed.json peers.json
+          fi
           printf "%s" "${{ secrets.SWARM_NONCE }}" > overlay-nonce
 
       - name: Upload to Swarm via hoverfly
