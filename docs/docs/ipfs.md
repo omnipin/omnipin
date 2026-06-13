@@ -323,37 +323,6 @@ it as:
 OMNIPIN_FULA_TOKEN=<your_api_key>
 ```
 
-### Top-up
-
-Every account includes 500 MB free. Beyond that, storage is billed in `$FULA`
-credits (~3 FULA / GB / month). Fula has no chain of its own — `$FULA` is a
-plain ERC-20 deployed on **Ethereum**
-(`0x92217cCaEDBdbc54C76c15feA18823db1558fDc9`) and **Base**
-(`0x9e12735d77c72c5C3670636D428f2F3815d8A4cB`) — so topping up is a token
-transfer to Fula's payment vault, which credits your account.
-
-Acquire `$FULA` by swapping for it on a DEX, then deposit what you hold with
-the `deposit` command. The chain is auto-detected from where you hold `$FULA`
-(override with `--chain`):
-
-```sh
-# Deposit 10 $FULA (chain auto-detected from your balance)
-OMNIPIN_FULA_PK=0x... omnipin deposit --provider=Fula 10
-
-# Force a specific chain
-OMNIPIN_FULA_PK=0x... omnipin deposit --provider=Fula --chain=base 10
-```
-
-:::info
-The deposit signing key is **separate** from the pinning API key.
-`OMNIPIN_FULA_TOKEN` holds the pinning JWT and is never used to sign
-transactions; the wallet key comes from `OMNIPIN_FULA_PK` (or the generic
-`OMNIPIN_PK`).
-:::
-
-See [`omnipin deposit`](../cli/deposit) for all options (`--chain`, `--to`,
-`--rpc-url`).
-
 ## Pinata
 
 - API env variables: `OMNIPIN_PINATA_TOKEN`
