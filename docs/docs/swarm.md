@@ -37,7 +37,13 @@ hoverfly daemon \
   --peerlist peers.json
 ```
 
-The repo ships a curated `peers.seed.json`; copy it to `peers.json` for a fast cold start (`cp peers.seed.json peers.json`). On a cold or stale peerlist, add `--discover-rounds 3`.
+Always fetch a fresh peerlist from the GitHub CDN — the release-bundled `peers.seed.json` goes stale:
+
+```sh
+curl -fsSL -o peers.json https://raw.githubusercontent.com/omnipin/hoverfly/main/peers.seed.json
+```
+
+On a cold peerlist, add `--discover-rounds 3`.
 
 ### Running the deployment
 
