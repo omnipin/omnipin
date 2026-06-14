@@ -83,6 +83,7 @@ export const deployAction = async ({
     cid: ipfsCid,
     bytes,
     size,
+    path: tarPath,
   } = await packAction({
     dir,
     options: {
@@ -129,6 +130,7 @@ export const deployAction = async ({
           beeURL: apiTokens.get('BEE_URL'),
           // Hoverfly talks to a local `hoverfly daemon` over its UNIX socket.
           key: apiTokens.get('HOVERFLY_KEY'),
+          path: tarPath,
           socket: apiTokens.get('HOVERFLY_SOCKET'),
           rpcUrl: apiTokens.get('HOVERFLY_RPC_URL'),
           depth: hoverflyDepth ? Number(hoverflyDepth) : undefined,

@@ -1,6 +1,3 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { DeployError, PinningNotSupportedError } from '../../errors.js'
 import type { UploadFunction } from '../../types.js'
 import {
@@ -14,6 +11,7 @@ const providerName = 'Hoverfly'
 
 export const uploadOnHoverfly: UploadFunction<{
   key?: string
+  path?: string | null
   socket?: string
   rpcUrl?: string
   depth?: number
@@ -21,10 +19,10 @@ export const uploadOnHoverfly: UploadFunction<{
   retries?: number
 }> = async ({
   token,
-  bytes,
   verbose,
   first,
   key,
+  path,
   socket,
   rpcUrl,
   depth,
@@ -34,17 +32,19 @@ export const uploadOnHoverfly: UploadFunction<{
   if (!first) throw new PinningNotSupportedError(providerName)
   if (!key)
     throw new DeployError(providerName, 'OMNIPIN_HOVERFLY_KEY is missing')
+  // The daemon's upload op takes the packed `.tar` by path; `deploy` writes it
+  // via `packAction` and passes it through.
+  if (!path) throw new DeployError(providerName, 'missing packed TAR path')
 
   const socketPath = socket ?? DEFAULT_HOVERFLY_SOCKET
   const batch = token.replace(/^0x/i, '')
   const signer = key.replace(/^0x/i, '')
 
-  let tmpDir: string | undefined
   try {
     const pong = await callDaemon(socketPath, { op: 'ping' }).catch(() => {
       throw new DeployError(
         providerName,
-        `no hoverfly daemon at ${socketPath} — start one with \`hoverfly daemon --socket ${socketPath} --identity 0x${signer} --peerlist peers.json\``,
+        `no hoverfly daemon at ${socketPath} — start one with \`hoverfly daemon --socket ${socketPath}\``,
       )
     })
     if (pong.status !== 'pong') {
@@ -53,11 +53,6 @@ export const uploadOnHoverfly: UploadFunction<{
 
     const batchDepth = depth ?? (await resolveBatchDepth(batch, rpcUrl))
     if (verbose) logger.info(`${providerName}: batch depth ${batchDepth}`)
-
-    // The daemon reads the upload from a file path; persist the packed TAR.
-    tmpDir = await mkdtemp(join(tmpdir(), 'omnipin-hoverfly-'))
-    const tarPath = join(tmpDir, 'site.tar')
-    await writeFile(tarPath, bytes)
 
     if (verbose) logger.info(`${providerName}: uploading via ${socketPath}…`)
     const startedAt = Date.now()
@@ -71,7 +66,7 @@ export const uploadOnHoverfly: UploadFunction<{
     try {
       resp = await callDaemon(socketPath, {
         op: 'upload',
-        file: tarPath,
+        file: path,
         batch,
         depth: batchDepth,
         key: signer,
@@ -106,8 +101,5 @@ export const uploadOnHoverfly: UploadFunction<{
     if (e instanceof PinningNotSupportedError || e instanceof DeployError)
       throw e
     throw new DeployError(providerName, (e as Error).message, { cause: e })
-  } finally {
-    if (tmpDir)
-      await rm(tmpDir, { recursive: true, force: true }).catch(() => {})
   }
 }

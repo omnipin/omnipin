@@ -2,6 +2,9 @@
 
 import { describe, expect, it } from 'bun:test'
 import { existsSync } from 'node:fs'
+import { writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { createTar } from 'nanotar'
 
 import { PROVIDERS } from '../../src/constants.js'
@@ -19,17 +22,21 @@ const batch = Bun.env.OMNIPIN_HOVERFLY_TOKEN
 const hasDaemon = existsSync(socket)
 const canUpload = hasDaemon && Boolean(key && batch)
 
-const tinyTar = (): Uint8Array<ArrayBuffer> =>
-  createTar([
+const tinyTarPath = async (): Promise<string> => {
+  const bytes = createTar([
     { name: 'index.html', data: '<h1>omnipin × hoverfly daemon</h1>' },
-  ]) as Uint8Array<ArrayBuffer>
+  ]) as Uint8Array
+  const path = join(tmpdir(), `omnipin-hoverfly-test-${Date.now()}.tar`)
+  await writeFile(path, bytes)
+  return path
+}
 
 describe('Hoverfly', () => {
   it('throws PinningNotSupportedError when not the first provider', async () => {
     await expect(
       uploadOnHoverfly({
         token: batch ?? '0x00',
-        bytes: tinyTar(),
+        bytes: new Uint8Array() as Uint8Array<ArrayBuffer>,
         name: '',
         first: false,
         size: 0,
@@ -45,8 +52,9 @@ describe('Hoverfly', () => {
         uploadOnHoverfly({
           token: batch ?? '0x00',
           key: key ?? '0xab',
+          path: await tinyTarPath(),
           socket: '/tmp/definitely-no-hoverfly.sock',
-          bytes: tinyTar(),
+          bytes: new Uint8Array() as Uint8Array<ArrayBuffer>,
           name: '',
           first: true,
           size: 0,
@@ -66,8 +74,9 @@ describe('Hoverfly', () => {
       const { cid, rID } = await uploadOnHoverfly({
         token: batch!,
         key: key!,
+        path: await tinyTarPath(),
         socket,
-        bytes: tinyTar(),
+        bytes: new Uint8Array() as Uint8Array<ArrayBuffer>,
         name: '',
         first: true,
         size: 0,
