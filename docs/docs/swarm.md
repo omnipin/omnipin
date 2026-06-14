@@ -1,6 +1,6 @@
 # Swarm
 
-Omnipin supports uploading on the [Swarm](https://ethswarm.org) decentralized network via [Swarmy](https://swarmy.cloud) and a Bee node.
+Omnipin supports uploading on the [Swarm](https://ethswarm.org) decentralized network via [Swarmy](https://swarmy.cloud), a Bee node, or the [Hoverfly](https://github.com/omnipin/hoverfly) light client.
 
 ## Swarmy
 
@@ -32,6 +32,63 @@ Then run the deployment command:
 ```sh
 omnipin deploy --ens omnipin.eth --safe eth:0x...
 ```
+
+## Hoverfly
+
+- API token env variables: `OMNIPIN_HOVERFLY_TOKEN`, `OMNIPIN_HOVERFLY_KEY`
+- Supported methods: Upload
+
+[Hoverfly](https://github.com/omnipin/hoverfly) is a minimal Swarm light client. Omnipin uploads through a locally-running `hoverfly daemon` over its UNIX socket — no Bee node and no remote API. The daemon holds a warm libp2p session pool, so each deploy is a single fast push instead of paying the cold connection-fill cost in-process.
+
+### Setup
+
+Install Hoverfly:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/omnipin/hoverfly/main/install.sh | sh
+```
+
+Generate a signer key, fund it with xDAI + BZZ on Gnosis (see the [Hoverfly README](https://github.com/omnipin/hoverfly#setup)), then buy a postage batch and generate an overlay nonce directly with the CLI.
+
+Buy a postage stamp batch and generate an overlay nonce:
+
+```sh
+hoverfly batch create --key 0xYOUR_KEY --size 200MB --duration 30d
+hoverfly vanity-overlay --key 0xYOUR_KEY --peerlist peers.json --output overlay-nonce
+```
+
+### Running the daemon
+
+Start the daemon and leave it running. It picks up `peers.json` and the overlay nonce from the paths you pass, and keeps a warm session pool ready for uploads:
+
+```sh
+hoverfly daemon \
+  --socket /tmp/hoverfly.sock \
+  --pool-size 256 \
+  --identity 0xYOUR_KEY \
+  --nonce-file overlay-nonce \
+  --peerlist peers.json
+```
+
+The repo ships a curated `peers.seed.json`; copy it to `peers.json` for a fast cold start (`cp peers.seed.json peers.json`). On a cold or stale peerlist, add `--discover-rounds 3` so the eager pool fill has enough fresh peers to dial; a warm peerlist needs no discovery. The daemon persists reachability observations on shutdown, so subsequent starts are warmer.
+
+### Running the deployment
+
+Set the postage batch ID and signer key in the environment:
+
+```sh
+OMNIPIN_HOVERFLY_TOKEN=0xf078...1afc # postage batch ID
+OMNIPIN_HOVERFLY_KEY=da25...0a44
+# OMNIPIN_HOVERFLY_SOCKET=/tmp/hoverfly.sock   # optional, this is the default
+```
+
+Then run the deployment command:
+
+```sh
+omnipin deploy
+```
+
+Omnipin reads the batch depth on-chain automatically; override it with `OMNIPIN_HOVERFLY_DEPTH` to skip the lookup. Other optional knobs: `OMNIPIN_HOVERFLY_RPC_URL` (Gnosis RPC for the depth lookup), `OMNIPIN_HOVERFLY_CONCURRENCY` (session fan-out, defaults to 256 — raise toward `512` to push throughput on a large pool), and `OMNIPIN_HOVERFLY_RETRIES` (per-chunk retries, defaults to 60).
 
 ## Bee node
 
