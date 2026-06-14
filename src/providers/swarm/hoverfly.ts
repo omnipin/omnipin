@@ -12,21 +12,6 @@ import { referenceToCIDString, resolveBatchDepth } from '../../utils/swarm.js'
 
 const providerName = 'Hoverfly'
 
-/**
- * Swarm upload via a running `hoverfly daemon` over its UNIX socket — no bee
- * node, no remote API. The daemon holds a warm libp2p session pool and the node
- * identity/overlay, so a single deploy is one fast framed request instead of
- * paying the cold pool-fill + overlay-placement cost in-process.
- *
- * Start the daemon first (it picks up `peers.json` + `overlay-nonce` from its
- * working dir; see hoverfly's README):
- *
- *   hoverfly daemon --socket /tmp/hoverfly.sock --pool-size 256 \
- *     --identity 0xKEY --peerlist peers.json
- *
- * Then point omnipin at it with `OMNIPIN_HOVERFLY_TOKEN` (postage batch),
- * `OMNIPIN_HOVERFLY_KEY` (signer), and optionally `OMNIPIN_HOVERFLY_SOCKET`.
- */
 export const uploadOnHoverfly: UploadFunction<{
   key?: string
   socket?: string
@@ -56,7 +41,6 @@ export const uploadOnHoverfly: UploadFunction<{
 
   let tmpDir: string | undefined
   try {
-    // Verify the daemon is up before doing any work.
     const pong = await callDaemon(socketPath, { op: 'ping' }).catch(() => {
       throw new DeployError(
         providerName,
@@ -70,17 +54,12 @@ export const uploadOnHoverfly: UploadFunction<{
     const batchDepth = depth ?? (await resolveBatchDepth(batch, rpcUrl))
     if (verbose) logger.info(`${providerName}: batch depth ${batchDepth}`)
 
-    // The daemon reads the upload from a file path (client and daemon share a
-    // filesystem), so persist the packed TAR to a temp file. `.tar` +
-    // `collection: true` makes the daemon serve it as a browsable website.
+    // The daemon reads the upload from a file path; persist the packed TAR.
     tmpDir = await mkdtemp(join(tmpdir(), 'omnipin-hoverfly-'))
     const tarPath = join(tmpDir, 'site.tar')
     await writeFile(tarPath, bytes)
 
     if (verbose) logger.info(`${providerName}: uploading via ${socketPath}…`)
-    // A large site can take minutes to push; the daemon streams progress to its
-    // own log, but the single socket response looks like a hang from here. Emit
-    // an elapsed-time heartbeat in verbose mode so it's clearly alive.
     const startedAt = Date.now()
     const heartbeat = verbose
       ? setInterval(() => {
@@ -97,10 +76,6 @@ export const uploadOnHoverfly: UploadFunction<{
         depth: batchDepth,
         key: signer,
         max_retries: retries ?? 60,
-        // The dispatcher fans out across this many sessions. The daemon's pool
-        // fills toward its --pool-size (e.g. 256), but a low request concurrency
-        // caps the live session set — hardcoding 8 left the pool stuck at
-        // `pool=8 eligible=0` on large uploads. Match the recommended pool size.
         concurrency: concurrency ?? 256,
         raw: false,
         collection: true,
