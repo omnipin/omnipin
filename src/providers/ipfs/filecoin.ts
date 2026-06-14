@@ -45,11 +45,34 @@ const providerName = 'Filecoin'
 async function findPiece(
   providerURL: string,
   pieceCid: string,
-  options: { retries?: number; pollInterval?: number; verbose?: boolean } = {},
+  options: {
+    timeoutMs?: number
+    pollInterval?: number
+    verbose?: boolean
+  } = {},
 ): Promise<void> {
-  const { retries = 5, pollInterval = 3000, verbose = false } = options
+  // This is an HTTP readiness probe against the SP's PDP server (`/pdp/piece`),
+  // NOT an on-chain wait — it polls until the SP has ingested and indexed the
+  // just-uploaded piece, before we move on to the on-chain addPieces step.
+  // Ingestion latency scales with payload size / SP load, so a small fixed
+  // retry count (previously 5 × 3s = ~15s) aborts otherwise-fine deploys.
+  //
+  // Mirror the upstream Synapse SDK (@filoz/synapse-core RETRY_CONSTANTS):
+  // poll every 4s, bounded by a 5-minute wall-clock timeout. Both are
+  // overridable via env for slow SPs / large payloads.
+  const envTimeout = Number(process.env.OMNIPIN_FILECOIN_FINDPIECE_TIMEOUT_MS)
+  const {
+    timeoutMs = Number.isFinite(envTimeout) && envTimeout > 0
+      ? envTimeout
+      : 1000 * 60 * 5,
+    pollInterval = 4000,
+    verbose = false,
+  } = options
 
-  for (let i = 0; i < retries; i++) {
+  const deadline = Date.now() + timeoutMs
+  let attempt = 0
+
+  while (Date.now() < deadline) {
     const res = await fetch(
       new URL(`/pdp/piece?pieceCid=${pieceCid}`, providerURL),
     )
@@ -58,12 +81,25 @@ async function findPiece(
     if (res.ok) {
       return
     }
+
+    attempt++
+    if (verbose && attempt % 5 === 0) {
+      const elapsed = Math.round((timeoutMs - (deadline - Date.now())) / 1000)
+      logger.info(
+        `Piece ${pieceCid} not yet stored at provider (${elapsed}s elapsed, ~${Math.round(
+          timeoutMs / 1000,
+        )}s budget); still waiting…`,
+      )
+    }
+
     await setTimeout(pollInterval)
   }
 
   throw new DeployError(
     providerName,
-    'Piece not found on provider after retries',
+    `Piece not found on provider after ~${Math.round(
+      timeoutMs / 1000,
+    )}s. The piece was uploaded but the SP did not confirm it in time; it may still settle. Retry the deploy, or raise OMNIPIN_FILECOIN_FINDPIECE_TIMEOUT_MS.`,
   )
 }
 
