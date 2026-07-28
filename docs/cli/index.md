@@ -104,10 +104,12 @@ omnipin deploy --ens v1rtl.eth --roles-mod-address 0x6aBD167a6a29Fd9aDcf4365Ed46
 
 ### `dnslink`
 
-Update DNSLink. After finishing the deployment, DNSLink is updated afterwards (or after ENS if it was included in the deployment). Equivalent to `omnipin dnslink <cid>`
+Update DNSLink. Takes the DNS record name to update. After finishing the deployment, DNSLink is updated afterwards (or after ENS if it was included in the deployment). Equivalent to running `omnipin dnslink <cid> <name>` afterwards.
+
+Requires `OMNIPIN_CF_KEY` and `OMNIPIN_CF_ZONE_ID` environment variables.
 
 ```sh
-omnipin deploy --dnslink
+omnipin deploy --dnslink _dnslink.example.com
 ```
 
 ### `roles-mod-address`
@@ -137,6 +139,16 @@ Filecoin network to use for Filecoin provider deployments.
 
 ```sh
 omnipin deploy --filecoin-chain calibration
+```
+
+### `filecoin-force-new-dataset`
+
+Default: `false`
+
+Create a new Filecoin dataset instead of reusing an existing one. Only relevant for the `Filecoin` provider.
+
+```sh
+omnipin deploy --filecoin-force-new-dataset
 ```
 
 ### `dry-run`

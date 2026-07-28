@@ -35,15 +35,17 @@ Follow this flow strictly. Do not invent env var names or providers — only use
 
 ### 1. Ask which providers to deploy to
 
-Ask the user to pick one or more providers. Present the list grouped by network:
+Ask the user to pick one or more providers. Present the list grouped by network, and note which ones can *upload* content versus only *pin an existing CID*:
 
-- **IPFS**: `Filecoin`, `Spec`, `Filebase`, `IPFSNinja`, `Pinata`, `4EVERLAND`, `QuickNode`, `Lighthouse`, `Blockfrost`, `Aleph`, `SimplePage`
+- **IPFS — upload-capable** (can host the first copy): `Filecoin`, `Filebase`, `IPFSNinja`, `Pinata`, `Lighthouse`, `Fula`, `SimplePage`
+- **IPFS — pin-only** (re-pin a CID uploaded by another provider): `Spec`, `4EVERLAND`, `QuickNode`, `Blockfrost`, `Aleph`, `AIOZ`
 - **Swarm** (mutually exclusive with IPFS providers): `Bee` (recommended), `Swarmy`
 
 Important constraints:
 
-- Swarm and IPFS cannot be combined in the same deploy. If the user picks a Swarm provider, do not also pick IPFS providers.
-- For a robust deployment, recommend at least 2 IPFS providers (e.g. `Filecoin` + `Pinata`).
+- Swarm and IPFS cannot be combined in the same deploy. If Swarm providers are present, Omnipin ignores the IPFS ones entirely, so don't mix them.
+- **At least one upload-capable IPFS provider is required.** A deploy consisting only of pin-only providers fails — there is nothing to pin. Omnipin automatically sorts upload-capable providers first, so the order passed to `--providers` doesn't matter.
+- For a robust deployment, recommend at least 2 IPFS providers, one of which uploads (e.g. `Filecoin` + `Pinata`, or `Fula` + `4EVERLAND`).
 - For Swarm deployments, prefer `Bee` (a self-hosted Bee node) over `Swarmy` (a hosted gateway). Bee gives you direct control over postage stamps and avoids relying on a third-party uploader. Only suggest `Swarmy` if the user explicitly does not want to run a node.
 
 ### 2. Collect required env vars per provider
@@ -87,7 +89,7 @@ Options:
    - `OMNIPIN_PK` set to the role member's private key
    - `--safe <address-or-ens>` flag
    - `--roles-mod-address <0x...>` flag (the deployed Roles Module address)
-   - First-time setup: run `omnipin zodiac --safe <safe>` to generate `zodiac.json`, then upload it via the Safe Transaction Builder. See [Safe integration guide](https://omnipin.eth.limo/docs/#safe-integration).
+   - First-time setup: run `omnipin zodiac --safe <safe> <roles-mod-address> <ens-resolver-address>` to generate `zodiac.json`, then upload it via the Safe Transaction Builder. Both positional addresses are required; the generated role (`ENS_DEPLOYER`) may only call `setContentHash` on that resolver. If `OMNIPIN_PK` is unset, the command generates a keypair and prints the private key once — save it. See [Safe integration guide](https://omnipin.eth.limo/docs/#safe-integration).
 
 Always warn that storing `OMNIPIN_PK` in `.env` carries risk; recommend the Safe delegate flow for any production or CI deployment.
 
@@ -98,7 +100,7 @@ Always warn that storing `OMNIPIN_PK` in `.env` carries risk; recommend the Safe
 - `OMNIPIN_CF_KEY` — Cloudflare API token with Web3 gateway edit permission
 - `OMNIPIN_CF_ZONE_ID` — Cloudflare Zone ID
 
-Then add `--dnslink` to the final command.
+Then add `--dnslink <record>` to the final command, where `<record>` is the DNS record name — e.g. `--dnslink _dnslink.example.com`. The flag takes a value; passing a bare `--dnslink` is wrong.
 
 ### 6. Build the final command
 
@@ -133,9 +135,30 @@ Useful extra flags to offer:
 - `--strict` — fail if any provider fails (recommended in CI)
 - `--dry-run` — simulate the ENS tx without sending (only with `--ens`)
 - `--filecoin-chain calibration` — use Filecoin testnet
+- `--filecoin-force-new-dataset` — create a new Filecoin dataset instead of reusing the existing one
 - `--chain sepolia` — use Sepolia for ENS
+- `--rpc-url <url>` — custom Ethereum RPC (defaults to public nodes)
+- `--dnslink <record>` — update a Cloudflare DNSLink record after deploying
+- `--name <name>` / `--dist <dir>` — name of the packed archive and where to write it (defaults: current directory name, OS temp dir)
+- `--progress-bar` — render an upload progress bar (TTY only)
 - `--verbose` — verbose logs
 - `[dir]` — positional arg, defaults to `dist`. Pass e.g. `.vitepress/dist`, `build`, `out` if different.
+
+### Other commands worth knowing
+
+Only bring these up when relevant — `deploy` is the main entry point.
+
+| Command | Use |
+|---------|-----|
+| `omnipin pack [dir]` | Pack into a CAR (or TAR with `--tar` for Swarm) without uploading. `--only-hash` prints just the CIDv1 — handy in CI. |
+| `omnipin pin <cid>` | Pin an already-uploaded CID on more providers. |
+| `omnipin unpin <cid>` | Unpin a CID from providers that support unpinning. |
+| `omnipin status <cid>` | Check pin status across providers. |
+| `omnipin ens <cid> <name>` | Update an ENS contenthash separately from a deploy. |
+| `omnipin dnslink <cid> <name>` | Update a DNSLink record separately from a deploy. |
+| `omnipin bridge <amount>` | Bridge funds into a provider chain (`--provider=AIOZ` or `--provider=Filecoin`). |
+| `omnipin deposit <amount>` | Move already-held tokens into a provider's payment contract (`--provider=Filecoin` → Filecoin Pay, `--provider=Fula` → Fula vault). |
+| `omnipin zodiac <roles-mod> <resolver>` | Generate `zodiac.json` for the Safe Transaction Builder. |
 
 ### 7. Run it
 
@@ -147,19 +170,21 @@ Use these env var names exactly. Do not invent variants.
 
 ### IPFS providers
 
-| Provider     | `--providers` value | Required env vars |
-|--------------|---------------------|-------------------|
-| Filecoin     | `Filecoin`          | `OMNIPIN_FILECOIN_TOKEN` — private key of a wallet funded with FIL + USDfc, see [Funding a Filecoin wallet](#funding-a-filecoin-wallet). **Do not ask for SP overrides by default**; Omnipin picks a storage provider automatically. Only mention `OMNIPIN_FILECOIN_SP_URL` / `OMNIPIN_FILECOIN_SP_ADDRESS` if the user explicitly wants to pin a specific SP. |
-| Spec (generic pinning service) | `Spec` | `OMNIPIN_SPEC_TOKEN`, `OMNIPIN_SPEC_URL` |
-| Filebase     | `Filebase`          | `OMNIPIN_FILEBASE_TOKEN`. For upload+pin also `OMNIPIN_FILEBASE_BUCKET_NAME` |
-| IPFS.NINJA   | `IPFSNinja`         | `OMNIPIN_IPFS_NINJA_TOKEN` (key starts with `bws_`; generate at <https://ipfs.ninja/api-keys>). Max 100 MB CAR per upload. |
-| Pinata       | `Pinata`            | `OMNIPIN_PINATA_TOKEN` (JWT) |
-| 4EVERLAND    | `4EVERLAND`         | `OMNIPIN_4EVERLAND_TOKEN` |
-| QuickNode    | `QuickNode`         | `OMNIPIN_QUICKNODE_TOKEN` |
-| Lighthouse   | `Lighthouse`        | `OMNIPIN_LIGHTHOUSE_TOKEN` |
-| Blockfrost   | `Blockfrost`        | `OMNIPIN_BLOCKFROST_TOKEN` |
-| Aleph        | `Aleph`             | `OMNIPIN_ALEPH_TOKEN` (private key). Optional: `OMNIPIN_ALEPH_CHAIN` (`ETH` \| `AVAX` \| `BASE`) |
-| SimplePage   | `SimplePage`        | `OMNIPIN_SIMPLEPAGE_TOKEN` (the ENS name used by the page; requires onchain subscription) |
+| Provider     | `--providers` value | Upload | Required env vars |
+|--------------|---------------------|--------|-------------------|
+| Filecoin     | `Filecoin`          | ✅ | `OMNIPIN_FILECOIN_TOKEN` — private key of a wallet funded with FIL + USDfc, see [Funding a Filecoin wallet](#funding-a-filecoin-wallet). **Do not ask for SP overrides by default**; Omnipin picks a storage provider automatically. Only mention `OMNIPIN_FILECOIN_SP_URL` / `OMNIPIN_FILECOIN_SP_ADDRESS` if the user explicitly wants to pin to a specific SP. |
+| Filebase     | `Filebase`          | ✅ | `OMNIPIN_FILEBASE_TOKEN` + `OMNIPIN_FILEBASE_BUCKET_NAME` when uploading. The token differs per mode: for **upload** it's base64 of `accessKey:accessSecret` (S3 API), for **pin-only** it's an IPFS RPC API key. Paid plan required for uploads. |
+| IPFS.NINJA   | `IPFSNinja`         | ✅ | `OMNIPIN_IPFS_NINJA_TOKEN` (key starts with `bws_`; generate at <https://ipfs.ninja/api-keys>). Max 100 MB CAR per upload. |
+| Pinata       | `Pinata`            | ✅ | `OMNIPIN_PINATA_TOKEN` (JWT) |
+| Lighthouse   | `Lighthouse`        | ✅ | `OMNIPIN_LIGHTHOUSE_TOKEN` |
+| Fula         | `Fula`              | ✅ | `OMNIPIN_FULA_TOKEN` (JWT from <https://cloud.fx.land> → API Keys). 500 MB free, then pay-as-you-go in `$FULA`. Top up with `omnipin deposit --provider=Fula <amount>`, which signs with `OMNIPIN_FULA_PK` (a wallet key — **never** the JWT). |
+| SimplePage   | `SimplePage`        | ✅ | `OMNIPIN_SIMPLEPAGE_TOKEN` (the ENS name used by the page; requires onchain subscription) |
+| Spec (generic pinning service) | `Spec` | ❌ | `OMNIPIN_SPEC_TOKEN`, `OMNIPIN_SPEC_URL` |
+| 4EVERLAND    | `4EVERLAND`         | ❌ | `OMNIPIN_4EVERLAND_TOKEN` |
+| QuickNode    | `QuickNode`         | ❌ | `OMNIPIN_QUICKNODE_TOKEN` |
+| Blockfrost   | `Blockfrost`        | ❌ | `OMNIPIN_BLOCKFROST_TOKEN` |
+| Aleph        | `Aleph`             | ❌ | `OMNIPIN_ALEPH_TOKEN` (private key). Optional: `OMNIPIN_ALEPH_CHAIN` (`ETH` \| `AVAX` \| `BASE`) |
+| AIOZ         | `AIOZ`              | ❌ | `OMNIPIN_AIOZ_TOKEN` in `api_key:api_secret` form (two values from the AIOZ API Keys page, joined with a colon). Needs an AIOZ balance on AIOZ Network — top up with `omnipin bridge --provider=AIOZ --from-chain=eth --to=<aioz-pin-account> <amount>`. |
 
 ### Swarm providers
 
@@ -223,7 +248,7 @@ Notes:
 - `full-node: false` runs a light node — sufficient for uploading via Omnipin. Only switch to `true` if the user wants to earn by serving chunks.
 - `password: password` is fine for a throwaway local node, but **warn the user to change it** if the node will be exposed beyond `localhost`. The password encrypts the node's Swarm key.
 - `blockchain-rpc-endpoint` points at a public Gnosis Chain RPC. For production, suggest a dedicated RPC (e.g. their own node, a paid provider) — public endpoints rate-limit and can stall the node.
-- `mainnet: true` + `swap-enable: true` means the node will fund itself on Gnosis Chain. The node needs a small amount of xDAI and xBZZ on its own address before it can buy stamps; Bee prints the address on first start, and the docs cover funding: <https://docs.ethswarm.org/docs/bee/installation/fund-your-node>.
+- `mainnet: true` + `swap-enable: true` means the node will fund itself on Gnosis Chain. It needs xDAI (gas) and xBZZ (postage + SWAP) on its own address before it can buy stamps — see step 4.
 
 ### 3. Start Bee and wait for it to sync
 
@@ -233,22 +258,35 @@ bee start --config ~/.bee.yaml
 
 Or, if installed as a service, `sudo systemctl start bee` / `brew services start swarm-bee`. Wait until `curl http://localhost:1633/health` returns `"status":"ok"` and the node has finished warmup.
 
-### 4. Buy a postage batch
+### 4. Fund the node
 
-Omnipin needs a postage batch ID to upload. Buy one once the node is funded and synced:
+Read the node's Gnosis Chain address:
 
 ```sh
-curl -s -XPOST "http://localhost:1633/stamps/<amount>/<depth>"
+curl -s http://localhost:1633/addresses | jq .ethereum
 ```
 
-Reasonable starting values for a typical static site: `amount=2073600000` (~5 days TTL at current price) and `depth=22` (~600 MB effective capacity — depth 22 in practice gives a usable batch around that size, e.g. `swarm-cli stamp list` reports ~628 MB total / ~511 MB remaining at 19% usage). Lower depths fill up surprisingly fast because of how chunks are distributed across the postage stamp's address space; depth 22 is a good "set and forget" default for most sites. Bump `amount` for longer TTL (it scales linearly with time), bump `depth` only if a single deploy is larger than a few hundred MB (depth scales cost roughly exponentially). The endpoint returns a `batchID` — that's the value to put in `OMNIPIN_BEE_TOKEN`.
+Then send xDAI + xBZZ to it via <https://fund.ethswarm.org> — paste the address, pay with any supported asset on any supported network, and the service handles the cross-chain swap and delivers both tokens. This is a browser step; the agent cannot do it. Once the funds land, Bee automatically deposits BZZ into its chequebook contract.
 
-See <https://docs.ethswarm.org/docs/develop/access-the-swarm/buy-a-stamp-batch> for current pricing and the depth/amount tradeoff.
+### 5. Buy a postage batch
 
-### 5. Wire it into `.env`
+Omnipin needs a postage batch ID to upload. Pick `amount` (TTL) and `depth` (capacity) with the [batch calculator](https://docs.ethswarm.org/docs/develop/access-the-swarm/buy-a-stamp-batch/#time--volume-to-depth--amount-calculator), then buy the batch:
 
 ```sh
-OMNIPIN_BEE_TOKEN=<batchID from step 4>
+# via swarm-cli (bunx / npx / pnpm dlx)
+bunx @ethersphere/swarm-cli stamp create --amount <amount> --depth <depth>
+
+# or directly against the Bee API
+curl -sX POST "http://localhost:1633/stamps/<amount>/<depth>"
+# { "batchID": "8fc...8552c6b", "txHash": "0x51c77...907b675" }
+```
+
+`depth=22` (~600 MB usable) is a good "set and forget" default for a static site — lower depths fill up faster than their nominal size suggests because of how chunks spread across the stamp's address space. `amount` scales TTL linearly and can be topped up later; `depth` scales cost roughly exponentially, so only raise it for sites larger than a few hundred MB. The returned `batchID` is the value for `OMNIPIN_BEE_TOKEN`.
+
+### 6. Wire it into `.env`
+
+```sh
+OMNIPIN_BEE_TOKEN=<batchID from step 5>
 # OMNIPIN_BEE_URL is optional; defaults to http://localhost:1633
 ```
 
@@ -265,20 +303,28 @@ For most small (<10 GB) deployments, ~0.1 FIL and ~$1 of USDfc is enough.
 
 If the user doesn't have a wallet yet, generate one with `cast wallet new` (from Foundry) or any other Ethereum keypair tool, save the private key as `OMNIPIN_FILECOIN_TOKEN`, and fund the corresponding address.
 
-### Getting FIL
+### Funding: `omnipin bridge` + `omnipin deposit`
 
-Suggest these in order:
+Omnipin does the whole funding flow itself — **never send the user off to a DEX or bridge UI**. `bridge` routes a source token through [Squid Router](https://app.squidrouter.com) and splits it into FIL (gas) and USDfc (storage payment); `deposit` then moves the USDfc into Filecoin Pay so the storage provider can actually spend it.
 
-1. **ChainSafe Forest mainnet faucet** — small drip (0.01 FIL), no swap needed. Direct the user to <https://forest-explorer.chainsafe.dev/faucet/mainnet>, where they paste their `f`-prefixed Filecoin address and click "Send". **The agent should not try to call this endpoint directly** — it's behind a Cloudflare bot challenge, requires a live nonce/gas estimate from a Filecoin RPC, and is rate-limited per address. Always have the user perform this step in the browser.
-2. **Calibration testnet** — for testing only. Use the [FIL faucet](https://forest-explorer.chainsafe.dev/faucet/calibnet) and pass `--filecoin-chain calibration` in the deploy command.
-3. **Bridge** — for larger amounts. Bridge FIL via [Squid Router](https://app.squidrouter.com/?chains=137%2C314&tokens=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359%2C0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee).
+```sh
+# Bridge 10 USDC from Arbitrum into FIL + USDfc on Filecoin
+omnipin bridge --provider=Filecoin --from-chain=arb --from-token=USDC 10
 
-### Getting USDfc
+# Move 9 USDfc into Filecoin Pay
+omnipin deposit --provider=Filecoin 9
+```
 
-The mainnet faucet **does not provide USDfc** — it only sends FIL. Suggest these:
+Notes:
 
-1. **Swap on Filecoin** — once the wallet has FIL on Filecoin mainnet, swap a small portion to USDfc on [SushiSwap](https://www.sushi.com/filecoin/swap?token0=NATIVE&token1=0x80b98d3aa09ffff255c3ba4a241111ff1262f045). Cross-chain USDfc liquidity is low, so always bridge FIL first and swap *on* Filecoin rather than swapping to USDfc on another chain and bridging.
-2. **Calibration testnet** — for testing only, use the [USDfc faucet](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc).
+- Both commands sign with `OMNIPIN_FILECOIN_TOKEN` (falling back to `OMNIPIN_PK`), so no extra key is needed.
+- `--from-chain` accepts `eth`, `opt`, `bsc`, `polygon`, `base`, `arb`, `avax`. `--from-token` takes a symbol (`USDC`, `ETH`, `USDT`, …) or a raw `0x` address, and the amount is denominated in that token.
+- `--fil-ratio` (default `0.1`) controls what fraction is kept as native FIL for gas; the rest becomes USDfc. `--slippage` (default `1`, percent) caps swap slippage.
+- `deposit` works on its own too — if the user already holds USDfc on Filecoin (however they got it), just run `omnipin deposit --provider=Filecoin <amount>` to move it into Filecoin Pay. No swap UI needed.
+
+### Calibration testnet
+
+For testing only, fund from the [FIL faucet](https://forest-explorer.chainsafe.dev/faucet/calibnet) and the [USDfc faucet](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc), then pass `--filecoin-chain calibration` in the deploy command. **The agent should not call faucet endpoints directly** — they sit behind a bot challenge and are rate-limited per address. This is the one funding step the user has to do in a browser.
 
 ## Safety notes
 
