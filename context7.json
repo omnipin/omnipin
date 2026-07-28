@@ -1,4 +1,27 @@
 {
+  "$schema": "https://context7.com/schema/context7.json",
   "url": "https://context7.com/omnipin/omnipin",
-  "public_key": "pk_Zg66zrQD79oSfCGSoZLV7"
+  "public_key": "pk_Zg66zrQD79oSfCGSoZLV7",
+  "projectTitle": "Omnipin",
+  "description": "Self-custodial decentralized deployments to IPFS, Filecoin and Swarm with ENS and DNSLink updates",
+  "branch": "main",
+  "folders": ["docs/docs", "docs/cli", "skills"],
+  "excludeFolders": [
+    "node_modules",
+    "docs/node_modules",
+    "docs/.vitepress",
+    "coverage",
+    "dist",
+    "src",
+    "test"
+  ],
+  "excludeFiles": ["AGENTS.md", "FUNDING.json", "proof_bytes.txt"],
+  "rules": [
+    "Storacha and Gateway3 are no longer supported providers. Never reference OMNIPIN_STORACHA_TOKEN or OMNIPIN_STORACHA_PROOF.",
+    "Provider tokens are read from OMNIPIN_<PROVIDER>_TOKEN environment variables; see docs/docs/ipfs.md for the authoritative list.",
+    "A deploy needs at least one upload-capable provider. Pin-only providers (Spec, 4EVERLAND, QuickNode, Blockfrost, Aleph, AIOZ) can only re-pin an existing CID.",
+    "Swarm and IPFS providers cannot be combined in one deploy; Swarm providers take precedence and IPFS ones are ignored.",
+    "Prefer the Safe delegate flow (--safe) over a raw EOA key for ENS updates, and Zodiac Roles (--roles-mod-address) for unattended CI deploys.",
+    "Fund a Filecoin wallet with `omnipin bridge --provider=Filecoin` and `omnipin deposit --provider=Filecoin` instead of manual DEX or bridge UIs."
+  ]
 }
