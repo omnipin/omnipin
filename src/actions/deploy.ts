@@ -83,6 +83,7 @@ export const deployAction = async ({
     cid: ipfsCid,
     bytes,
     size,
+    path: tarPath,
   } = await packAction({
     dir,
     options: {
@@ -117,6 +118,9 @@ export const deployAction = async ({
       bar?.update(total++, deployMessage(provider.name, provider.supported))
       const envVar = findEnvVarProviderName(provider.name)
       try {
+        const hoverflyDepth = apiTokens.get('HOVERFLY_DEPTH')
+        const hoverflyConcurrency = apiTokens.get('HOVERFLY_CONCURRENCY')
+        const hoverflyRetries = apiTokens.get('HOVERFLY_RETRIES')
         const result = await provider.upload({
           bytes,
           token: apiTokens.get(envVar)!,
@@ -124,6 +128,16 @@ export const deployAction = async ({
           name: '',
           first: true,
           beeURL: apiTokens.get('BEE_URL'),
+          // Hoverfly talks to a local `hoverfly daemon` over its UNIX socket.
+          key: apiTokens.get('HOVERFLY_KEY'),
+          path: tarPath,
+          socket: apiTokens.get('HOVERFLY_SOCKET'),
+          rpcUrl: apiTokens.get('HOVERFLY_RPC_URL'),
+          depth: hoverflyDepth ? Number(hoverflyDepth) : undefined,
+          concurrency: hoverflyConcurrency
+            ? Number(hoverflyConcurrency)
+            : undefined,
+          retries: hoverflyRetries ? Number(hoverflyRetries) : undefined,
         })
         swarmCid = result.cid
         cid = result.rID!
