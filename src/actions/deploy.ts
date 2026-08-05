@@ -121,9 +121,10 @@ export const deployAction = async ({
           bytes,
           token: apiTokens.get(envVar)!,
           verbose,
-          name: '',
+          name: 'omnipin-deploy',
           first: true,
           beeURL: apiTokens.get('BEE_URL'),
+          beeportURL: apiTokens.get('BEEPORT_URL'),
         })
         swarmCid = result.cid
         cid = result.rID!
