@@ -21,7 +21,7 @@ function validateEthereumAddress(address: string): void {
 const isValidEip3770NetworkPrefix = (prefix: string): boolean =>
   networks.some(({ shortName }) => shortName === prefix)
 
-function getEip3770NetworkPrefixFromChainId(chainId: number): string {
+export function getEip3770NetworkPrefixFromChainId(chainId: number): string {
   const network = networks.find((network) => chainId === network.chainId)
   if (!network)
     throw new Error('No network prefix supported for the current chainId')
