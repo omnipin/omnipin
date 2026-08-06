@@ -3,6 +3,7 @@ import * as assert from 'node:assert'
 import {
   type EIP3770Address,
   getEip3770Address,
+  getEip3770NetworkPrefixFromChainId,
   parseEip3770Address,
 } from '../../../src/utils/safe/eip3770.js'
 
@@ -60,6 +61,23 @@ describe('safe/eip3770', () => {
             fullAddress: `eth:${VITALIK}` satisfies EIP3770Address,
             chainId: 137,
           }),
+        /No network prefix supported for the current chainId/,
+      )
+    })
+  })
+
+  // `zodiac` builds its Safe app deeplink from this: a bare `0x…` parses to an
+  // empty prefix, which produced `safe=:0x…` until the prefix was derived from
+  // the chain instead.
+  describe('getEip3770NetworkPrefixFromChainId', () => {
+    it('maps supported chain ids to their short names', () => {
+      assert.strictEqual(getEip3770NetworkPrefixFromChainId(1), 'eth')
+      assert.strictEqual(getEip3770NetworkPrefixFromChainId(11155111), 'sep')
+    })
+
+    it('throws for an unsupported chain id', () => {
+      assert.throws(
+        () => getEip3770NetworkPrefixFromChainId(137),
         /No network prefix supported for the current chainId/,
       )
     })
