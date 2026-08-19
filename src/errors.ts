@@ -62,14 +62,20 @@ export class UnpinNotSupportedError extends Error {
   }
 }
 
+type ProviderOperation = 'deploy' | 'pin' | 'unpin' | 'status'
+
+const operationLabel: Record<ProviderOperation, string> = {
+  deploy: 'Deploy',
+  pin: 'Pinning',
+  unpin: 'Unpinning',
+  status: 'Status check',
+}
+
 export class AllProvidersFailedError extends AggregateError {
   name = 'AllProvidersFailedError'
-  operation: 'deploy' | 'pin' | 'unpin'
-  constructor(operation: 'deploy' | 'pin' | 'unpin', errors: Error[]) {
-    super(
-      errors,
-      `${operation === 'deploy' ? 'Deploy' : operation === 'pin' ? 'Pinning' : 'Unpinning'} failed on all providers.`,
-    )
+  operation: ProviderOperation
+  constructor(operation: ProviderOperation, errors: Error[]) {
+    super(errors, `${operationLabel[operation]} failed on all providers.`)
     this.operation = operation
   }
 }

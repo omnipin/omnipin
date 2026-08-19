@@ -46,12 +46,19 @@ export const unpinAction = async ({
     const token = apiTokens.get(envVar)!
 
     try {
-      await provider.unpin?.({
+      const result = await provider.unpin?.({
         cid,
         token,
         verbose,
         baseURL: apiTokens.get('SPEC_URL'),
       })
+      // Not every provider signals failure by throwing — Blockfrost, for one,
+      // resolves with `success: false` when the pin was not actually removed.
+      // Treating that as a success reported a clean unpin for a CID that is
+      // still pinned.
+      if (result && !result.success) {
+        throw new Error(`${provider.name} reported the pin was not removed`)
+      }
       logger.success(`Unpinned on ${provider.name}`)
     } catch (e) {
       logger.error(`Failed to unpin on ${provider.name}`)

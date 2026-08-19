@@ -1,7 +1,12 @@
 import { PROVIDERS } from '../constants.js'
-import { NoProvidersError, UnknownProviderError } from '../errors.js'
+import {
+  AllProvidersFailedError,
+  NoProvidersError,
+  UnknownProviderError,
+} from '../errors.js'
 import { findEnvVarProviderName, parseTokensFromEnv } from '../utils/env.js'
 import { assertCID } from '../utils/ipfs.js'
+import { logger } from '../utils/logger.js'
 import { pinStatus } from '../utils/pin.js'
 
 export const statusAction = async ({
@@ -34,7 +39,9 @@ export const statusAction = async ({
 
   const providers = tokens.map((token) => PROVIDERS[token])
 
-  await Promise.all(
+  // `allSettled`, not `all`: one provider being down, rate-limited or holding a
+  // stale token must not suppress the statuses of every other provider.
+  const results = await Promise.allSettled(
     providers.map(async (provider, i) => {
       const token = tokens[i]
       if (provider?.status) {
@@ -50,4 +57,22 @@ export const statusAction = async ({
       }
     }),
   )
+
+  const errors: Error[] = []
+  for (const [i, result] of results.entries()) {
+    if (result.status === 'rejected') {
+      logger.error(
+        `Failed to read status from ${providers[i]?.name ?? tokens[i]}`,
+        result.reason,
+      )
+      errors.push(result.reason as Error)
+    }
+  }
+
+  // Every provider that could have reported a status failed, so the command
+  // printed nothing useful — keep the non-zero exit it had before.
+  const queried = providers.filter((p) => p?.status).length
+  if (errors.length !== 0 && errors.length === queried) {
+    throw new AllProvidersFailedError('status', errors)
+  }
 }

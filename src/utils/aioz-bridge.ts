@@ -222,6 +222,19 @@ export const bridgeAioz = async ({
     `Bridge to AIOZ Network: ${amountWei} (wei) AIOZ from ${sourceChain.name} → ${destination}`,
   )
 
+  // 0. When a forward is needed, snapshot the signer's AIOZ balance *before*
+  // bridging. The forward must move what the relayer credits — measured as the
+  // delta — not the wallet's whole balance, which would sweep AIOZ the signer
+  // already held. The credited amount is also net of bridge fees, so it cannot
+  // be assumed equal to `amountWei`.
+  const willForward = destination.toLowerCase() !== signer.toLowerCase()
+  const aiozProvider = willForward
+    ? Provider.from(fromHttp(aiozRpcUrl ?? AIOZ_MAINNET.rpc))
+    : undefined
+  const aiozBalanceBefore = aiozProvider
+    ? await getBalance({ provider: aiozProvider, address: signer })
+    : 0n
+
   // 1. Resolve pool address LIVE.
   const pool = await fetchPoolAddress({
     from: fromChain,
@@ -274,27 +287,25 @@ export const bridgeAioz = async ({
   )
 
   // 4. Forward on AIOZ mainnet if --to differs from the signer.
-  if (destination.toLowerCase() === signer.toLowerCase()) {
+  if (!willForward || !aiozProvider) {
     logger.info('Destination equals signer; no forward step needed')
     return { srcTxHash, bridgeTxOut }
   }
 
-  const aiozTransport = fromHttp(aiozRpcUrl ?? AIOZ_MAINNET.rpc)
-  const aiozProvider = Provider.from(aiozTransport)
-
   // Wait for the relayer's destination tx to actually land in our balance.
   // `status=sent` is the relayer's last word, but the receipt on chain 168
   // may need a few seconds to be visible via RPC.
-  const balance = await waitForBalance({
+  const credited = await waitForCredit({
     provider: aiozProvider,
     address: signer,
-    minimumWei: amountWei,
+    baseline: aiozBalanceBefore,
     verbose,
   })
 
+  if (verbose) logger.info(`Bridge credited ${credited} (wei) native AIOZ`)
+
   // Estimate gas for the value transfer and reserve enough native AIOZ to
-  // pay for it. The bridged amount lands as native AIOZ exactly equal to
-  // what we sent, so we must subtract the gas cost from what we forward.
+  // pay for it, then forward the credited amount less that reserve.
   const gasUnits = await estimateGas({
     provider: aiozProvider,
     from: signer,
@@ -307,10 +318,10 @@ export const bridgeAioz = async ({
   // formula of 2×baseFee + priorityFee).
   const gasReserve = gasUnits * gasPriceWei * 2n
 
-  const forwardAmount = balance - gasReserve
+  const forwardAmount = credited - gasReserve
   if (forwardAmount <= 0n) {
     logger.warn(
-      `Not enough native AIOZ on signer to cover gas + forward (balance=${balance}, gasReserve=${gasReserve}). Leaving funds at signer.`,
+      `Not enough native AIOZ on signer to cover gas + forward (credited=${credited}, gasReserve=${gasReserve}). Leaving funds at signer.`,
     )
     return { srcTxHash, bridgeTxOut }
   }
@@ -340,38 +351,41 @@ export const bridgeAioz = async ({
 }
 
 /**
- * Poll the destination chain's RPC until the signer's native balance
- * reaches at least `minimumWei`. The AIOZ bridge relayer reports
- * `status=sent` as soon as the destination tx is mined, but some RPC
+ * Poll the destination chain's RPC until the signer's native balance rises
+ * above `baseline`, and return the credited delta. The AIOZ bridge relayer
+ * reports `status=sent` as soon as the destination tx is mined, but some RPC
  * providers lag by a few seconds before exposing the new balance.
+ *
+ * Measuring a delta rather than waiting for an absolute threshold matters
+ * twice over: the credit is net of bridge fees (so it never reaches the amount
+ * that was sent), and the delta is what may be forwarded without also moving
+ * AIOZ the signer already held.
  */
-const waitForBalance = async ({
+const waitForCredit = async ({
   provider,
   address,
-  minimumWei,
+  baseline,
   maxAttempts = 30,
   intervalMs = 2_000,
   verbose,
 }: {
   provider: Provider.Provider
   address: Address
-  minimumWei: bigint
+  baseline: bigint
   maxAttempts?: number
   intervalMs?: number
   verbose?: boolean
 }): Promise<bigint> => {
   for (let i = 0; i < maxAttempts; i++) {
     const balance = await getBalance({ provider, address })
-    if (balance >= minimumWei) return balance
+    if (balance > baseline) return balance - baseline
     if (verbose && i % 5 === 0) {
-      logger.info(
-        `Waiting for destination balance (have ${balance}, need ${minimumWei})`,
-      )
+      logger.info(`Waiting for the bridged AIOZ to land (poll ${i + 1})`)
     }
     await setTimeout(intervalMs)
   }
   throw new Error(
-    `Destination balance did not reach ${minimumWei} within ${maxAttempts} polls`,
+    `Bridged AIOZ did not land within ${maxAttempts} polls. It may still arrive — check your wallet before retrying.`,
   )
 }
 

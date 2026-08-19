@@ -10,6 +10,7 @@ import { logger } from '../utils/logger.js'
 import {
   type EIP3770Address,
   getEip3770Address,
+  getEip3770NetworkPrefixFromChainId,
 } from '../utils/safe/eip3770.js'
 import { ENS_DEPLOYER_ROLE } from '../utils/zodiac-roles/init.js'
 import type { DeployActionArgs } from './deploy.js'
@@ -51,12 +52,17 @@ export const zodiacAction = async ({
     chainId: chains[chainName].id,
   })
 
+  // `prefix` is empty when --safe was given as a bare `0x…` address, but the
+  // Safe web app requires the EIP-3770 chain prefix, so derive it from the
+  // chain rather than emitting `safe=:0x…`.
+  const safePrefix =
+    safeAddress.prefix ||
+    getEip3770NetworkPrefixFromChainId(chains[chainName].id)
+
   if (verbose) {
     logger.info(`Chain: ${chainName} (id ${chains[chainName].id})`)
     logger.info(`Role address: ${roleAddress}`)
-    logger.info(
-      `Safe: ${safeAddress.prefix ? `${safeAddress.prefix}:` : ''}${safeAddress.address}`,
-    )
+    logger.info(`Safe: ${safePrefix}:${safeAddress.address}`)
     logger.info(`Roles module: ${rolesModAddress}`)
     logger.info(`Resolver: ${resolverAddress}`)
   }
@@ -158,7 +164,7 @@ export const zodiacAction = async ({
   logger.text(
     `Open in a browser: ${styleText(
       'underline',
-      `https://app.safe.global/apps/open?safe=${safeAddress.prefix}:${safeAddress.address}&appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder`,
+      `https://app.safe.global/apps/open?safe=${safePrefix}:${safeAddress.address}&appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder`,
     )}`,
   )
 

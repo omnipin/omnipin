@@ -1,4 +1,4 @@
-import { encodeData } from 'ox/AbiFunction'
+import { decodeResult, encodeData } from 'ox/AbiFunction'
 import type { Address } from 'ox/Address'
 import { toHex } from 'ox/Bytes'
 import type { Hex } from 'ox/Hex'
@@ -54,31 +54,39 @@ export const execTransactionWithRole = async ({
     false,
   ])
 
-  const success = await simulateTransaction({
+  // `simulateTransaction` resolves with the raw `eth_call` return data, so any
+  // non-empty hex — including an ABI-encoded `false` — is truthy. `shouldRevert`
+  // is false, so a call the module refuses returns `false` here rather than
+  // reverting: decode the bool and stop before sending anything.
+  const result = await simulateTransaction({
     provider,
     to: rolesModAddress,
     data,
     from,
   })
 
-  if (success) {
-    const hash = await sendTransaction({
-      privateKey,
-      to: rolesModAddress,
-      data,
-      from,
-      provider,
-      chainId,
-    })
-
-    logger.info(`Transaction pending: ${explorerUrl}/tx/${hash}`)
-
-    try {
-      await waitForTransaction(provider, hash)
-    } catch (e) {
-      return logger.error(e)
-    }
-
-    logger.success('Transaction succeeded')
+  if (!decodeResult(execTransactionWithRoleAbi, result as Hex)) {
+    throw new Error(
+      `Zodiac Roles module ${rolesModAddress} refused the setContenthash call.`,
+    )
   }
+
+  const hash = await sendTransaction({
+    privateKey,
+    to: rolesModAddress,
+    data,
+    from,
+    provider,
+    chainId,
+  })
+
+  logger.info(`Transaction pending: ${explorerUrl}/tx/${hash}`)
+
+  try {
+    await waitForTransaction(provider, hash)
+  } catch (e) {
+    return logger.error(e)
+  }
+
+  logger.success('Transaction succeeded')
 }

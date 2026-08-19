@@ -49,6 +49,17 @@ export const depositFilecoinUsdfc = async ({
   const signer = fromPublicKey(getPublicKey({ privateKey }))
   const owner = (from ?? signer) as Address
 
+  // The deposit is authorized with an EIP-2612 permit whose `owner` field is
+  // `owner` but which is signed with `privateKey`. If they differ, `ecrecover`
+  // yields the signer and the permit reverts — and `sendTransaction` would
+  // additionally read the nonce for `owner` while signing as the signer,
+  // producing a tx that cannot land. Fail before spending any gas.
+  if (owner.toLowerCase() !== signer.toLowerCase()) {
+    throw new Error(
+      `--from ${owner} is not the signer (${signer}). The deposit permit can only be signed by the token holder.`,
+    )
+  }
+
   let amountAtomic: bigint
   try {
     amountAtomic = Value.from(amount, 18)

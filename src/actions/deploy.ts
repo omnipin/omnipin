@@ -67,13 +67,15 @@ export const deployAction = async ({
 
   if (!allProviders.length) throw new NoProvidersError()
 
+  // A site cannot go to both protocols at once, so Swarm wins when present and
+  // the IPFS providers are ignored (see docs/docs/swarm.md). Everything that
+  // counts providers — the log line, the progress bar total, and the
+  // all-failed check — must look at this set, not at whichever tokens happen
+  // to be sitting in the environment.
+  const activeProviders = swarmProviders.length ? swarmProviders : ipfsProviders
+
   logger.info(
-    `Deploying with providers: ${(swarmProviders.length
-      ? swarmProviders
-      : ipfsProviders
-    )
-      .map((p) => p.name)
-      .join(', ')}`,
+    `Deploying with providers: ${activeProviders.map((p) => p.name).join(', ')}`,
   )
 
   let cid: string = undefined!
@@ -101,10 +103,7 @@ export const deployAction = async ({
   const bar =
     isTTY && progressBar
       ? new AsciiBar({
-          total:
-            swarmProviders.length !== 0
-              ? swarmProviders.length
-              : ipfsProviders.length,
+          total: activeProviders.length,
           hideCursor: false,
           enableSpinner: true,
           width: process.stdout.columns - 30,
@@ -180,11 +179,7 @@ export const deployAction = async ({
     bar?.update(total)
   }
 
-  if (
-    errors.length !== 0 &&
-    (errors.length === ipfsProviders.length ||
-      errors.length === swarmProviders.length)
-  ) {
+  if (errors.length !== 0 && errors.length === activeProviders.length) {
     logger.error('Deploy failed')
     errors.forEach((e) => {
       logger.error(e)

@@ -81,4 +81,34 @@ describe('deposit action', () => {
       }),
     ).rejects.toThrow(/Invalid amount/)
   })
+
+  // The deposit is authorized with an EIP-2612 permit whose `owner` is `--from`
+  // but which is signed with the signer's key, so a mismatch could never
+  // produce a landable transaction. It must be rejected before any gas is
+  // spent — i.e. before the amount is even parsed.
+  it('rejects --from when it is not the signing wallet', async () => {
+    process.env.OMNIPIN_PK = DUMMY_PK
+    await expect(
+      depositAction({
+        amount: '1',
+        options: {
+          provider: 'Filecoin',
+          from: '0x0000000000000000000000000000000000000001',
+        },
+      }),
+    ).rejects.toThrow(/is not the signer/)
+  })
+
+  it('rejects a mismatched --from before validating the amount', async () => {
+    process.env.OMNIPIN_PK = DUMMY_PK
+    await expect(
+      depositAction({
+        amount: 'not-a-number',
+        options: {
+          provider: 'Filecoin',
+          from: '0x0000000000000000000000000000000000000001',
+        },
+      }),
+    ).rejects.toThrow(/is not the signer/)
+  })
 })
