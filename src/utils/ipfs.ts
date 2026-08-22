@@ -1,5 +1,4 @@
-import { createWriteStream } from 'node:fs'
-import { readFile } from 'node:fs/promises'
+import { writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { CarWriter } from '@ipld/car/writer'
 import { base32 } from 'multiformats/bases/base32'
@@ -10,7 +9,7 @@ import { type FileCandidate, importer } from './ipfs/unixfs.js'
 
 const tmp = tmpdir()
 
-const concatBytes = (chunks: Uint8Array[]): Uint8Array => {
+const concatBytes = (chunks: Uint8Array[]): Uint8Array<ArrayBuffer> => {
   let total = 0
   for (const c of chunks) total += c.byteLength
 
@@ -43,12 +42,15 @@ export const packCAR = async (
     throw new Error('No files were imported')
   }
 
-  const writeStream = createWriteStream(output)
   const { writer, out } = CarWriter.create([rootCID])
 
-  const writePromise = (async () => {
+  // `out` must be drained while blocks are being fed in: `CarWriter` hands
+  // chunks over one at a time and `writer.put` will not resolve until the
+  // previous chunk has been taken.
+  const carChunks: Uint8Array[] = []
+  const collecting = (async () => {
     for await (const chunk of out) {
-      writeStream.write(chunk)
+      carChunks.push(chunk)
     }
   })()
 
@@ -68,19 +70,17 @@ export const packCAR = async (
   }
 
   await writer.close()
-  await writePromise
-  writeStream.end()
+  await collecting
 
-  await new Promise<void>((resolve) => writeStream.on('close', resolve))
-
-  const file = await readFile(output)
-  // `readFile` returns a Node `Buffer` whose underlying type widens to
-  // `Uint8Array<ArrayBufferLike>`. We know the returned buffer is backed by
-  // a plain ArrayBuffer (not SharedArrayBuffer), so narrow it explicitly so
-  // callers can hand `bytes` to `Blob` / `File` without extra casts.
-  const bytes = file as Uint8Array<ArrayBuffer>
-
+  // Release the blocks before joining the CAR chunks so peak memory stays at
+  // roughly one copy of the blocks plus one copy of the CAR, as it was when
+  // this read the finished file back off disk.
   blockstore.clear()
+
+  const bytes = concatBytes(carChunks)
+  carChunks.length = 0
+
+  await writeFile(output, bytes)
 
   return { bytes, rootCID }
 }
