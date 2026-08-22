@@ -18,11 +18,11 @@
 		"@stauro/filebase-upload": "npm:@jsr/stauro__filebase-upload",
 		"@types/bun": "^1.3.10",
 		"@types/varint": "^6.0.3",
+		"abort-error": "^1.0.2",
 		"hamt-sharding": "^3.0.8",
 		"interface-blockstore": "^7.0.1",
 		"interface-store": "^8.0.0",
 		"ipfs-unixfs": "^13.0.0",
-		"it-all": "^3.0.11",
 		"multiformats": "^14.0.0",
 		"nanotar": "^0.3.0",
 		"ox": "^0.14.8",
@@ -39,7 +39,7 @@
 	"description": "🌸 Self-custodial decentralized deployments",
 	"engineStrict": true,
 	"engines": {
-		"node": "^20.10.0 || >=21.1.0"
+		"node": ">=22"
 	},
 	"files": [
 		"dist"

@@ -100,8 +100,6 @@ export class InvalidContentError extends Error {
   }
 }
 
-// --- async iteration helpers (inlined from it-batch / it-parallel-batch) ---
-
 /**
  * Collect `source` into arrays of at most `size`. Accepts sync or async
  * sources — the balanced layout recurses with a plain array.
@@ -156,8 +154,6 @@ async function* parallelBatch<T>(
   }
 }
 
-// --- block persistence ---
-
 interface PersistOptions {
   codec?: BlockCodec<number, unknown>
   cidVersion?: CIDVersion
@@ -181,8 +177,6 @@ const persist = async (
 
   return cid
 }
-
-// --- chunking ---
 
 /**
  * Fixed-size chunker. Emits exactly `CHUNK_SIZE` bytes per chunk apart from a
@@ -208,7 +202,6 @@ async function* fixedSizeChunker(
     while (currentLength >= CHUNK_SIZE) {
       const head = queue[0]
 
-      // Fast path: the whole chunk is already contiguous in the head buffer.
       if (head.byteLength - offset >= CHUNK_SIZE) {
         yield head.subarray(offset, offset + CHUNK_SIZE)
         offset += CHUNK_SIZE
@@ -273,8 +266,6 @@ async function* fixedSizeChunker(
   }
 }
 
-// --- content normalisation ---
-
 function isIterable(thing: unknown): thing is Iterable<Uint8Array> {
   return Symbol.iterator in (thing as object)
 }
@@ -335,8 +326,6 @@ async function* validateChunks(
   }
 }
 
-// --- leaf blocks ---
-
 /**
  * Write each chunk as a raw block. Under `rawLeaves` the leaf carries no
  * UnixFS wrapper, so leaves are always CIDv1 + raw codec regardless of the
@@ -394,8 +383,6 @@ async function* buildFileBatch(
     yield previous
   }
 }
-
-// --- file DAG assembly ---
 
 type Reducer = (
   leaves: InProgressImportResult[],
@@ -487,10 +474,6 @@ const reduce = (file: File, blockstore: WritableStorage): Reducer => {
   }
 }
 
-/**
- * Balanced layout: fold leaves into parents `MAX_CHILDREN_PER_NODE` at a time,
- * then fold the parents, until a single root remains.
- */
 async function balancedLayout(
   source:
     | AsyncIterable<InProgressImportResult>
@@ -516,8 +499,6 @@ const buildFile = async (
 ): Promise<InProgressImportResult> =>
   balancedLayout(buildFileBatch(file, blockstore), reduce(file, blockstore))
 
-// --- directory nodes ---
-
 const buildDir = async (
   dir: { path?: string; mtime?: Mtime; mode?: number; originalPath?: string },
   blockstore: WritableStorage,
@@ -539,8 +520,6 @@ const buildDir = async (
     block,
   }
 }
-
-// --- candidate stream -> DAG stream ---
 
 function isFileCandidate(entry: ImportCandidate): entry is FileCandidate {
   return (entry as FileCandidate).content != null
@@ -587,8 +566,6 @@ async function* dagBuilder(
     }
   }
 }
-
-// --- directory tree ---
 
 interface DirProps {
   root: boolean
@@ -642,7 +619,6 @@ abstract class Dir {
   abstract childCount(): number
 }
 
-/** UTF-8 byte length of `str` without allocating an encoded copy. */
 function utf8ByteLength(str: string): number {
   let len = 0
 
@@ -778,8 +754,6 @@ class DirFlat extends Dir {
   }
 }
 
-// --- HAMT-sharded directories ---
-
 /**
  * go-ipfs truncates murmur3-128 to its first 64 bits and stores them
  * little-endian; both quirks are load-bearing for CID parity.
@@ -855,7 +829,6 @@ function isDir(obj: unknown): obj is Dir {
   return typeof (obj as Dir)?.flush === 'function'
 }
 
-/** Build the UnixFS node describing one HAMT bucket. */
 function shardNode(
   bucket: Bucket<InProgressImportResult | Dir>,
   shardRoot: DirSharded | null,
