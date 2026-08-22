@@ -13,13 +13,10 @@ export const packTAR = async (
   const entries: TarFileItem[] = []
 
   for (const { path, content } of files) {
-    const chunks: Uint8Array[] = []
-    let totalLength = 0
+    const chunks = await Array.fromAsync(content)
 
-    for await (const chunk of content) {
-      chunks.push(chunk)
-      totalLength += chunk.length
-    }
+    let totalLength = 0
+    for (const c of chunks) totalLength += c.length
 
     const fileData = new Uint8Array(totalLength)
     let offset = 0
