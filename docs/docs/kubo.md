@@ -91,7 +91,7 @@ jobs:
 
       - uses: denoland/setup-deno@v2
         with:
-          deno-version: v2.2.2
+          deno-version: v2.2.11
       - name: Install dependencies
         run: cd www && deno install --allow-scripts
       - uses: actions/cache@v4
@@ -208,6 +208,11 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
 
       - name: Install dependencies
         run: pnpm install
