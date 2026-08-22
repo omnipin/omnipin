@@ -91,7 +91,7 @@ jobs:
 
       - uses: denoland/setup-deno@v2
         with:
-          deno-version: v2.2.2
+          deno-version: v2.2.11
       - name: Install dependencies
         run: cd www && deno install --allow-scripts
       - uses: actions/cache@v4
