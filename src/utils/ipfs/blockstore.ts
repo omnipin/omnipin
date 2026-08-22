@@ -1,11 +1,12 @@
-import type { AbortOptions } from 'abort-error'
 import type { Blockstore, InputPair, Pair } from 'interface-blockstore'
 import { NotFoundError } from 'interface-store'
 import { base32 } from 'multiformats/bases/base32'
 import type { CID } from 'multiformats/cid'
 
-// interface-store v8 dropped these helpers and moved `AbortOptions` to
-// `abort-error`. They only ever meant "sync or async", so keep them local.
+// interface-store v8 dropped these helpers and moved `AbortOptions` out to
+// the `abort-error` package. They are all trivial -- `AbortSignal` is a
+// global, and the rest only ever meant "sync or async" -- so keep them local.
+type AbortOptions = { signal?: AbortSignal }
 type Await<T> = T | Promise<T>
 type AwaitIterable<T> = Iterable<T> | AsyncIterable<T>
 type AwaitGenerator<T> = Generator<T> | AsyncGenerator<T>
