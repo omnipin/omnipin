@@ -44,10 +44,8 @@ export const packCAR = async (
 
   const { writer, out } = CarWriter.create([rootCID])
 
-  // `out` must be drained while blocks are being fed in: `CarWriter` hands
-  // chunks over one at a time and `writer.put` will not resolve until the
-  // previous chunk has been taken. Start collecting now, await it after the
-  // writer is closed.
+  // Must be drained while blocks are fed in: `writer.put` will not resolve
+  // until the previous chunk has been taken off `out`.
   const collecting = Array.fromAsync(out)
 
   for await (const { cid, bytes } of blockstore.getAll()) {
@@ -64,9 +62,8 @@ export const packCAR = async (
   await writer.close()
   const carChunks = await collecting
 
-  // Release the blocks before joining the CAR chunks so peak memory stays at
-  // roughly one copy of the blocks plus one copy of the CAR, as it was when
-  // this read the finished file back off disk.
+  // Released before joining the chunks so peak memory stays at roughly one
+  // copy of the blocks plus one of the CAR.
   blockstore.clear()
 
   const bytes = concatBytes(carChunks)

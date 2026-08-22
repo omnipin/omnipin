@@ -5,8 +5,7 @@ import { base32 } from 'multiformats/bases/base32'
 import type { CID } from 'multiformats/cid'
 
 // interface-store v8 dropped these helpers and moved `AbortOptions` to
-// `abort-error`. They only ever described "sync or async", so keep them local
-// rather than depending on a package that no longer exports them.
+// `abort-error`. They only ever meant "sync or async", so keep them local.
 type Await<T> = T | Promise<T>
 type AwaitIterable<T> = Iterable<T> | AsyncIterable<T>
 type AwaitGenerator<T> = Generator<T> | AsyncGenerator<T>
@@ -66,9 +65,8 @@ export class MemoryBlockstore implements Blockstore {
       return this._put(key, [val], options)
     }
 
-    // Only an async source forces this to return a promise. Spreading a sync
-    // iterable stays on the synchronous path, which `Await<CID>` allows and
-    // which `Array.fromAsync` could not do -- it always returns a promise.
+    // Only an async source forces a promise here. `Array.fromAsync` always
+    // returns one, so sync iterables take the spread to stay synchronous.
     if (Symbol.asyncIterator in val) {
       return Array.fromAsync(val).then((bytes) =>
         this._put(key, bytes, options),
