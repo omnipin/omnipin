@@ -2,6 +2,7 @@
   "compilerOptions": {
     "module": "NodeNext",
     "target": "es2023",
+    "lib": ["ES2023", "ESNext.Array", "DOM"],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
