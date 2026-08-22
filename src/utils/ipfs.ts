@@ -2,11 +2,11 @@ import { createWriteStream } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { CarWriter } from '@ipld/car/writer'
-import { type FileCandidate, importer } from 'ipfs-unixfs-importer'
 import { base32 } from 'multiformats/bases/base32'
 import type { CID } from 'multiformats/cid'
 import { InvalidCIDError } from '../errors.js'
 import { MemoryBlockstore } from './ipfs/blockstore.js'
+import { type FileCandidate, importer } from './ipfs/unixfs.js'
 
 const tmp = tmpdir()
 
@@ -35,9 +35,7 @@ export const packCAR = async (
   const blockstore = new MemoryBlockstore()
   let rootCID: CID | null = null
 
-  for await (const entry of importer(files, blockstore, {
-    wrapWithDirectory: true,
-  })) {
+  for await (const entry of importer(files, blockstore)) {
     rootCID = entry.cid
   }
 
