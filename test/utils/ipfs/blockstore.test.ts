@@ -1,7 +1,6 @@
 import { describe, it } from 'bun:test'
 import * as assert from 'node:assert'
 import { NotFoundError } from 'interface-store'
-import all from 'it-all'
 import { CID } from 'multiformats/cid'
 import * as raw from 'multiformats/codecs/raw'
 import { sha256 } from 'multiformats/hashes/sha2'
@@ -120,7 +119,7 @@ describe('MemoryBlockstore', () => {
         yield { cid: cid2, bytes: new TextEncoder().encode('b') }
       })()
 
-      const results = await all(bs.putMany(source))
+      const results = await Array.fromAsync(bs.putMany(source))
       assert.deepStrictEqual(results, [cid1, cid2])
       assert.strictEqual(await bs.has(cid1), true)
       assert.strictEqual(await bs.has(cid2), true)
@@ -135,7 +134,7 @@ describe('MemoryBlockstore', () => {
       await bs.put(cid1, new TextEncoder().encode('x'))
       await bs.put(cid2, new TextEncoder().encode('y'))
 
-      const pairs = await all(
+      const pairs = await Array.fromAsync(
         bs.getMany(
           (async function* () {
             yield cid1
@@ -158,7 +157,7 @@ describe('MemoryBlockstore', () => {
       await bs.put(cid1, new TextEncoder().encode('del1'))
       await bs.put(cid2, new TextEncoder().encode('del2'))
 
-      const results = await all(
+      const results = await Array.fromAsync(
         bs.deleteMany(
           (async function* () {
             yield cid1

@@ -46,23 +46,15 @@ export const packCAR = async (
 
   // `out` must be drained while blocks are being fed in: `CarWriter` hands
   // chunks over one at a time and `writer.put` will not resolve until the
-  // previous chunk has been taken.
-  const carChunks: Uint8Array[] = []
-  const collecting = (async () => {
-    for await (const chunk of out) {
-      carChunks.push(chunk)
-    }
-  })()
+  // previous chunk has been taken. Start collecting now, await it after the
+  // writer is closed.
+  const collecting = Array.fromAsync(out)
 
   for await (const { cid, bytes } of blockstore.getAll()) {
     try {
-      const chunks: Uint8Array[] = []
-      for await (const chunk of bytes) {
-        chunks.push(chunk)
-      }
       await writer.put({
         cid,
-        bytes: concatBytes(chunks),
+        bytes: concatBytes(await Array.fromAsync(bytes)),
       })
     } catch (error) {
       console.warn(`Failed to add block ${cid.toString()} to CAR:`, error)
@@ -70,7 +62,7 @@ export const packCAR = async (
   }
 
   await writer.close()
-  await collecting
+  const carChunks = await collecting
 
   // Release the blocks before joining the CAR chunks so peak memory stays at
   // roughly one copy of the blocks plus one copy of the CAR, as it was when

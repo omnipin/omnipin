@@ -1,18 +1,15 @@
+import type { AbortOptions } from 'abort-error'
 import type { Blockstore, InputPair, Pair } from 'interface-blockstore'
-import type {
-  AbortOptions,
-  Await,
-  AwaitGenerator,
-  AwaitIterable,
-} from 'interface-store'
 import { NotFoundError } from 'interface-store'
-import all from 'it-all'
 import { base32 } from 'multiformats/bases/base32'
 import type { CID } from 'multiformats/cid'
 
-function isPromise<T>(p?: any): p is Promise<T> {
-  return typeof p?.then === 'function'
-}
+// interface-store v8 dropped these helpers and moved `AbortOptions` to
+// `abort-error`. They only ever described "sync or async", so keep them local
+// rather than depending on a package that no longer exports them.
+type Await<T> = T | Promise<T>
+type AwaitIterable<T> = Iterable<T> | AsyncIterable<T>
+type AwaitGenerator<T> = Generator<T> | AsyncGenerator<T>
 
 type Entry = {
   cid: CID
@@ -65,23 +62,20 @@ export class MemoryBlockstore implements Blockstore {
   ): Await<CID> {
     options?.signal?.throwIfAborted()
 
-    let buf: Uint8Array[]
-
     if (val instanceof Uint8Array) {
-      buf = [val]
-    } else {
-      const result = all(val)
-
-      if (isPromise<Uint8Array[]>(result)) {
-        return result.then((val) => {
-          return this._put(key, val, options)
-        })
-      } else {
-        buf = result
-      }
+      return this._put(key, [val], options)
     }
 
-    return this._put(key, buf, options)
+    // Only an async source forces this to return a promise. Spreading a sync
+    // iterable stays on the synchronous path, which `Await<CID>` allows and
+    // which `Array.fromAsync` could not do -- it always returns a promise.
+    if (Symbol.asyncIterator in val) {
+      return Array.fromAsync(val).then((bytes) =>
+        this._put(key, bytes, options),
+      )
+    }
+
+    return this._put(key, [...val], options)
   }
 
   private _put(
