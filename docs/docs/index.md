@@ -2,7 +2,7 @@
 
 ## Installation
 
-Omnipin supports one of these JavaScript runtimes: [Node.js](https://nodejs.org) (20+), [Deno](https://deno.com) (2.2.11+) and [Bun](https://bun.sh).
+Omnipin supports one of these JavaScript runtimes: [Node.js](https://nodejs.org) (22+), [Deno](https://deno.com) (2.2.11+) and [Bun](https://bun.sh).
 
 :::code-group
 
