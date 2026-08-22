@@ -9,15 +9,15 @@
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.7",
 		"@ipld/car": "^5.4.2",
-		"@jsr/omnipin__foc": "^0.0.19",
-		"@omnipin/foc": "npm:@jsr/omnipin__foc@0.0.18",
+		"@jsr/omnipin__foc": "^0.0.20",
+		"@omnipin/foc": "npm:@jsr/omnipin__foc@0.0.20",
 		"@rslib/core": "^0.23.2",
 		"@size-limit/file": "^12.0.1",
 		"@stauro/filebase-upload": "npm:@jsr/stauro__filebase-upload",
 		"@types/bun": "^1.3.10",
 		"@types/varint": "^6.0.3",
 		"ipfs-unixfs-importer": "^17.0.1",
-		"multiformats": "^13.4.2",
+		"multiformats": "^14.0.0",
 		"nanotar": "^0.3.0",
 		"ox": "^0.14.8",
 		"prool": "^0.2.4",
@@ -46,9 +46,6 @@
 		"cli"
 	],
 	"license": "MIT",
-	"overrides": {
-		"multiformats": "13.4.2"
-	},
 	"release": {
 		"branches": [
 			"main"
