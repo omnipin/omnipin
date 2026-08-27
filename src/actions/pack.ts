@@ -57,7 +57,7 @@ export const packAction = async ({
       logger.info(`TAR: ${isTTY ? styleText('white', output) : output}`)
     }
 
-    return { name, bytes, files, size }
+    return { name, bytes, files, size, path: output }
   }
 
   const { rootCID, bytes } = await packCAR(files, name, dist)

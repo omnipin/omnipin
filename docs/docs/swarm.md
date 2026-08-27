@@ -1,6 +1,67 @@
 # Swarm
 
-Omnipin supports uploading on the [Swarm](https://ethswarm.org) decentralized network via [Swarmy](https://swarmy.cloud) and a Bee node.
+Omnipin supports uploading on the [Swarm](https://ethswarm.org) decentralized network via the [Hoverfly](https://github.com/omnipin/hoverfly) light client, [Swarmy](https://swarmy.cloud), or a Bee node.
+
+## Hoverfly
+
+- API token env variables: `OMNIPIN_HOVERFLY_TOKEN`, `OMNIPIN_HOVERFLY_KEY`
+- Supported methods: Upload
+
+[Hoverfly](https://github.com/omnipin/hoverfly) is a Swarm light client that requires no Bee node and no remote server — it runs entirely on your machine and works in CI.
+
+### Setup
+
+Install Hoverfly:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/omnipin/hoverfly/main/install.sh | sh
+```
+
+Generate a signer key, fund it with xDAI + BZZ on Gnosis (see the [Hoverfly README](https://github.com/omnipin/hoverfly#setup)), then buy a postage batch and generate an overlay nonce:
+
+```sh
+hoverfly batch create --key 0xYOUR_KEY --size 200MB --duration 30d
+hoverfly vanity-overlay --key 0xYOUR_KEY --peerlist peers.json --output overlay-nonce
+```
+
+### Running the daemon
+
+Start the daemon and leave it running:
+
+```sh
+hoverfly daemon \
+  --socket /tmp/hoverfly.sock \
+  --pool-size 256 \
+  --identity 0xYOUR_KEY \
+  --nonce-file overlay-nonce \
+  --peerlist peers.json
+```
+
+Always fetch a fresh peerlist from the GitHub CDN — the release-bundled `peers.seed.json` goes stale:
+
+```sh
+curl -fsSL -o peers.json https://raw.githubusercontent.com/omnipin/hoverfly/main/peers.seed.json
+```
+
+On a cold peerlist, add `--discover-rounds 3`.
+
+### Running the deployment
+
+Set the postage batch ID and signer key in the environment:
+
+```sh
+OMNIPIN_HOVERFLY_TOKEN=0xf078...1afc # postage batch ID
+OMNIPIN_HOVERFLY_KEY=da25...0a44
+# OMNIPIN_HOVERFLY_SOCKET=/tmp/hoverfly.sock   # optional, this is the default
+```
+
+Then run the deployment command:
+
+```sh
+omnipin deploy
+```
+
+Omnipin reads the batch depth on-chain automatically; override it with `OMNIPIN_HOVERFLY_DEPTH` to skip the lookup. Other optional knobs: `OMNIPIN_HOVERFLY_RPC_URL`, `OMNIPIN_HOVERFLY_CONCURRENCY` (session fan-out, defaults to 256), and `OMNIPIN_HOVERFLY_RETRIES`.
 
 ## Swarmy
 
