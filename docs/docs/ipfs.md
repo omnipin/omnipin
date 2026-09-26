@@ -74,6 +74,15 @@ Omnipin supports a wide range of different IPFS providers.
       <td>✅</td>
     </tr>
     <tr>
+      <td><a href="#pinion-build">Pinion.build</a></td>
+      <td><a href="https://pinion.build/docs">Docs</a></td>
+      <td>❌</td>
+      <td>✅</td>
+      <td>✅</td>
+      <td>✅</td>
+      <td>✅</td>
+    </tr>
+    <tr>
       <td><a href="#pinata">Pinata</a></td>
       <td><a href="https://docs.pinata.cloud/files/uploading-files">Docs</a></td>
       <td>❌</td>
@@ -322,6 +331,27 @@ it as:
 ```sh
 OMNIPIN_FULA_TOKEN=<your_api_key>
 ```
+
+## Pinion.build
+
+- API env variables: `OMNIPIN_PINION_BUILD_TOKEN`
+
+[Pinion.build](https://pinion.build) is an IPFS pinning service built by
+[Pinion Engineering](https://github.com/pinionengineering), the team behind
+Omnipin. It uploads CAR files via its own upload API (preserving the local
+root CID exactly) and pins existing CIDs through a spec-compliant IPFS
+Pinning Service API.
+
+Sign up at [pinion.build](https://pinion.build), then create a personal
+access token from the [tokens page](https://pinion.build/profile/tokens).
+Save it as:
+
+```sh
+OMNIPIN_PINION_BUILD_TOKEN=<your_token>
+```
+
+See the [API docs](https://pinion.build/docs) for details on scopes and
+rate limits.
 
 ## Pinata
 

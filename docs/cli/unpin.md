@@ -1,6 +1,6 @@
 # `omnipin unpin`
 
-Unpin an IPFS CID from providers. Only providers that support unpinning are used — currently Pinata, Lighthouse, IPFS.NINJA, Blockfrost, 4EVERLAND, Fula and any Spec-compliant pinning service.
+Unpin an IPFS CID from providers. Only providers that support unpinning are used — currently Pinata, Pinion.build, Lighthouse, IPFS.NINJA, Blockfrost, 4EVERLAND, Fula and any Spec-compliant pinning service.
 
 ```sh
 omnipin unpin <cid>

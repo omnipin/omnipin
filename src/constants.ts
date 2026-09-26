@@ -33,6 +33,11 @@ import {
   unpinOnPinata,
   uploadOnPinata,
 } from './providers/ipfs/pinata.js'
+import {
+  statusOnPinionBuild,
+  unpinOnPinionBuild,
+  uploadOnPinionBuild,
+} from './providers/ipfs/pinion-build.js'
 import { pinOnQuicknode } from './providers/ipfs/quicknode.js'
 import { uploadToSimplePage } from './providers/ipfs/simplepage.js'
 import { specPin, specStatus, specUnpin } from './providers/ipfs/spec.js'
@@ -79,6 +84,14 @@ export const PROVIDERS: Record<
     upload: uploadOnPinata,
     status: statusOnPinata,
     unpin: unpinOnPinata,
+    supported: 'both',
+    protocol: 'ipfs',
+  },
+  PINION_BUILD_TOKEN: {
+    name: 'Pinion.build',
+    upload: uploadOnPinionBuild,
+    status: statusOnPinionBuild,
+    unpin: unpinOnPinionBuild,
     supported: 'both',
     protocol: 'ipfs',
   },
