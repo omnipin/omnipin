@@ -130,6 +130,18 @@ Render a progress bar during content upload.
 omnipin deploy --progress-bar
 ```
 
+### `skip-pinned`
+
+Default: `false`
+
+Before uploading, check each provider's pin status for the computed CID and skip providers that already pin it. Only a definite `pinned` status counts; providers that don't support status checks are always deployed to. A failed status check is treated as "not pinned" — the provider is deployed to normally and the deploy never fails because of it, even with `--strict`. Has no effect on Swarm deploys, since Swarm providers replicate content themselves.
+
+For Filecoin, the piece CID is derived from the packed CAR and counted as pinned only when the piece sits in one of your active data sets on the storage provider — a piece stored under someone else's deal is deployed normally.
+
+```sh
+omnipin deploy --skip-pinned
+```
+
 ### `filecoin-chain`
 
 - Default: `mainnet`

@@ -13,7 +13,10 @@ import {
   statusOnFilebase,
   uploadOnFilebase,
 } from './providers/ipfs/filebase.js'
-import { uploadToFilecoin } from './providers/ipfs/filecoin.js'
+import {
+  statusOnFilecoin,
+  uploadToFilecoin,
+} from './providers/ipfs/filecoin.js'
 import {
   statusOnFula,
   unpinOnFula,
@@ -164,6 +167,7 @@ export const PROVIDERS: Record<
   FILECOIN_TOKEN: {
     name: 'Filecoin',
     upload: uploadToFilecoin,
+    status: statusOnFilecoin,
     supported: 'both',
     protocol: 'ipfs',
   },

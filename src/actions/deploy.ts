@@ -17,6 +17,7 @@ export type DeployActionArgs = Partial<{
   providers: string
   dnslink: string
   'progress-bar': boolean
+  'skip-pinned': boolean
   'filecoin-chain': 'mainnet' | 'calibration'
   'filecoin-force-new-dataset': boolean
 }> &
@@ -40,6 +41,7 @@ export const deployAction = async ({
     providers: providersList,
     dnslink,
     'progress-bar': progressBar,
+    'skip-pinned': skipPinned,
     'filecoin-chain': filecoinChain,
     'filecoin-force-new-dataset': filecoinForceNewDataset,
     ...opts
@@ -97,6 +99,54 @@ export const deployAction = async ({
 
   if (swarmProviders.length === 0) cid = ipfsCid!
 
+  // Providers that already pin this CID and can be skipped. Only a definite
+  // 'pinned' counts — 'queued' can still fail — and a failed status check
+  // means "unknown", so that provider is deployed to normally instead of
+  // skipped. Status failures are deliberately kept out of `errors` and away
+  // from --strict: a flaky status endpoint must never fail an otherwise fine
+  // deploy. Swarm is exempt because Bee and Swarmy replicate content
+  // themselves; only IPFS pins need manual replication.
+  const skipped = new Set<(typeof ipfsProviders)[number]>()
+
+  if (skipPinned) {
+    if (swarmProviders.length !== 0) {
+      logger.warn('skip-pinned has no effect on Swarm deploys and is ignored')
+    } else {
+      const checkable = ipfsProviders.filter((p) => p.status)
+      const results = await Promise.allSettled(
+        checkable.map((provider) =>
+          provider.status!({
+            cid,
+            auth: {
+              token: apiTokens.get(findEnvVarProviderName(provider.name)),
+            },
+            verbose,
+            baseURL: apiTokens.get('SPEC_URL'),
+
+            // Filecoin: PDP lookups are keyed by the piece CID, which is
+            // derived from the packed CAR bytes.
+            bytes,
+            pieceCid: apiTokens.get('FILECOIN_PIECE_CID'),
+            providerURL: apiTokens.get('FILECOIN_SP_URL'),
+            providerAddress: apiTokens.get('FILECOIN_SP_ADDRESS'),
+            filecoinChain,
+          }),
+        ),
+      )
+      for (const [i, result] of results.entries()) {
+        const provider = checkable[i]
+        if (result.status === 'fulfilled' && result.value.pin === 'pinned') {
+          skipped.add(provider)
+          logger.info(`Skipping ${provider.name} (already pinned)`)
+        } else if (result.status === 'rejected' && verbose)
+          logger.warn(
+            `Could not check pin status on ${provider.name}, deploying anyway:`,
+            result.reason,
+          )
+      }
+    }
+  }
+
   let total = 0
 
   const errors: Error[] = []
@@ -134,7 +184,27 @@ export const deployAction = async ({
       bar?.update(total)
     }
   } else {
+    // When at least one provider already pins the CID, the content is
+    // retrievable over IPFS, so nobody *has* to receive the raw bytes — hand
+    // them to the first non-skipped provider that can take an upload (if
+    // any) and let the rest pin by CID. When nothing is skipped this must
+    // stay ipfsProviders[0]: with an all-pin-only provider list, index 0
+    // still gets first: true today (e.g. 4EVERLAND uploads bytes on first
+    // despite supported: 'pin').
+    const uploader = skipped.size
+      ? ipfsProviders.find(
+          (p) =>
+            !skipped.has(p) &&
+            (p.supported === 'both' || p.supported === 'upload'),
+        )
+      : ipfsProviders[0]
+
     for (const provider of ipfsProviders) {
+      if (skipped.has(provider)) {
+        bar?.update(total++, `⏭ ${provider.name} (already pinned)`)
+        continue
+      }
+
       const envVar = findEnvVarProviderName(provider.name)
       const token = apiTokens.get(envVar)!
 
@@ -159,7 +229,7 @@ export const deployAction = async ({
           token,
           bucketName,
           cid,
-          first: ipfsProviders.indexOf(provider) === 0,
+          first: provider === uploader,
           verbose,
           baseURL: apiTokens.get('SPEC_URL'),
           size,
@@ -179,7 +249,10 @@ export const deployAction = async ({
     bar?.update(total)
   }
 
-  if (errors.length !== 0 && errors.length === activeProviders.length) {
+  // Compare against providers actually attempted: skipped providers can
+  // neither fail nor rescue a deploy where everything attempted failed.
+  const attempted = activeProviders.length - skipped.size
+  if (errors.length !== 0 && errors.length === attempted) {
     logger.error('Deploy failed')
     errors.forEach((e) => {
       logger.error(e)
@@ -190,7 +263,9 @@ export const deployAction = async ({
     errors.forEach((e) => {
       logger.error(e)
     })
-  } else logger.success('Deployed across all providers')
+  } else if (skipped.size === activeProviders.length)
+    logger.success('All providers already pin this CID')
+  else logger.success('Deployed across all providers')
 
   if (swarmCid) {
     logger.success('Deployed on Swarm')

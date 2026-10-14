@@ -52,6 +52,12 @@ export const statusAction = async ({
           },
           verbose,
           baseURL: env.get('SPEC_URL'),
+
+          // Filecoin: the piece CID cannot be derived from the root CID
+          // alone, so without FILECOIN_PIECE_CID the status is 'unknown'.
+          pieceCid: env.get('FILECOIN_PIECE_CID'),
+          providerURL: env.get('FILECOIN_SP_URL'),
+          providerAddress: env.get('FILECOIN_SP_ADDRESS'),
         })
         pinStatus(provider.name, pin)
       }
