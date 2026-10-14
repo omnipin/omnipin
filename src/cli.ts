@@ -105,6 +105,11 @@ cli.command(
         type: 'boolean',
       },
       {
+        name: 'skip-pinned',
+        description: 'Skip providers that already pin the CID',
+        type: 'boolean',
+      },
+      {
         name: 'filecoin-chain',
         description: 'Filecoin network',
         type: 'string',

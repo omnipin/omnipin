@@ -20,6 +20,7 @@ import {
 } from '@omnipin/foc/sp-registry'
 import {
   calculatePieceCID,
+  type FilecoinChain,
   filecoinCalibration,
   filecoinMainnet,
   filProvider,
@@ -32,7 +33,7 @@ import { getPublicKey } from 'ox/Secp256k1'
 import * as Value from 'ox/Value'
 import { randomInt, setTimeout } from '../../deps.js'
 import { DeployError, MissingKeyError } from '../../errors.js'
-import type { UploadFunction } from '../../types.js'
+import type { PinStatus, StatusFunction, UploadFunction } from '../../types.js'
 import { logger } from '../../utils/logger.js'
 import {
   sendTransaction,
@@ -331,4 +332,110 @@ export const uploadToFilecoin: UploadFunction<{
   logger.success('Piece found')
 
   return { cid }
+}
+
+/**
+ * Core pin-status check, driven by a client address rather than a private
+ * key so it can be exercised against any on-chain client. Exported for
+ * tests.
+ */
+export const filecoinPieceStatus = async ({
+  pieceCid,
+  address,
+  providerAddress,
+  providerURL,
+  chain,
+  verbose = false,
+}: {
+  pieceCid: string
+  address: Address
+  providerAddress?: Address
+  providerURL?: string
+  chain: FilecoinChain
+  verbose?: boolean
+}): Promise<{ pin: PinStatus }> => {
+  if (!providerURL) {
+    // Resolve the same SP that uploadToFilecoin would pick, so "pinned"
+    // means "pinned where a deploy would go".
+    const providerId = await pickProvider({
+      chain,
+      ...(providerAddress ? { providerAddress } : { address }),
+    })
+    const metadata = await getProviderMetadata({ chain, providerId })
+    providerURL = metadata.serviceURL
+  }
+
+  const res = await fetch(
+    new URL(`/pdp/piece?pieceCid=${pieceCid}`, providerURL),
+  )
+  if (verbose) logger.request('GET', res.url, res.status)
+
+  if (res.status === 404) return { pin: 'not pinned' }
+  if (!res.ok)
+    throw new Error(`Filecoin SP piece lookup failed with status ${res.status}`)
+
+  // The piece exists on the SP, but possibly under someone else's deal —
+  // report pinned only when it sits in one of this client's active data
+  // sets. Data sets living on other SPs 404 (or 401) here, which the loop
+  // skips, and that also keeps the check safe against SPs that enforce JWT
+  // auth: an unreadable data set can only downgrade the answer to
+  // 'not pinned', never fake a 'pinned'.
+  const datasets = await getClientDataSets({ chain, address })
+
+  for (const dataset of datasets.filter((ds) => ds.pdpEndEpoch === 0n)) {
+    const dsRes = await fetch(
+      new URL(`/pdp/data-sets/${dataset.dataSetId}`, providerURL),
+    )
+    if (verbose) logger.request('GET', dsRes.url, dsRes.status)
+    if (!dsRes.ok) continue
+
+    const { pieces } = (await dsRes.json()) as {
+      pieces?: { pieceCid: string; subPieceCid: string }[]
+    }
+    if (
+      pieces?.some((p) => p.pieceCid === pieceCid || p.subPieceCid === pieceCid)
+    )
+      return { pin: 'pinned' }
+  }
+
+  return { pin: 'not pinned' }
+}
+
+export const statusOnFilecoin: StatusFunction<{
+  bytes?: Uint8Array<ArrayBuffer>
+  pieceCid?: string
+  providerAddress?: Address
+  providerURL?: string
+  filecoinChain?: 'mainnet' | 'calibration'
+}> = async ({
+  auth,
+  verbose,
+  bytes,
+  pieceCid,
+  providerAddress,
+  providerURL,
+  filecoinChain = 'mainnet',
+}) => {
+  // The PDP API is keyed by piece CID (CommP), which cannot be derived from
+  // the IPFS root CID alone — it takes the packed CAR bytes or an explicit
+  // FILECOIN_PIECE_CID. Without either the answer is unknowable.
+  const piece =
+    pieceCid ?? (bytes ? calculatePieceCID(bytes).toString() : undefined)
+  if (!piece) return { pin: 'unknown' }
+
+  const privateKey = auth.token as Hex | undefined
+  if (!privateKey) throw new MissingKeyError('FILECOIN_TOKEN')
+
+  const address = fromPublicKey(getPublicKey({ privateKey }))
+  const chain =
+    filecoinChain === 'mainnet' ? filecoinMainnet : filecoinCalibration
+
+  return filecoinPieceStatus({
+    pieceCid: piece,
+    address,
+    providerAddress,
+    providerURL,
+    chain,
+    verbose,
+  })
 }
