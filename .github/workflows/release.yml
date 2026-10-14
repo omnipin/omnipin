@@ -20,15 +20,10 @@ jobs:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.0
-
-      - name: Install deps
-        run: bun install
+      - uses: pnpm/setup@v3
 
       - name: Build
-        run: bun run build
+        run: pnpm build
 
       # Ensure npm 11.5.1 or later is installed
       - name: Update npm

@@ -1,5 +1,5 @@
 {
-  "npm.packageManager": "bun",
+  "npm.packageManager": "pnpm",
   "editor.formatOnSave": true,
   "biome.enabled": true,
   "eslint.enable": false,

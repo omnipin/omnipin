@@ -1,27 +1,28 @@
-import { describe, expect, it } from 'bun:test'
+import * as assert from 'node:assert'
+import { describe, it } from 'node:test'
 
 import { unpinOnBlockfrost } from '../../src/providers/ipfs/blockfrost.js'
 
-const hasToken = Boolean(Bun.env.OMNIPIN_BLOCKFROST_TOKEN)
+const hasToken = Boolean(process.env.OMNIPIN_BLOCKFROST_TOKEN)
 const TEST_CID = 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi'
 
 describe('Blockfrost', () => {
   describe('unpin', () => {
     it('should throw DeployError with invalid token', async () => {
-      await expect(
+      await assert.rejects(
         unpinOnBlockfrost({ token: 'bad-token', cid: TEST_CID }),
-      ).rejects.toThrow('Failed to deploy on Blockfrost')
+        /Failed to deploy on Blockfrost/,
+      )
     })
 
-    it.skipIf(!hasToken)(
-      'should unpin a CID successfully',
-      async () => {
-        const token = Bun.env.OMNIPIN_BLOCKFROST_TOKEN!
-        const result = await unpinOnBlockfrost({ token, cid: TEST_CID })
-        expect(result.success).toBe(true)
-        expect(result.cid).toBe(TEST_CID)
-      },
-      { timeout: 30_000 },
-    )
+    it('should unpin a CID successfully', {
+      skip: !hasToken,
+      timeout: 30_000,
+    }, async () => {
+      const token = process.env.OMNIPIN_BLOCKFROST_TOKEN!
+      const result = await unpinOnBlockfrost({ token, cid: TEST_CID })
+      assert.strictEqual(result.success, true)
+      assert.strictEqual(result.cid, TEST_CID)
+    })
   })
 })

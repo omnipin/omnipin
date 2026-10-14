@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import * as assert from 'node:assert'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 import { bridgeAction } from '../../src/actions/bridge.js'
 import {
   MissingCLIArgsError,
@@ -34,168 +35,178 @@ describe('bridge action', () => {
   })
 
   it('throws MissingCLIArgsError if amount is missing', async () => {
-    await expect(
+    await assert.rejects(
       bridgeAction({ amount: '', options: { provider: 'AIOZ' } }),
-    ).rejects.toBeInstanceOf(MissingCLIArgsError)
+      MissingCLIArgsError,
+    )
   })
 
   it('throws MissingCLIArgsError if provider is missing', async () => {
-    await expect(
+    await assert.rejects(
       bridgeAction({ amount: '1', options: {} }),
-    ).rejects.toBeInstanceOf(MissingCLIArgsError)
+      MissingCLIArgsError,
+    )
   })
 
   it('throws UnknownProviderError for unsupported providers', async () => {
-    await expect(
+    await assert.rejects(
       bridgeAction({
         amount: '1',
         options: { provider: 'Pinata', 'from-chain': 'eth' },
       }),
-    ).rejects.toBeInstanceOf(UnknownProviderError)
+      UnknownProviderError,
+    )
   })
 
   it('throws MissingKeyError when no signing key is set', async () => {
-    await expect(
+    await assert.rejects(
       bridgeAction({
         amount: '1',
         options: { provider: 'AIOZ', 'from-chain': 'eth' },
       }),
-    ).rejects.toBeInstanceOf(MissingKeyError)
+      MissingKeyError,
+    )
   })
 
-  it('throws MissingCLIArgsError for invalid --from-chain', async () => {
-    process.env.OMNIPIN_PK = DUMMY_PK
-    await expect(
-      bridgeAction({
-        amount: '1',
-        options: { provider: 'AIOZ', 'from-chain': 'polygon' },
-      }),
-    ).rejects.toBeInstanceOf(MissingCLIArgsError)
-  })
-
-  it('throws MissingCLIArgsError if --from-chain is missing for AIOZ', async () => {
-    process.env.OMNIPIN_PK = DUMMY_PK
-    await expect(
-      bridgeAction({
-        amount: '1',
-        options: { provider: 'AIOZ' },
-      }),
-    ).rejects.toBeInstanceOf(MissingCLIArgsError)
-  })
-
-  it('rejects non-positive amounts', async () => {
-    process.env.OMNIPIN_PK = DUMMY_PK
-    await expect(
-      bridgeAction({
-        amount: '0',
-        options: { provider: 'AIOZ', 'from-chain': 'eth' },
-      }),
-    ).rejects.toThrow(/must be positive/)
-  })
-
-  it('rejects malformed amounts', async () => {
-    process.env.OMNIPIN_PK = DUMMY_PK
-    await expect(
-      bridgeAction({
-        amount: 'not-a-number',
-        options: { provider: 'AIOZ', 'from-chain': 'eth' },
-      }),
-    ).rejects.toThrow(/Invalid amount/)
-  })
-
-  describe('Filecoin', () => {
-    it('throws MissingCLIArgsError if --from-chain is missing', async () => {
+  describe('with a signing key', () => {
+    beforeEach(() => {
       process.env.OMNIPIN_PK = DUMMY_PK
-      await expect(
-        bridgeAction({
-          amount: '1',
-          options: { provider: 'Filecoin', 'from-token': 'USDC' },
-        }),
-      ).rejects.toBeInstanceOf(MissingCLIArgsError)
     })
 
-    it('throws MissingCLIArgsError for an unsupported --from-chain', async () => {
-      process.env.OMNIPIN_PK = DUMMY_PK
-      await expect(
+    it('throws MissingCLIArgsError for invalid --from-chain', async () => {
+      await assert.rejects(
         bridgeAction({
           amount: '1',
-          options: {
-            provider: 'Filecoin',
-            'from-chain': 'fantom',
-            'from-token': 'USDC',
-          },
+          options: { provider: 'AIOZ', 'from-chain': 'polygon' },
         }),
-      ).rejects.toBeInstanceOf(MissingCLIArgsError)
+        MissingCLIArgsError,
+      )
     })
 
-    it('throws MissingCLIArgsError if --from-token is missing', async () => {
-      process.env.OMNIPIN_PK = DUMMY_PK
-      await expect(
+    it('throws MissingCLIArgsError if --from-chain is missing for AIOZ', async () => {
+      await assert.rejects(
         bridgeAction({
           amount: '1',
-          options: { provider: 'Filecoin', 'from-chain': 'arb' },
+          options: { provider: 'AIOZ' },
         }),
-      ).rejects.toBeInstanceOf(MissingCLIArgsError)
+        MissingCLIArgsError,
+      )
     })
 
-    it('rejects an out-of-range --fil-ratio', async () => {
-      process.env.OMNIPIN_PK = DUMMY_PK
-      await expect(
+    it('rejects non-positive amounts', async () => {
+      await assert.rejects(
         bridgeAction({
-          amount: '1',
-          options: {
-            provider: 'Filecoin',
-            'from-chain': 'arb',
-            'from-token': 'USDC',
-            'fil-ratio': '2',
-          },
+          amount: '0',
+          options: { provider: 'AIOZ', 'from-chain': 'eth' },
         }),
-      ).rejects.toThrow(/fil-ratio/)
+        /must be positive/,
+      )
     })
 
-    it('rejects a non-numeric --fil-ratio', async () => {
-      process.env.OMNIPIN_PK = DUMMY_PK
-      await expect(
+    it('rejects malformed amounts', async () => {
+      await assert.rejects(
         bridgeAction({
-          amount: '1',
-          options: {
-            provider: 'Filecoin',
-            'from-chain': 'arb',
-            'from-token': 'USDC',
-            'fil-ratio': 'half',
-          },
+          amount: 'not-a-number',
+          options: { provider: 'AIOZ', 'from-chain': 'eth' },
         }),
-      ).rejects.toThrow(/fil-ratio/)
+        /Invalid amount/,
+      )
     })
 
-    it('rejects a non-positive --slippage', async () => {
-      process.env.OMNIPIN_PK = DUMMY_PK
-      await expect(
-        bridgeAction({
-          amount: '1',
-          options: {
-            provider: 'Filecoin',
-            'from-chain': 'arb',
-            'from-token': 'USDC',
-            slippage: '0',
-          },
-        }),
-      ).rejects.toThrow(/slippage/)
-    })
+    describe('Filecoin', () => {
+      it('throws MissingCLIArgsError if --from-chain is missing', async () => {
+        await assert.rejects(
+          bridgeAction({
+            amount: '1',
+            options: { provider: 'Filecoin', 'from-token': 'USDC' },
+          }),
+          MissingCLIArgsError,
+        )
+      })
 
-    it('rejects a --slippage above the cap', async () => {
-      process.env.OMNIPIN_PK = DUMMY_PK
-      await expect(
-        bridgeAction({
-          amount: '1',
-          options: {
-            provider: 'Filecoin',
-            'from-chain': 'arb',
-            'from-token': 'USDC',
-            slippage: '75',
-          },
-        }),
-      ).rejects.toThrow(/slippage/)
+      it('throws MissingCLIArgsError for an unsupported --from-chain', async () => {
+        await assert.rejects(
+          bridgeAction({
+            amount: '1',
+            options: {
+              provider: 'Filecoin',
+              'from-chain': 'fantom',
+              'from-token': 'USDC',
+            },
+          }),
+          MissingCLIArgsError,
+        )
+      })
+
+      it('throws MissingCLIArgsError if --from-token is missing', async () => {
+        await assert.rejects(
+          bridgeAction({
+            amount: '1',
+            options: { provider: 'Filecoin', 'from-chain': 'arb' },
+          }),
+          MissingCLIArgsError,
+        )
+      })
+
+      it('rejects an out-of-range --fil-ratio', async () => {
+        await assert.rejects(
+          bridgeAction({
+            amount: '1',
+            options: {
+              provider: 'Filecoin',
+              'from-chain': 'arb',
+              'from-token': 'USDC',
+              'fil-ratio': '2',
+            },
+          }),
+          /fil-ratio/,
+        )
+      })
+
+      it('rejects a non-numeric --fil-ratio', async () => {
+        await assert.rejects(
+          bridgeAction({
+            amount: '1',
+            options: {
+              provider: 'Filecoin',
+              'from-chain': 'arb',
+              'from-token': 'USDC',
+              'fil-ratio': 'half',
+            },
+          }),
+          /fil-ratio/,
+        )
+      })
+
+      it('rejects a non-positive --slippage', async () => {
+        await assert.rejects(
+          bridgeAction({
+            amount: '1',
+            options: {
+              provider: 'Filecoin',
+              'from-chain': 'arb',
+              'from-token': 'USDC',
+              slippage: '0',
+            },
+          }),
+          /slippage/,
+        )
+      })
+
+      it('rejects a --slippage above the cap', async () => {
+        await assert.rejects(
+          bridgeAction({
+            amount: '1',
+            options: {
+              provider: 'Filecoin',
+              'from-chain': 'arb',
+              'from-token': 'USDC',
+              slippage: '75',
+            },
+          }),
+          /slippage/,
+        )
+      })
     })
   })
 })

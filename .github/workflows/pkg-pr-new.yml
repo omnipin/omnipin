@@ -11,14 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v6
+      - uses: pnpm/setup@v3
         with:
-          node-version: 22
+          runtime: node@22
 
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.0
-
-      - run: bun install --frozen-lockfile
-      - run: bun run build
-      - run: npx pkg-pr-new publish --bin --packageManager=bun
+      - run: pnpm build
+      - run: pnpm dlx pkg-pr-new publish --bin --packageManager=pnpm

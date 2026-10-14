@@ -7,14 +7,14 @@ Guidelines for agentic coding agents operating in this repository.
 ## 1. Build, Lint, and Test Commands
 
 ```bash
-bun install          # Install dependencies
-bun run build       # Build with rslib to dist/
-bun run types       # TypeScript type checking
-bun run check       # Biome linter/formatter
-bun run test:report # Run tests with coverage
-bun test            # Run all tests
-bun test path       # Run specific test file
-bun test --env-file=.env.local path  # With env vars
+pnpm install         # Install dependencies
+pnpm build           # Build with rslib to dist/
+pnpm types           # TypeScript type checking
+pnpm check           # Biome linter/formatter
+pnpm test:report     # Run tests with coverage
+pnpm test            # Run all tests
+node --experimental-test-module-mocks --import ./test/register.ts --test path  # Run specific test file
+node --env-file=.env.local --experimental-test-module-mocks --import ./test/register.ts --test path  # With env vars
 ```
 
 ---
@@ -113,27 +113,29 @@ export const PROVIDERS = {
 ## 4. Tests
 
 - Test files: `test/providers/<provider>.test.ts`
-- Use `bun:test` framework
+- Use the `node:test` runner with `node:assert`
 - Use CIDv1 for test CIDs (`bafybe...`)
-- Skip live API tests if no token: use `it.skipIf()`
+- Skip live API tests if no token: pass `{ skip: !hasToken }` to `it()`
 
 ```typescript
-import { describe, expect, it } from 'bun:test'
+import * as assert from 'node:assert'
+import { describe, it } from 'node:test'
 import { UploadNotSupportedError } from '../../src/errors.js'
 import { pinOnProvider } from '../../src/providers/ipfs/provider.js'
 
-const hasToken = Boolean(Bun.env.OMNIPIN_PROVIDER_TOKEN)
+const hasToken = Boolean(process.env.OMNIPIN_PROVIDER_TOKEN)
 
 describe('ProviderName', () => {
   it('should throw if first provider', async () => {
-    await expect(
-      pinOnProvider({ first: true, token: 'key', cid: '...', name: 'test', car: new Blob(), size: 0 })
-    ).rejects.toThrow(UploadNotSupportedError)
+    await assert.rejects(
+      pinOnProvider({ first: true, token: 'key', cid: '...', name: 'test', car: new Blob(), size: 0 }),
+      UploadNotSupportedError,
+    )
   })
 
-  it.skipIf(!hasToken)('should pin successfully', async () => {
+  it('should pin successfully', { skip: !hasToken, timeout: 30_000 }, async () => {
     // Live test
-  }, { timeout: 30_000 })
+  })
 })
 ```
 

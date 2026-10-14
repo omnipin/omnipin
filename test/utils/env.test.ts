@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it } from 'bun:test'
+import * as assert from 'node:assert'
+import { afterEach, describe, it } from 'node:test'
 import { MissingKeyError } from '../../src/errors.js'
 import {
   findEnvVarProviderName,
@@ -21,8 +22,8 @@ describe('env utils', () => {
         OMNIPIN_AIOZ_TOKEN: 'aioz-key',
       }
       const tokens = parseTokensFromEnv()
-      expect(tokens.get('PINATA_TOKEN')).toBe('pinata-key')
-      expect(tokens.get('AIOZ_TOKEN')).toBe('aioz-key')
+      assert.strictEqual(tokens.get('PINATA_TOKEN'), 'pinata-key')
+      assert.strictEqual(tokens.get('AIOZ_TOKEN'), 'aioz-key')
     })
 
     it('skips empty or falsy values', () => {
@@ -31,8 +32,8 @@ describe('env utils', () => {
         OMNIPIN_AIOZ_TOKEN: 'aioz-key',
       }
       const tokens = parseTokensFromEnv()
-      expect(tokens.has('PINATA_TOKEN')).toBeFalse()
-      expect(tokens.get('AIOZ_TOKEN')).toBe('aioz-key')
+      assert.strictEqual(tokens.has('PINATA_TOKEN'), false)
+      assert.strictEqual(tokens.get('AIOZ_TOKEN'), 'aioz-key')
     })
 
     it('skips non-OMNIPIN_ env vars', () => {
@@ -42,9 +43,9 @@ describe('env utils', () => {
         OMNIPIN_PINATA_TOKEN: 'pinata-key',
       }
       const tokens = parseTokensFromEnv()
-      expect(tokens.get('PINATA_TOKEN')).toBe('pinata-key')
-      expect(tokens.has('PATH')).toBeFalse()
-      expect(tokens.has('HOME')).toBeFalse()
+      assert.strictEqual(tokens.get('PINATA_TOKEN'), 'pinata-key')
+      assert.strictEqual(tokens.has('PATH'), false)
+      assert.strictEqual(tokens.has('HOME'), false)
     })
   })
 
@@ -55,13 +56,14 @@ describe('env utils', () => {
         'AIOZ_TOKEN',
         'FILECOIN_TOKEN',
       ])
-      expect(result).toEqual(['Pinata', 'AIOZ', 'Filecoin'])
+      assert.deepStrictEqual(result, ['Pinata', 'AIOZ', 'Filecoin'])
     })
 
     it('throws UnknownProviderError for unknown _TOKEN keys', () => {
-      expect(() =>
-        tokensToProviderNames(['PINATA_TOKEN', 'FAKE_TOKEN']),
-      ).toThrow(/Unknown provider FAKE_TOKEN/)
+      assert.throws(
+        () => tokensToProviderNames(['PINATA_TOKEN', 'FAKE_TOKEN']),
+        /Unknown provider FAKE_TOKEN/,
+      )
     })
 
     it('silently skips unknown keys without _TOKEN suffix', () => {
@@ -70,25 +72,26 @@ describe('env utils', () => {
         'SOME_OTHER_VAR',
         'AIOZ_TOKEN',
       ])
-      expect(result).toEqual(['Pinata', 'AIOZ'])
+      assert.deepStrictEqual(result, ['Pinata', 'AIOZ'])
     })
 
     it('returns empty array for empty input', () => {
       const result = tokensToProviderNames([])
-      expect(result).toEqual([])
+      assert.deepStrictEqual(result, [])
     })
   })
 
   describe('findEnvVarProviderName', () => {
     it('finds the token key for a known provider', () => {
-      expect(findEnvVarProviderName('Pinata')).toBe('PINATA_TOKEN')
+      assert.strictEqual(findEnvVarProviderName('Pinata'), 'PINATA_TOKEN')
     })
 
     it('throws for an unknown provider', () => {
-      expect(() => findEnvVarProviderName('NonExistent')).toThrow(
+      assert.throws(
+        () => findEnvVarProviderName('NonExistent'),
         /Unknown provider/,
       )
-      expect(() => findEnvVarProviderName('')).toThrow(/Unknown provider/)
+      assert.throws(() => findEnvVarProviderName(''), /Unknown provider/)
     })
   })
 
@@ -101,23 +104,24 @@ describe('env utils', () => {
         OMNIPIN_FILECOIN_TOKEN: PROVIDER_KEY,
         OMNIPIN_PK: PK,
       }
-      expect(resolveSignerKey('Filecoin')).toBe(PROVIDER_KEY)
+      assert.strictEqual(resolveSignerKey('Filecoin'), PROVIDER_KEY)
     })
 
     it('falls back to OMNIPIN_PK when the provider key is unset', () => {
       process.env = { OMNIPIN_PK: PK }
-      expect(resolveSignerKey('Filecoin')).toBe(PK)
+      assert.strictEqual(resolveSignerKey('Filecoin'), PK)
     })
 
     it('resolves the AIOZ provider key', () => {
       process.env = { OMNIPIN_AIOZ_TOKEN: PROVIDER_KEY }
-      expect(resolveSignerKey('AIOZ')).toBe(PROVIDER_KEY)
+      assert.strictEqual(resolveSignerKey('AIOZ'), PROVIDER_KEY)
     })
 
     it('throws MissingKeyError naming the provider var when nothing is set', () => {
       process.env = {}
-      expect(() => resolveSignerKey('Filecoin')).toThrow(MissingKeyError)
-      expect(() => resolveSignerKey('Filecoin')).toThrow(
+      assert.throws(() => resolveSignerKey('Filecoin'), MissingKeyError)
+      assert.throws(
+        () => resolveSignerKey('Filecoin'),
         /OMNIPIN_FILECOIN_TOKEN/,
       )
     })

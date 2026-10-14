@@ -1,5 +1,5 @@
-import { describe, it } from 'bun:test'
 import * as assert from 'node:assert'
+import { describe, it } from 'node:test'
 import { Provider } from 'ox'
 import { fromHttp } from 'ox/RpcTransport'
 import { getEnsResolver } from '../../src/utils/ens/get-resolver.js'

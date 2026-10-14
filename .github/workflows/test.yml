@@ -15,15 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
+      - uses: pnpm/setup@v3
         with:
-          bun-version: 1.4.0
-      - name: install deps
-        run: bun i
+          runtime: node@22
       - name: build
-        run: bun run build
+        run: pnpm build
       - name: test
-        run: bun test:report
+        run: pnpm test:report
         env:
           OMNIPIN_LIGHTHOUSE_TOKEN: ${{ secrets.OMNIPIN_LIGHTHOUSE_TOKEN }}
           OMNIPIN_IPFS_NINJA_TOKEN: ${{ secrets.OMNIPIN_IPFS_NINJA_TOKEN }}

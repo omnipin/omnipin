@@ -1,6 +1,6 @@
-import { describe, it } from 'bun:test'
 import * as assert from 'node:assert'
 import path from 'node:path'
+import { describe, it } from 'node:test'
 import { exists, fileSize, walk } from '../../src/utils/fs.js'
 
 describe('fs utils', () => {

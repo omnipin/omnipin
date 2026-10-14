@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'bun:test'
+import * as assert from 'node:assert'
+import { describe, it } from 'node:test'
 import type * as Provider from 'ox/Provider'
 import {
   computeFwssFloor,
@@ -15,25 +16,27 @@ import { NATIVE_TOKEN } from '../../src/utils/squid.js'
 describe('filecoin-bridge utils', () => {
   describe('SOURCE_CHAINS', () => {
     it('contains the seven allow-listed chains', () => {
-      expect(Object.keys(SOURCE_CHAINS).sort()).toEqual(
+      assert.deepStrictEqual(
+        Object.keys(SOURCE_CHAINS).sort(),
         ['arb', 'avax', 'base', 'bsc', 'eth', 'opt', 'polygon'].sort(),
       )
     })
 
     it('maps each chain to its canonical chain id', () => {
-      expect(SOURCE_CHAINS.eth.id).toBe(1)
-      expect(SOURCE_CHAINS.opt.id).toBe(10)
-      expect(SOURCE_CHAINS.bsc.id).toBe(56)
-      expect(SOURCE_CHAINS.polygon.id).toBe(137)
-      expect(SOURCE_CHAINS.base.id).toBe(8453)
-      expect(SOURCE_CHAINS.arb.id).toBe(42161)
-      expect(SOURCE_CHAINS.avax.id).toBe(43114)
+      assert.strictEqual(SOURCE_CHAINS.eth.id, 1)
+      assert.strictEqual(SOURCE_CHAINS.opt.id, 10)
+      assert.strictEqual(SOURCE_CHAINS.bsc.id, 56)
+      assert.strictEqual(SOURCE_CHAINS.polygon.id, 137)
+      assert.strictEqual(SOURCE_CHAINS.base.id, 8453)
+      assert.strictEqual(SOURCE_CHAINS.arb.id, 42161)
+      assert.strictEqual(SOURCE_CHAINS.avax.id, 43114)
     })
   })
 
   describe('FILECOIN_USDFC', () => {
     it('is the canonical USDfc address on Filecoin', () => {
-      expect(FILECOIN_USDFC.toLowerCase()).toBe(
+      assert.strictEqual(
+        FILECOIN_USDFC.toLowerCase(),
         '0x80b98d3aa09ffff255c3ba4a241111ff1262f045',
       )
     })
@@ -42,66 +45,74 @@ describe('filecoin-bridge utils', () => {
   describe('isSourceChainKey', () => {
     it('accepts every allow-listed chain', () => {
       for (const key of Object.keys(SOURCE_CHAINS)) {
-        expect(isSourceChainKey(key)).toBe(true)
+        assert.strictEqual(isSourceChainKey(key), true)
       }
     })
 
     it('rejects unknown chains', () => {
-      expect(isSourceChainKey('fantom')).toBe(false)
-      expect(isSourceChainKey('zksync')).toBe(false)
-      expect(isSourceChainKey('eth ')).toBe(false)
-      expect(isSourceChainKey(undefined)).toBe(false)
+      assert.strictEqual(isSourceChainKey('fantom'), false)
+      assert.strictEqual(isSourceChainKey('zksync'), false)
+      assert.strictEqual(isSourceChainKey('eth '), false)
+      assert.strictEqual(isSourceChainKey(undefined), false)
     })
   })
 
   describe('resolveSourceToken', () => {
     it('resolves a known symbol on the given chain', () => {
-      expect(
+      assert.strictEqual(
         resolveSourceToken({ chain: 'arb', token: 'USDC' }).toLowerCase(),
-      ).toBe('0xaf88d065e77c8cc2239327c5edb3a432268e5831')
+        '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
+      )
     })
 
     it('resolves case-insensitively', () => {
-      expect(
+      assert.strictEqual(
         resolveSourceToken({ chain: 'eth', token: 'usdc' }).toLowerCase(),
-      ).toBe(SOURCE_CHAINS.eth.tokens.USDC.toLowerCase())
+        SOURCE_CHAINS.eth.tokens.USDC.toLowerCase(),
+      )
     })
 
     it('resolves a native gas token to the 0xeee sentinel', () => {
-      expect(resolveSourceToken({ chain: 'eth', token: 'ETH' })).toBe(
+      assert.strictEqual(
+        resolveSourceToken({ chain: 'eth', token: 'ETH' }),
         NATIVE_TOKEN,
       )
-      expect(resolveSourceToken({ chain: 'bsc', token: 'BNB' })).toBe(
+      assert.strictEqual(
+        resolveSourceToken({ chain: 'bsc', token: 'BNB' }),
         NATIVE_TOKEN,
       )
-      expect(resolveSourceToken({ chain: 'polygon', token: 'POL' })).toBe(
+      assert.strictEqual(
+        resolveSourceToken({ chain: 'polygon', token: 'POL' }),
         NATIVE_TOKEN,
       )
     })
 
     it('resolves dotted symbols like USDC.e', () => {
-      expect(
+      assert.strictEqual(
         resolveSourceToken({ chain: 'polygon', token: 'USDC.e' }).toLowerCase(),
-      ).toBe('0x2791bca1f2de4661ed88a30c99a7a9449aa84174')
+        '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
+      )
     })
 
     it('passes through raw 0x addresses', () => {
       const raw = '0x1234567890123456789012345678901234567890'
-      expect(resolveSourceToken({ chain: 'eth', token: raw })).toBe(raw)
+      assert.strictEqual(resolveSourceToken({ chain: 'eth', token: raw }), raw)
     })
 
     it('throws for unknown symbols', () => {
-      expect(() =>
-        resolveSourceToken({ chain: 'eth', token: 'FOOBAR' }),
-      ).toThrow(/Unknown token/)
+      assert.throws(
+        () => resolveSourceToken({ chain: 'eth', token: 'FOOBAR' }),
+        /Unknown token/,
+      )
     })
 
     it('rejects malformed 0x addresses (wrong length) by treating as a symbol', () => {
       // Anything that starts with 0x but isn't 42 chars long is treated as a
       // symbol → unknown symbol → throws.
-      expect(() =>
-        resolveSourceToken({ chain: 'eth', token: '0xabc' }),
-      ).toThrow(/Unknown token/)
+      assert.throws(
+        () => resolveSourceToken({ chain: 'eth', token: '0xabc' }),
+        /Unknown token/,
+      )
     })
   })
 })
@@ -214,42 +225,51 @@ describe('ensureRouterAllowances', () => {
     const erc20ReadSpenders = erc20Reads.map((r) =>
       addrInWord(r.data.slice(-64)),
     )
-    expect(erc20ReadSpenders).toContain(SQUID_ROUTER.toLowerCase())
-    expect(erc20ReadSpenders).toContain(PERMIT2_ADDRESS.toLowerCase())
+    assert.ok(erc20ReadSpenders.includes(SQUID_ROUTER.toLowerCase()))
+    assert.ok(erc20ReadSpenders.includes(PERMIT2_ADDRESS.toLowerCase()))
 
-    expect(sent).toHaveLength(3)
+    assert.strictEqual(sent.length, 3)
     const [approveRouter, approvePermit2Erc20, approvePermit2] = sent
 
     // 1) ERC-20 approve(router, maxUint256) — direct transferFrom path
-    expect(approveRouter.to.toLowerCase()).toBe(USDC.toLowerCase())
-    expect(approveRouter.data.slice(0, 10)).toBe(ERC20_APPROVE)
-    expect(addrInWord(approveRouter.data.slice(10, 74))).toBe(
+    assert.strictEqual(approveRouter.to.toLowerCase(), USDC.toLowerCase())
+    assert.strictEqual(approveRouter.data.slice(0, 10), ERC20_APPROVE)
+    assert.strictEqual(
+      addrInWord(approveRouter.data.slice(10, 74)),
       SQUID_ROUTER.toLowerCase(),
     )
-    expect(approveRouter.data.slice(74, 138)).toBe('f'.repeat(64))
+    assert.strictEqual(approveRouter.data.slice(74, 138), 'f'.repeat(64))
 
     // 2) ERC-20 approve(PERMIT2, maxUint256)
-    expect(approvePermit2Erc20.to.toLowerCase()).toBe(USDC.toLowerCase())
-    expect(approvePermit2Erc20.data.slice(0, 10)).toBe(ERC20_APPROVE)
-    expect(addrInWord(approvePermit2Erc20.data.slice(10, 74))).toBe(
+    assert.strictEqual(approvePermit2Erc20.to.toLowerCase(), USDC.toLowerCase())
+    assert.strictEqual(approvePermit2Erc20.data.slice(0, 10), ERC20_APPROVE)
+    assert.strictEqual(
+      addrInWord(approvePermit2Erc20.data.slice(10, 74)),
       PERMIT2_ADDRESS.toLowerCase(),
     )
-    expect(approvePermit2Erc20.data.slice(74, 138)).toBe('f'.repeat(64))
+    assert.strictEqual(approvePermit2Erc20.data.slice(74, 138), 'f'.repeat(64))
 
     // 3) Permit2 approve(token, router, maxUint160, maxUint48)
-    expect(approvePermit2.to.toLowerCase()).toBe(PERMIT2_ADDRESS.toLowerCase())
-    expect(approvePermit2.data.slice(0, 10)).toBe(PERMIT2_APPROVE)
-    expect(addrInWord(approvePermit2.data.slice(10, 74))).toBe(
+    assert.strictEqual(
+      approvePermit2.to.toLowerCase(),
+      PERMIT2_ADDRESS.toLowerCase(),
+    )
+    assert.strictEqual(approvePermit2.data.slice(0, 10), PERMIT2_APPROVE)
+    assert.strictEqual(
+      addrInWord(approvePermit2.data.slice(10, 74)),
       USDC.toLowerCase(),
     )
-    expect(addrInWord(approvePermit2.data.slice(74, 138))).toBe(
+    assert.strictEqual(
+      addrInWord(approvePermit2.data.slice(74, 138)),
       SQUID_ROUTER.toLowerCase(),
     )
     // amount = max uint160, expiration = max uint48
-    expect(approvePermit2.data.slice(138, 202)).toBe(
+    assert.strictEqual(
+      approvePermit2.data.slice(138, 202),
       `${'0'.repeat(24)}${'f'.repeat(40)}`,
     )
-    expect(approvePermit2.data.slice(202, 266)).toBe(
+    assert.strictEqual(
+      approvePermit2.data.slice(202, 266),
       `${'0'.repeat(52)}${'f'.repeat(12)}`,
     )
   })
@@ -263,7 +283,7 @@ describe('ensureRouterAllowances', () => {
 
     await run(provider)
 
-    expect(sent).toHaveLength(0)
+    assert.strictEqual(sent.length, 0)
   })
 
   it('re-authorizes via Permit2 when the stored allowance is expired', async () => {
@@ -275,9 +295,9 @@ describe('ensureRouterAllowances', () => {
 
     await run(provider)
 
-    expect(sent).toHaveLength(1)
-    expect(sent[0].to.toLowerCase()).toBe(PERMIT2_ADDRESS.toLowerCase())
-    expect(sent[0].data.slice(0, 10)).toBe(PERMIT2_APPROVE)
+    assert.strictEqual(sent.length, 1)
+    assert.strictEqual(sent[0].to.toLowerCase(), PERMIT2_ADDRESS.toLowerCase())
+    assert.strictEqual(sent[0].data.slice(0, 10), PERMIT2_APPROVE)
   })
 })
 
@@ -308,10 +328,10 @@ describe('fetchSourceBalance', () => {
       owner: OWNER,
     })
 
-    expect(balance).toBe(250_000n)
-    expect(seen?.to.toLowerCase()).toBe(USDC.toLowerCase())
-    expect(seen?.data.slice(0, 10)).toBe('0x70a08231') // balanceOf(address)
-    expect(`0x${seen?.data.slice(-40)}`.toLowerCase()).toBe(OWNER)
+    assert.strictEqual(balance, 250_000n)
+    assert.strictEqual(seen?.to.toLowerCase(), USDC.toLowerCase())
+    assert.strictEqual(seen?.data.slice(0, 10), '0x70a08231') // balanceOf(address)
+    assert.strictEqual(`0x${seen?.data.slice(-40)}`.toLowerCase(), OWNER)
   })
 
   it('reads the native balance via eth_getBalance for the native sentinel', async () => {
@@ -332,8 +352,8 @@ describe('fetchSourceBalance', () => {
       owner: OWNER,
     })
 
-    expect(balance).toBe(1_000_000_000_000_000_000n)
-    expect(method).toBe('eth_getBalance')
+    assert.strictEqual(balance, 1_000_000_000_000_000_000n)
+    assert.strictEqual(method, 'eth_getBalance')
   })
 })
 
@@ -343,15 +363,17 @@ describe('computeFwssFloor', () => {
   // minimum-rate floor and sybil fee were removed in v1.3.0.
   it('equals the FWSS new-dataset fixed funds at default pricing (0.125 USDfc)', () => {
     // 0.10 USDfc lifecycle reserve + 0.025 USDfc create fee = 0.125 USDfc.
-    expect(
+    assert.strictEqual(
       computeFwssFloor(100_000_000_000_000_000n, 25_000_000_000_000_000n),
-    ).toBe(125_000_000_000_000_000n)
+      125_000_000_000_000_000n,
+    )
   })
 
   it('tracks a raised lifecycle reserve or creation fee', () => {
     // 0.20 USDfc reserve + 0.05 USDfc create fee = 0.25 USDfc.
-    expect(
+    assert.strictEqual(
       computeFwssFloor(200_000_000_000_000_000n, 50_000_000_000_000_000n),
-    ).toBe(250_000_000_000_000_000n)
+      250_000_000_000_000_000n,
+    )
   })
 })

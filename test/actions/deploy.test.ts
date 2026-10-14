@@ -1,7 +1,8 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'bun:test'
+import * as assert from 'node:assert'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { after, afterEach, before, describe, it } from 'node:test'
 import { deployAction } from '../../src/actions/deploy.js'
 import { PROVIDERS } from '../../src/constants.js'
 import { AllProvidersFailedError } from '../../src/errors.js'
@@ -54,12 +55,12 @@ const statusDown: StatusFunction = async () => {
   throw new Error('status endpoint down')
 }
 
-beforeAll(async () => {
+before(async () => {
   dir = await mkdtemp(join(tmpdir(), 'omnipin-deploy-test-'))
   await writeFile(join(dir, 'index.html'), '<!doctype html>hello')
 })
 
-afterAll(async () => {
+after(async () => {
   await rm(dir, { recursive: true, force: true })
 })
 
@@ -80,9 +81,9 @@ describe('deploy action', () => {
 
     // One of two Swarm providers fails, and exactly one IPFS provider is
     // configured but never deployed to.
-    await expect(
+    await assert.doesNotReject(
       deployAction({ dir, options: { providers: `${ipfs},${down},${up}` } }),
-    ).resolves.toBeUndefined()
+    )
   })
 
   it('still fails when every Swarm provider fails', async () => {
@@ -90,35 +91,36 @@ describe('deploy action', () => {
     const a = register('TEST_SWARM_A_TOKEN', 'TestSwarmA', 'swarm', fails)
     const b = register('TEST_SWARM_B_TOKEN', 'TestSwarmB', 'swarm', fails)
 
-    await expect(
+    await assert.rejects(
       deployAction({ dir, options: { providers: `${ipfs},${a},${b}` } }),
-    ).rejects.toBeInstanceOf(AllProvidersFailedError)
+      AllProvidersFailedError,
+    )
   })
 
   it('still fails when every IPFS provider fails', async () => {
     const a = register('TEST_IPFS_TOKEN', 'TestIpfs', 'ipfs', fails)
     const b = register('TEST_IPFS_B_TOKEN', 'TestIpfsB', 'ipfs', fails)
 
-    await expect(
+    await assert.rejects(
       deployAction({ dir, options: { providers: `${a},${b}` } }),
-    ).rejects.toBeInstanceOf(AllProvidersFailedError)
+      AllProvidersFailedError,
+    )
   })
 
   it('resolves when a single IPFS provider succeeds', async () => {
     const a = register('TEST_IPFS_TOKEN', 'TestIpfs', 'ipfs', succeeds)
 
-    await expect(
-      deployAction({ dir, options: { providers: a } }),
-    ).resolves.toBeUndefined()
+    await assert.doesNotReject(deployAction({ dir, options: { providers: a } }))
   })
 
   it('rethrows immediately under --strict', async () => {
     const a = register('TEST_IPFS_TOKEN', 'TestIpfs', 'ipfs', fails)
     const b = register('TEST_IPFS_B_TOKEN', 'TestIpfsB', 'ipfs', succeeds)
 
-    await expect(
+    await assert.rejects(
       deployAction({ dir, options: { providers: `${a},${b}`, strict: true } }),
-    ).rejects.toThrow('provider is down')
+      /provider is down/,
+    )
   })
 })
 
@@ -133,14 +135,14 @@ describe('deploy action with --skip-pinned', () => {
       status: notPinned,
     })
 
-    await expect(
+    await assert.doesNotReject(
       deployAction({
         dir,
         options: { providers: `${a},${b}`, 'skip-pinned': true },
       }),
-    ).resolves.toBeUndefined()
-    expect(aRec.calls.length).toBe(0)
-    expect(bRec.calls.length).toBe(1)
+    )
+    assert.strictEqual(aRec.calls.length, 0)
+    assert.strictEqual(bRec.calls.length, 1)
   })
 
   it('uploads when the status is not pinned', async () => {
@@ -149,10 +151,10 @@ describe('deploy action with --skip-pinned', () => {
       status: notPinned,
     })
 
-    await expect(
+    await assert.doesNotReject(
       deployAction({ dir, options: { providers: a, 'skip-pinned': true } }),
-    ).resolves.toBeUndefined()
-    expect(rec.calls).toEqual([{ first: true }])
+    )
+    assert.deepStrictEqual(rec.calls, [{ first: true }])
   })
 
   it('deploys anyway when the status check throws, even under --strict', async () => {
@@ -164,13 +166,13 @@ describe('deploy action with --skip-pinned', () => {
     // A leaked status error would either reject via --strict or, with a
     // single provider, match the error count and throw
     // AllProvidersFailedError.
-    await expect(
+    await assert.doesNotReject(
       deployAction({
         dir,
         options: { providers: a, 'skip-pinned': true, strict: true },
       }),
-    ).resolves.toBeUndefined()
-    expect(rec.calls.length).toBe(1)
+    )
+    assert.strictEqual(rec.calls.length, 1)
   })
 
   it('hands the byte upload to the next provider when the uploader is skipped', async () => {
@@ -180,13 +182,13 @@ describe('deploy action with --skip-pinned', () => {
     })
     const b = register('TEST_IPFS_B_TOKEN', 'TestIpfsB', 'ipfs', bRec.upload)
 
-    await expect(
+    await assert.doesNotReject(
       deployAction({
         dir,
         options: { providers: `${a},${b}`, 'skip-pinned': true },
       }),
-    ).resolves.toBeUndefined()
-    expect(bRec.calls).toEqual([{ first: true }])
+    )
+    assert.deepStrictEqual(bRec.calls, [{ first: true }])
   })
 
   it('gives pin-only providers first: false when every uploader is skipped', async () => {
@@ -198,13 +200,13 @@ describe('deploy action with --skip-pinned', () => {
       supported: 'pin',
     })
 
-    await expect(
+    await assert.doesNotReject(
       deployAction({
         dir,
         options: { providers: `${a},${b}`, 'skip-pinned': true },
       }),
-    ).resolves.toBeUndefined()
-    expect(bRec.calls).toEqual([{ first: false }])
+    )
+    assert.deepStrictEqual(bRec.calls, [{ first: false }])
   })
 
   it('succeeds without uploads when every provider already pins the CID', async () => {
@@ -217,14 +219,14 @@ describe('deploy action with --skip-pinned', () => {
       status: pinned,
     })
 
-    await expect(
+    await assert.doesNotReject(
       deployAction({
         dir,
         options: { providers: `${a},${b}`, 'skip-pinned': true },
       }),
-    ).resolves.toBeUndefined()
-    expect(aRec.calls.length).toBe(0)
-    expect(bRec.calls.length).toBe(0)
+    )
+    assert.strictEqual(aRec.calls.length, 0)
+    assert.strictEqual(bRec.calls.length, 0)
   })
 
   it('still fails when every attempted provider fails', async () => {
@@ -236,12 +238,13 @@ describe('deploy action with --skip-pinned', () => {
     const b = register('TEST_IPFS_B_TOKEN', 'TestIpfsB', 'ipfs', fails)
     const c = register('TEST_IPFS_C_TOKEN', 'TestIpfsC', 'ipfs', fails)
 
-    await expect(
+    await assert.rejects(
       deployAction({
         dir,
         options: { providers: `${a},${b},${c}`, 'skip-pinned': true },
       }),
-    ).rejects.toBeInstanceOf(AllProvidersFailedError)
+      AllProvidersFailedError,
+    )
   })
 
   it('never calls status when the flag is off', async () => {
@@ -259,12 +262,12 @@ describe('deploy action with --skip-pinned', () => {
       status: spy,
     })
 
-    await expect(
+    await assert.doesNotReject(
       deployAction({ dir, options: { providers: `${a},${b}` } }),
-    ).resolves.toBeUndefined()
-    expect(statusCalled).toBe(false)
-    expect(aRec.calls).toEqual([{ first: true }])
-    expect(bRec.calls).toEqual([{ first: false }])
+    )
+    assert.strictEqual(statusCalled, false)
+    assert.deepStrictEqual(aRec.calls, [{ first: true }])
+    assert.deepStrictEqual(bRec.calls, [{ first: false }])
   })
 
   it('ignores the flag on Swarm deploys', async () => {
@@ -278,12 +281,12 @@ describe('deploy action with --skip-pinned', () => {
     })
     const swarm = register('TEST_SWARM_TOKEN', 'TestSwarm', 'swarm', succeeds)
 
-    await expect(
+    await assert.doesNotReject(
       deployAction({
         dir,
         options: { providers: `${ipfs},${swarm}`, 'skip-pinned': true },
       }),
-    ).resolves.toBeUndefined()
-    expect(statusCalled).toBe(false)
+    )
+    assert.strictEqual(statusCalled, false)
   })
 })

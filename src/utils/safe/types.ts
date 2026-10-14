@@ -1,9 +1,10 @@
 import type { Address } from 'ox/Address'
 import type { Hex } from 'ox/Hex'
-export enum OperationType {
-  Call, // 0
-  DelegateCall, // 1
-}
+export const OperationType = {
+  Call: 0,
+  DelegateCall: 1,
+} as const
+export type OperationType = (typeof OperationType)[keyof typeof OperationType]
 
 export type SafeTransactionData = {
   to: Address

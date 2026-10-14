@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import * as assert from 'node:assert'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 import { depositAction } from '../../src/actions/deposit.js'
 import {
   MissingCLIArgsError,
@@ -29,86 +30,98 @@ describe('deposit action', () => {
   })
 
   it('throws MissingCLIArgsError if amount is missing', async () => {
-    await expect(
+    await assert.rejects(
       depositAction({ amount: '', options: { provider: 'Filecoin' } }),
-    ).rejects.toBeInstanceOf(MissingCLIArgsError)
+      MissingCLIArgsError,
+    )
   })
 
   it('throws MissingCLIArgsError if provider is missing', async () => {
-    await expect(
+    await assert.rejects(
       depositAction({ amount: '1', options: {} }),
-    ).rejects.toBeInstanceOf(MissingCLIArgsError)
+      MissingCLIArgsError,
+    )
   })
 
   it('throws UnknownProviderError for unsupported providers', async () => {
-    await expect(
+    await assert.rejects(
       depositAction({ amount: '1', options: { provider: 'Pinata' } }),
-    ).rejects.toBeInstanceOf(UnknownProviderError)
+      UnknownProviderError,
+    )
   })
 
   it('throws UnknownProviderError for AIOZ (no deposit step)', async () => {
     // AIOZ has no separate deposit contract — bridge is the whole flow.
-    await expect(
+    await assert.rejects(
       depositAction({ amount: '1', options: { provider: 'AIOZ' } }),
-    ).rejects.toBeInstanceOf(UnknownProviderError)
+      UnknownProviderError,
+    )
   })
 
   it('throws MissingKeyError when no signing key is set', async () => {
-    await expect(
+    await assert.rejects(
       depositAction({ amount: '1', options: { provider: 'Filecoin' } }),
-    ).rejects.toBeInstanceOf(MissingKeyError)
+      MissingKeyError,
+    )
   })
 
   it('names OMNIPIN_FILECOIN_TOKEN in the MissingKeyError for Filecoin', async () => {
-    await expect(
+    await assert.rejects(
       depositAction({ amount: '1', options: { provider: 'Filecoin' } }),
-    ).rejects.toThrow(/OMNIPIN_FILECOIN_TOKEN/)
+      /OMNIPIN_FILECOIN_TOKEN/,
+    )
   })
 
-  it('rejects non-positive amounts', async () => {
-    process.env.OMNIPIN_PK = DUMMY_PK
-    await expect(
-      depositAction({ amount: '0', options: { provider: 'Filecoin' } }),
-    ).rejects.toThrow(/must be positive/)
-  })
+  describe('with a signing key', () => {
+    beforeEach(() => {
+      process.env.OMNIPIN_PK = DUMMY_PK
+    })
 
-  it('rejects malformed amounts', async () => {
-    process.env.OMNIPIN_PK = DUMMY_PK
-    await expect(
-      depositAction({
-        amount: 'not-a-number',
-        options: { provider: 'Filecoin' },
-      }),
-    ).rejects.toThrow(/Invalid amount/)
-  })
+    it('rejects non-positive amounts', async () => {
+      await assert.rejects(
+        depositAction({ amount: '0', options: { provider: 'Filecoin' } }),
+        /must be positive/,
+      )
+    })
 
-  // The deposit is authorized with an EIP-2612 permit whose `owner` is `--from`
-  // but which is signed with the signer's key, so a mismatch could never
-  // produce a landable transaction. It must be rejected before any gas is
-  // spent — i.e. before the amount is even parsed.
-  it('rejects --from when it is not the signing wallet', async () => {
-    process.env.OMNIPIN_PK = DUMMY_PK
-    await expect(
-      depositAction({
-        amount: '1',
-        options: {
-          provider: 'Filecoin',
-          from: '0x0000000000000000000000000000000000000001',
-        },
-      }),
-    ).rejects.toThrow(/is not the signer/)
-  })
+    it('rejects malformed amounts', async () => {
+      await assert.rejects(
+        depositAction({
+          amount: 'not-a-number',
+          options: { provider: 'Filecoin' },
+        }),
+        /Invalid amount/,
+      )
+    })
 
-  it('rejects a mismatched --from before validating the amount', async () => {
-    process.env.OMNIPIN_PK = DUMMY_PK
-    await expect(
-      depositAction({
-        amount: 'not-a-number',
-        options: {
-          provider: 'Filecoin',
-          from: '0x0000000000000000000000000000000000000001',
-        },
-      }),
-    ).rejects.toThrow(/is not the signer/)
+    // The deposit is authorized with an EIP-2612 permit whose `owner` is
+    // `--from` but which is signed with the signer's key, so a mismatch could
+    // never produce a landable transaction. It must be rejected before any
+    // gas is spent — i.e. before the amount is even parsed.
+    it('rejects --from when it is not the signing wallet', async () => {
+      await assert.rejects(
+        depositAction({
+          amount: '1',
+          options: {
+            provider: 'Filecoin',
+            from: '0x0000000000000000000000000000000000000001',
+          },
+        }),
+        /is not the signer/,
+      )
+    })
+
+    it('rejects a mismatched --from before validating the amount', async () => {
+      await assert.rejects(
+        depositAction({
+          amount: 'not-a-number',
+          options: {
+            provider: 'Filecoin',
+            from: '0x0000000000000000000000000000000000000001',
+          },
+        }),
+        /is not the signer/,
+      )
+    })
   })
 })

@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it } from 'bun:test'
+import * as assert from 'node:assert'
+import { afterEach, describe, it } from 'node:test'
 import { statusAction } from '../../src/actions/status.js'
 import { PROVIDERS } from '../../src/constants.js'
 import { AllProvidersFailedError } from '../../src/errors.js'
@@ -37,9 +38,9 @@ describe('status action', () => {
       pin: 'queued',
     }))
 
-    await expect(
+    await assert.doesNotReject(
       statusAction({ cid: CID, options: { providers: `${a},${b}` } }),
-    ).resolves.toBeUndefined()
+    )
   })
 
   // Regression: `Promise.all` rejected on the first failing provider, so one
@@ -58,12 +59,12 @@ describe('status action', () => {
       return { pin: 'pinned' }
     })
 
-    await expect(
+    await assert.doesNotReject(
       statusAction({ cid: CID, options: { providers: `${ok},${bad},TestC` } }),
-    ).resolves.toBeUndefined()
+    )
 
     // The provider listed after the failing one still ran.
-    expect(reported).toEqual('pinned')
+    assert.strictEqual(reported, 'pinned')
   })
 
   it('fails the run when every provider fails', async () => {
@@ -74,8 +75,9 @@ describe('status action', () => {
       throw new Error('also down')
     })
 
-    await expect(
+    await assert.rejects(
       statusAction({ cid: CID, options: { providers: `${a},${b}` } }),
-    ).rejects.toBeInstanceOf(AllProvidersFailedError)
+      AllProvidersFailedError,
+    )
   })
 })

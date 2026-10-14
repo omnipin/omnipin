@@ -1,5 +1,5 @@
-import { describe, it } from 'bun:test'
 import * as assert from 'node:assert'
+import { describe, it } from 'node:test'
 import { CarReader } from '@ipld/car/reader'
 import * as dagPb from '@ipld/dag-pb'
 import { assertCID, packCAR } from '../../src/utils/ipfs.js'
