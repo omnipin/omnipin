@@ -42,21 +42,15 @@ import { computed } from "vue";
 
 const sponsorSections = [
   {
-    title: "In collaboration with",
-    sponsors: [
-      {
-        name: "Lido",
-        href: "https://bafybeiecvujvs74xvxgpwctmbfkcucazyaudmwuiw4wfv6ys7uio7o376u.ipfs.dweb.link",
-        img: "/lido.svg",
-        columns: 1,
-        height: "120px",
-        invert: true,
-      },
-    ],
-  },
-  {
     title: "Used by",
     sponsors: [
+      {
+        name: "ENS",
+        href: "https://ens.eth.limo",
+        img: "/ens.svg",
+        columns: 1,
+        height: "80px",
+      },
       {
         name: "WalletBeat",
         href: "https://beta.walletbeat.eth.limo",
