@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it } from 'bun:test'
+import * as assert from 'node:assert'
+import { afterEach, describe, it } from 'node:test'
 import * as AbiParameters from 'ox/AbiParameters'
 import { randomPrivateKey } from 'ox/Secp256k1'
 // Import from src/index.js first: starting module evaluation at filecoin.js
@@ -106,39 +107,42 @@ describe('statusOnFilecoin', () => {
   it('returns unknown without CAR bytes or an explicit piece CID', async () => {
     const calls = stubFetch({})
 
-    expect(
+    assert.deepStrictEqual(
       await statusOnFilecoin({
         cid: 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
         auth: { token: randomPrivateKey() },
       }),
-    ).toEqual({ pin: 'unknown' })
-    expect(calls.length).toBe(0)
+      { pin: 'unknown' },
+    )
+    assert.strictEqual(calls.length, 0)
   })
 
   it('throws MissingKeyError without a token', async () => {
     stubFetch({})
 
-    expect(
+    await assert.rejects(
       statusOnFilecoin({
         cid: 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
         auth: {},
         pieceCid: PIECE_CID,
       }),
-    ).rejects.toBeInstanceOf(MissingKeyError)
+      MissingKeyError,
+    )
   })
 
   it('reports not pinned when the SP does not know the piece', async () => {
     const calls = stubFetch({ findPieceStatus: 404 })
 
-    expect(
+    assert.deepStrictEqual(
       await statusOnFilecoin({
         cid: 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
         auth: { token: randomPrivateKey() },
         pieceCid: PIECE_CID,
         providerURL: SP_URL,
       }),
-    ).toEqual({ pin: 'not pinned' })
-    expect(calls).toEqual([`${SP_URL}/pdp/piece?pieceCid=${PIECE_CID}`])
+      { pin: 'not pinned' },
+    )
+    assert.deepStrictEqual(calls, [`${SP_URL}/pdp/piece?pieceCid=${PIECE_CID}`])
   })
 
   it('reports pinned when the piece sits in an active client data set', async () => {
@@ -152,14 +156,15 @@ describe('statusOnFilecoin', () => {
       },
     })
 
-    expect(
+    assert.deepStrictEqual(
       await statusOnFilecoin({
         cid: 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
         auth: { token: randomPrivateKey() },
         pieceCid: PIECE_CID,
         providerURL: SP_URL,
       }),
-    ).toEqual({ pin: 'pinned' })
+      { pin: 'pinned' },
+    )
   })
 
   it('reports not pinned when the piece exists on the SP but only in a foreign deal', async () => {
@@ -173,14 +178,15 @@ describe('statusOnFilecoin', () => {
       },
     })
 
-    expect(
+    assert.deepStrictEqual(
       await statusOnFilecoin({
         cid: 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
         auth: { token: randomPrivateKey() },
         pieceCid: PIECE_CID,
         providerURL: SP_URL,
       }),
-    ).toEqual({ pin: 'not pinned' })
+      { pin: 'not pinned' },
+    )
   })
 
   it('ignores ended data sets and unreadable data sets', async () => {
@@ -200,28 +206,30 @@ describe('statusOnFilecoin', () => {
       },
     })
 
-    expect(
+    assert.deepStrictEqual(
       await statusOnFilecoin({
         cid: 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
         auth: { token: randomPrivateKey() },
         pieceCid: PIECE_CID,
         providerURL: SP_URL,
       }),
-    ).toEqual({ pin: 'not pinned' })
+      { pin: 'not pinned' },
+    )
   })
 
   it('derives the piece CID from CAR bytes', async () => {
     const calls = stubFetch({ findPieceStatus: 404 })
 
-    expect(
+    assert.deepStrictEqual(
       await statusOnFilecoin({
         cid: 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
         auth: { token: randomPrivateKey() },
         bytes: new Uint8Array(1024).fill(7) as Uint8Array<ArrayBuffer>,
         providerURL: SP_URL,
       }),
-    ).toEqual({ pin: 'not pinned' })
-    expect(calls.length).toBe(1)
-    expect(calls[0]).toContain('/pdp/piece?pieceCid=bafkzcib')
+      { pin: 'not pinned' },
+    )
+    assert.strictEqual(calls.length, 1)
+    assert.ok(calls[0].includes('/pdp/piece?pieceCid=bafkzcib'))
   })
 })

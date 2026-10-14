@@ -1,0 +1,5 @@
+allowBuilds:
+  esbuild: true
+
+overrides:
+  safer-buffer: npm:@socketregistry/safer-buffer@^1

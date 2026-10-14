@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, mock } from 'bun:test'
+import * as assert from 'node:assert'
+import { afterEach, describe, it, mock } from 'node:test'
 import {
   getRoute,
   getRouteWithRetry,
@@ -89,27 +90,28 @@ describe('squid utils', () => {
     it('sends the public widget integrator id by default and parses the route', async () => {
       delete process.env.OMNIPIN_SQUID_INTEGRATOR_ID
       let seenHeaders: Record<string, string> | undefined
-      const fetchFn = mock(
+      const fetchFn = mock.fn(
         async (url: string | URL | Request, init?: RequestInit) => {
-          expect(String(url)).toBe(`${SQUID_API}/v2/route`)
+          assert.strictEqual(String(url), `${SQUID_API}/v2/route`)
           seenHeaders = Object.fromEntries(new Headers(init?.headers).entries())
           return jsonResponse(sampleRouteBody())
         },
       ) as unknown as typeof fetch
 
       const route = await getRoute({ params: SAMPLE_PARAMS, fetchFn })
-      expect(route.estimate.toAmount).toBe('998000000000000000')
-      expect(route.transactionRequest.target).toBe(
+      assert.strictEqual(route.estimate.toAmount, '998000000000000000')
+      assert.strictEqual(
+        route.transactionRequest.target,
         '0xce16F69375520ab01377ce7B88f5BA8C48F8D666',
       )
-      expect(route.params?.requestId).toBe('req-abc-123')
-      expect(seenHeaders?.['x-integrator-id']).toBe('squid-swap-widget')
+      assert.strictEqual(route.params?.requestId, 'req-abc-123')
+      assert.strictEqual(seenHeaders?.['x-integrator-id'], 'squid-swap-widget')
     })
 
     it('honours OMNIPIN_SQUID_INTEGRATOR_ID override', async () => {
       process.env.OMNIPIN_SQUID_INTEGRATOR_ID = 'my-integrator-id'
       let seenHeaders: Record<string, string> | undefined
-      const fetchFn = mock(
+      const fetchFn = mock.fn(
         async (_url: string | URL | Request, init?: RequestInit) => {
           seenHeaders = Object.fromEntries(new Headers(init?.headers).entries())
           return jsonResponse(sampleRouteBody())
@@ -117,35 +119,36 @@ describe('squid utils', () => {
       ) as unknown as typeof fetch
 
       await getRoute({ params: SAMPLE_PARAMS, fetchFn })
-      expect(seenHeaders?.['x-integrator-id']).toBe('my-integrator-id')
+      assert.strictEqual(seenHeaders?.['x-integrator-id'], 'my-integrator-id')
     })
 
     it('throws with the web UI fallback link on non-2xx', async () => {
-      const fetchFn = mock(async () =>
+      const fetchFn = mock.fn(async () =>
         jsonResponse(
           { message: 'Apologies, swaps are currently unavailable.' },
           403,
         ),
       ) as unknown as typeof fetch
 
-      await expect(
+      await assert.rejects(
         getRoute({ params: SAMPLE_PARAMS, fetchFn }),
-      ).rejects.toThrow(/Fallback: https:\/\/app\.squidrouter\.com/)
+        /Fallback: https:\/\/app\.squidrouter\.com/,
+      )
     })
   })
 
   describe('squidWebUiUrl', () => {
     it('encodes from/to chains and tokens', () => {
       const url = squidWebUiUrl(SAMPLE_PARAMS)
-      expect(url).toContain('chains=42161%2C314')
-      expect(url).toContain(SAMPLE_PARAMS.fromToken)
-      expect(url).toContain(SAMPLE_PARAMS.toToken)
+      assert.ok(url.includes('chains=42161%2C314'))
+      assert.ok(url.includes(SAMPLE_PARAMS.fromToken))
+      assert.ok(url.includes(SAMPLE_PARAMS.toToken))
     })
   })
 
   describe('getStatus', () => {
     it('treats 404 as ongoing', async () => {
-      const fetchFn = mock(
+      const fetchFn = mock.fn(
         async () => new Response('', { status: 404 }),
       ) as unknown as typeof fetch
       const res = await getStatus({
@@ -154,11 +157,11 @@ describe('squid utils', () => {
         toChainId: '314',
         fetchFn,
       })
-      expect(res.squidTransactionStatus).toBe('ongoing')
+      assert.strictEqual(res.squidTransactionStatus, 'ongoing')
     })
 
     it('returns the status body on 200', async () => {
-      const fetchFn = mock(async () =>
+      const fetchFn = mock.fn(async () =>
         jsonResponse({ squidTransactionStatus: 'success' }),
       ) as unknown as typeof fetch
       const res = await getStatus({
@@ -167,13 +170,13 @@ describe('squid utils', () => {
         toChainId: '314',
         fetchFn,
       })
-      expect(res.squidTransactionStatus).toBe('success')
+      assert.strictEqual(res.squidTransactionStatus, 'success')
     })
   })
 
   describe('pollSquidStatus', () => {
     it('resolves on success', async () => {
-      const fetchFn = mock(async () =>
+      const fetchFn = mock.fn(async () =>
         jsonResponse({ squidTransactionStatus: 'success' }),
       ) as unknown as typeof fetch
       const res = await pollSquidStatus({
@@ -183,11 +186,11 @@ describe('squid utils', () => {
         intervalMs: 1,
         fetchFn,
       })
-      expect(res.squidTransactionStatus).toBe('success')
+      assert.strictEqual(res.squidTransactionStatus, 'success')
     })
 
     it('resolves on partial_success', async () => {
-      const fetchFn = mock(async () =>
+      const fetchFn = mock.fn(async () =>
         jsonResponse({ squidTransactionStatus: 'partial_success' }),
       ) as unknown as typeof fetch
       const res = await pollSquidStatus({
@@ -197,14 +200,14 @@ describe('squid utils', () => {
         intervalMs: 1,
         fetchFn,
       })
-      expect(res.squidTransactionStatus).toBe('partial_success')
+      assert.strictEqual(res.squidTransactionStatus, 'partial_success')
     })
 
     it('throws on refund', async () => {
-      const fetchFn = mock(async () =>
+      const fetchFn = mock.fn(async () =>
         jsonResponse({ squidTransactionStatus: 'refund' }),
       ) as unknown as typeof fetch
-      await expect(
+      await assert.rejects(
         pollSquidStatus({
           transactionId: TX_HASH,
           fromChainId: '42161',
@@ -212,14 +215,15 @@ describe('squid utils', () => {
           intervalMs: 1,
           fetchFn,
         }),
-      ).rejects.toThrow(/refund/)
+        /refund/,
+      )
     })
 
     it('throws on needs_gas', async () => {
-      const fetchFn = mock(async () =>
+      const fetchFn = mock.fn(async () =>
         jsonResponse({ squidTransactionStatus: 'needs_gas' }),
       ) as unknown as typeof fetch
-      await expect(
+      await assert.rejects(
         pollSquidStatus({
           transactionId: TX_HASH,
           fromChainId: '42161',
@@ -227,12 +231,13 @@ describe('squid utils', () => {
           intervalMs: 1,
           fetchFn,
         }),
-      ).rejects.toThrow(/needs_gas/)
+        /needs_gas/,
+      )
     })
 
     it('tolerates warmup 404s and eventually resolves', async () => {
       let n = 0
-      const fetchFn = mock(async () => {
+      const fetchFn = mock.fn(async () => {
         n += 1
         if (n < 3) return new Response('', { status: 404 })
         return jsonResponse({ squidTransactionStatus: 'success' })
@@ -245,15 +250,15 @@ describe('squid utils', () => {
         warmupAttempts: 5,
         fetchFn,
       })
-      expect(res.squidTransactionStatus).toBe('success')
-      expect(n).toBe(3)
+      assert.strictEqual(res.squidTransactionStatus, 'success')
+      assert.strictEqual(n, 3)
     })
 
     it('times out if status never reaches terminal', async () => {
-      const fetchFn = mock(async () =>
+      const fetchFn = mock.fn(async () =>
         jsonResponse({ squidTransactionStatus: 'ongoing' }),
       ) as unknown as typeof fetch
-      await expect(
+      await assert.rejects(
         pollSquidStatus({
           transactionId: TX_HASH,
           fromChainId: '42161',
@@ -262,14 +267,15 @@ describe('squid utils', () => {
           maxAttempts: 3,
           fetchFn,
         }),
-      ).rejects.toThrow(/timed out/)
+        /timed out/,
+      )
     })
   })
 
   describe('getRouteWithRetry', () => {
     it('retries on "Too many quote requests" then resolves', async () => {
       let n = 0
-      const fetchFn = mock(async () => {
+      const fetchFn = mock.fn(async () => {
         n += 1
         if (n === 1) {
           return jsonResponse(
@@ -286,34 +292,38 @@ describe('squid utils', () => {
         initialDelayMs: 1,
         fetchFn,
       })
-      expect(route.estimate.toAmountUSD).toBe('9.96')
-      expect(n).toBe(2)
+      assert.strictEqual(route.estimate.toAmountUSD, '9.96')
+      assert.strictEqual(n, 2)
     })
 
     it('surfaces non-rate-limit errors immediately without retry', async () => {
-      const fetchFn = mock(async () =>
+      const fetchFn = mock.fn(async () =>
         jsonResponse(
           { message: 'Apologies, swaps are currently unavailable.' },
           403,
         ),
-      ) as unknown as typeof fetch
+      )
 
-      await expect(
+      await assert.rejects(
         getRouteWithRetry({
           params: SAMPLE_PARAMS,
           attempts: 3,
           initialDelayMs: 1,
-          fetchFn,
+          fetchFn: fetchFn as unknown as typeof fetch,
         }),
-      ).rejects.toThrow(/Squid quote failed/)
+        /Squid quote failed/,
+      )
       // Should only be called once (no retry on non-429 errors).
-      expect(fetchFn).toHaveBeenCalledTimes(1)
+      assert.strictEqual(fetchFn.mock.callCount(), 1)
     })
   })
 
   describe('NATIVE_TOKEN', () => {
     it('is the canonical 0xeee… sentinel', () => {
-      expect(NATIVE_TOKEN).toBe('0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee')
+      assert.strictEqual(
+        NATIVE_TOKEN,
+        '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+      )
     })
   })
 })

@@ -1,5 +1,5 @@
-import { describe, it } from 'bun:test'
 import * as assert from 'node:assert'
+import { describe, it } from 'node:test'
 import {
   type EIP3770Address,
   getEip3770Address,

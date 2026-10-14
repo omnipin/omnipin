@@ -1,7 +1,7 @@
 import { base32 } from 'multiformats/bases/base32'
 import { toHex } from 'ox/Bytes'
 import { namehash, normalize } from 'ox/Ens'
-import * as varint from 'varint'
+import varint from 'varint'
 import type { ChainName } from '../types.js'
 import { referenceToCID } from './swarm.js'
 

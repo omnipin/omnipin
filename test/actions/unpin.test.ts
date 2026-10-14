@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it } from 'bun:test'
+import * as assert from 'node:assert'
+import { afterEach, describe, it } from 'node:test'
 import { unpinAction } from '../../src/actions/unpin.js'
 import { PROVIDERS } from '../../src/constants.js'
 import { AllProvidersFailedError } from '../../src/errors.js'
@@ -39,9 +40,9 @@ describe('unpin action', () => {
       cid: CID,
     }))
 
-    await expect(
+    await assert.doesNotReject(
       unpinAction({ cid: CID, options: { providers: name } }),
-    ).resolves.toBeUndefined()
+    )
   })
 
   // Regression: the `{ success }` return was discarded, so a provider that
@@ -53,9 +54,10 @@ describe('unpin action', () => {
       cid: CID,
     }))
 
-    await expect(
+    await assert.rejects(
       unpinAction({ cid: CID, options: { providers: name } }),
-    ).rejects.toBeInstanceOf(AllProvidersFailedError)
+      AllProvidersFailedError,
+    )
   })
 
   it('does not fail the run when only some providers report failure', async () => {
@@ -68,9 +70,9 @@ describe('unpin action', () => {
       cid: CID,
     }))
 
-    await expect(
+    await assert.doesNotReject(
       unpinAction({ cid: CID, options: { providers: `${ok},${bad}` } }),
-    ).resolves.toBeUndefined()
+    )
   })
 
   it('still aggregates providers that throw', async () => {
@@ -78,8 +80,9 @@ describe('unpin action', () => {
       throw new Error('boom')
     })
 
-    await expect(
+    await assert.rejects(
       unpinAction({ cid: CID, options: { providers: name } }),
-    ).rejects.toBeInstanceOf(AllProvidersFailedError)
+      AllProvidersFailedError,
+    )
   })
 })

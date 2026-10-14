@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: status is declared optional on the registry entry */
-import { afterEach, describe, expect, it } from 'bun:test'
+import * as assert from 'node:assert'
+import { afterEach, describe, it } from 'node:test'
 import { PROVIDERS } from '../../src/constants.js'
 import { DeployError } from '../../src/errors.js'
 
@@ -49,7 +50,7 @@ describe('Filebase', () => {
 
       await uploadOnFilebase(pinArgs)
 
-      expect(calls).toEqual([
+      assert.deepStrictEqual(calls, [
         `https://rpc.filebase.io/api/v0/pin/add?arg=${CID}`,
       ])
     })
@@ -61,14 +62,14 @@ describe('Filebase', () => {
 
       const result = await uploadOnFilebase(pinArgs)
 
-      expect(result.cid).toEqual(CID)
-      expect(result.status).toEqual('queued')
+      assert.strictEqual(result.cid, CID)
+      assert.strictEqual(result.status, 'queued')
     })
 
     it('falls back to the requested CID when the body omits Pins', async () => {
       stubFetch(() => new Response(JSON.stringify({}), { status: 200 }))
 
-      expect((await uploadOnFilebase(pinArgs)).cid).toEqual(CID)
+      assert.strictEqual((await uploadOnFilebase(pinArgs)).cid, CID)
     })
 
     // The RPC API reports errors as `{ Message, Code, Type }`, so reading
@@ -82,12 +83,8 @@ describe('Filebase', () => {
           ),
       )
 
-      await expect(uploadOnFilebase(pinArgs)).rejects.toThrow(
-        /not enough storage/,
-      )
-      await expect(uploadOnFilebase(pinArgs)).rejects.toBeInstanceOf(
-        DeployError,
-      )
+      await assert.rejects(uploadOnFilebase(pinArgs), /not enough storage/)
+      await assert.rejects(uploadOnFilebase(pinArgs), DeployError)
     })
 
     // Gateway and proxy errors are HTML, so `res.json()` used to throw before
@@ -102,14 +99,14 @@ describe('Filebase', () => {
         (e) => e,
       )) as DeployError
 
-      expect(err).toBeInstanceOf(DeployError)
-      expect(err.message).toContain('<!DOCTYPE html>')
+      assert.ok(err instanceof DeployError)
+      assert.ok(err.message.includes('<!DOCTYPE html>'))
     })
 
     it('falls back to the status line when the error body is empty', async () => {
       stubFetch(() => new Response('', { status: 500 }))
 
-      await expect(uploadOnFilebase(pinArgs)).rejects.toThrow(/500/)
+      await assert.rejects(uploadOnFilebase(pinArgs), /500/)
     })
   })
 
@@ -131,10 +128,10 @@ describe('Filebase', () => {
         auth: { token: 'token' },
       })
 
-      expect(calls).toEqual([
+      assert.deepStrictEqual(calls, [
         `https://api.filebase.io/v1/ipfs/pins?cid=${CID}&limit=1`,
       ])
-      expect(pin).toEqual('pinned')
+      assert.strictEqual(pin, 'pinned')
     })
   })
 })

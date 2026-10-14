@@ -27,18 +27,17 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: pnpm/setup@v3
         with:
-          bun-version: 1.4.0
+          runtime: node@22
+          working-directory: docs
 
       - name: Install Omnipin
-        run: bun i -g omnipin@3.1.1
+        run: pnpm add -g omnipin@3.1.1
 
       - name: Build website
-        run: |
-          cd docs
-          bun i
-          bun docs:build
+        working-directory: docs
+        run: pnpm docs:build
 
       - name: Pack dist as a tar collection
         working-directory: docs/.vitepress

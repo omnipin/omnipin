@@ -11,12 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
+      - uses: pnpm/setup@v3
         with:
-          bun-version: 1.4.0
-      - name: install deps
-        run: bun i
+          runtime: node@22
       - name: build
-        run: bun run build
+        run: pnpm build
       - name: lint
-        run: bun check
+        run: pnpm check

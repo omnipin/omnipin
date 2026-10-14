@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'bun:test'
+import * as assert from 'node:assert'
+import { describe, it } from 'node:test'
 import type { Provider } from 'ox/Provider'
 import { execTransactionWithRole } from '../../../src/utils/zodiac-roles/exec.js'
 
@@ -30,7 +31,7 @@ describe('zodiac-roles/execTransactionWithRole', () => {
   it('throws when the module simulation returns false', async () => {
     const { provider, methods } = stubProvider(ABI_FALSE)
 
-    await expect(
+    await assert.rejects(
       execTransactionWithRole({
         provider,
         resolverAddress: RESOLVER,
@@ -41,9 +42,10 @@ describe('zodiac-roles/execTransactionWithRole', () => {
         chainId: 1,
         explorerUrl: 'https://etherscan.io',
       }),
-    ).rejects.toThrow(/refused the setContenthash call/)
+      /refused the setContenthash call/,
+    )
 
     // Nothing may be signed or broadcast once the simulation says no.
-    expect(methods).toEqual(['eth_call'])
+    assert.deepStrictEqual(methods, ['eth_call'])
   })
 })

@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, mock } from 'bun:test'
+import * as assert from 'node:assert'
+import { afterEach, describe, it, mock } from 'node:test'
 import {
   AIOZ_BRIDGE_API,
   fetchPoolAddress,
@@ -24,8 +25,8 @@ describe('aioz-bridge', () => {
 
   describe('fetchPoolAddress', () => {
     it('returns the matching pool address', async () => {
-      globalThis.fetch = mock(async (url: string | URL | Request) => {
-        expect(String(url)).toBe(`${AIOZ_BRIDGE_API}/swap-directions`)
+      globalThis.fetch = mock.fn(async (url: string | URL | Request) => {
+        assert.strictEqual(String(url), `${AIOZ_BRIDGE_API}/swap-directions`)
         return makeResponse([
           {
             from_network: 'eth',
@@ -45,11 +46,11 @@ describe('aioz-bridge', () => {
       }) as unknown as typeof fetch
 
       const pool = await fetchPoolAddress({ from: 'eth', to: 'aioz' })
-      expect(pool).toBe(POOL)
+      assert.strictEqual(pool, POOL)
     })
 
     it('throws if no matching direction exists', async () => {
-      globalThis.fetch = mock(async () =>
+      globalThis.fetch = mock.fn(async () =>
         makeResponse([
           {
             from_network: 'bsc',
@@ -61,26 +62,28 @@ describe('aioz-bridge', () => {
         ]),
       ) as unknown as typeof fetch
 
-      await expect(
+      await assert.rejects(
         fetchPoolAddress({ from: 'eth', to: 'aioz' }),
-      ).rejects.toThrow(/No AIOZ bridge direction/)
+        /No AIOZ bridge direction/,
+      )
     })
 
     it('throws when the bridge API returns non-2xx', async () => {
-      globalThis.fetch = mock(
+      globalThis.fetch = mock.fn(
         async () =>
           new Response('boom', { status: 500, statusText: 'Server Error' }),
       ) as unknown as typeof fetch
 
-      await expect(
+      await assert.rejects(
         fetchPoolAddress({ from: 'eth', to: 'aioz' }),
-      ).rejects.toThrow(/returned 500/)
+        /returned 500/,
+      )
     })
   })
 
   describe('pollSwapStatus', () => {
     it('resolves immediately when status is sent', async () => {
-      const fetchFn = mock(async () =>
+      const fetchFn = mock.fn(async () =>
         makeResponse({ status: 'sent', tx_out: '0xdeadbeef' }),
       ) as unknown as typeof fetch
 
@@ -89,22 +92,23 @@ describe('aioz-bridge', () => {
         intervalMs: 1,
         fetchFn,
       })
-      expect(result).toEqual({ status: 'sent', txOut: '0xdeadbeef' })
+      assert.deepStrictEqual(result, { status: 'sent', txOut: '0xdeadbeef' })
     })
 
     it('throws when status is fail', async () => {
-      const fetchFn = mock(async () =>
+      const fetchFn = mock.fn(async () =>
         makeResponse({ status: 'fail' }),
       ) as unknown as typeof fetch
 
-      await expect(
+      await assert.rejects(
         pollSwapStatus({ srcTxHash: TX_HASH, intervalMs: 1, fetchFn }),
-      ).rejects.toThrow(/reported failure/)
+        /reported failure/,
+      )
     })
 
     it('tolerates warmup 404s and eventually resolves', async () => {
       let attempt = 0
-      const fetchFn = mock(async () => {
+      const fetchFn = mock.fn(async () => {
         attempt += 1
         if (attempt < 3) {
           return new Response('not found', {
@@ -122,13 +126,13 @@ describe('aioz-bridge', () => {
         fetchFn,
       })
 
-      expect(result.status).toBe('sent')
-      expect(result.txOut).toBe('0xfeed')
-      expect(attempt).toBe(3)
+      assert.strictEqual(result.status, 'sent')
+      assert.strictEqual(result.txOut, '0xfeed')
+      assert.strictEqual(attempt, 3)
     })
 
     it('throws if 404 persists past warmup', async () => {
-      const fetchFn = mock(
+      const fetchFn = mock.fn(
         async () =>
           new Response('not found', {
             status: 404,
@@ -136,7 +140,7 @@ describe('aioz-bridge', () => {
           }),
       ) as unknown as typeof fetch
 
-      await expect(
+      await assert.rejects(
         pollSwapStatus({
           srcTxHash: TX_HASH,
           intervalMs: 1,
@@ -144,22 +148,24 @@ describe('aioz-bridge', () => {
           maxAttempts: 3,
           fetchFn,
         }),
-      ).rejects.toThrow(/404 after warmup/)
+        /404 after warmup/,
+      )
     })
 
     it('times out if status never reaches sent', async () => {
-      const fetchFn = mock(async () =>
+      const fetchFn = mock.fn(async () =>
         makeResponse({ status: 'sending' }),
       ) as unknown as typeof fetch
 
-      await expect(
+      await assert.rejects(
         pollSwapStatus({
           srcTxHash: TX_HASH,
           intervalMs: 1,
           maxAttempts: 3,
           fetchFn,
         }),
-      ).rejects.toThrow(/timed out/)
+        /timed out/,
+      )
     })
   })
 })

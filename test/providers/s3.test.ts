@@ -1,17 +1,20 @@
-import { describe, expect, it, mock } from 'bun:test'
+import * as assert from 'node:assert'
+import { describe, it, mock } from 'node:test'
 import { DeployError } from '../../src/errors.js'
-import { uploadOnS3 } from '../../src/providers/ipfs/s3.js'
 
 const success = new Response(null, { status: 200 })
 const failure = new Response('mock', { status: 400 })
 
+let response: Response
+mock.module('@stauro/filebase-upload', {
+  namedExports: { uploadCar: async () => response },
+})
+// Loaded after the mock is registered, so s3.ts binds the stubbed uploadCar.
+const { uploadOnS3 } = await import('../../src/providers/ipfs/s3.js')
+
 describe('s3', () => {
   it('should upload a car to s3', async () => {
-    mock.module('@stauro/filebase-upload', async () => {
-      return {
-        uploadCar: async () => success,
-      }
-    })
+    response = success
     const res = await uploadOnS3({
       name: 'test.car',
       bytes: new Uint8Array(),
@@ -22,15 +25,11 @@ describe('s3', () => {
       verbose: false,
       size: 0,
     })
-    expect(res.status).toEqual(success.status)
+    assert.strictEqual(res.status, success.status)
   })
   it('should throw if upload fails', async () => {
-    mock.module('@stauro/filebase-upload', async () => {
-      return {
-        uploadCar: async () => failure,
-      }
-    })
-    expect(
+    response = failure
+    await assert.rejects(
       uploadOnS3({
         name: 'test.car',
         bytes: new Uint8Array(),
@@ -41,6 +40,7 @@ describe('s3', () => {
         verbose: false,
         size: 0,
       }),
-    ).rejects.toThrow(DeployError)
+      DeployError,
+    )
   })
 })

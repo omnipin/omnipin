@@ -1,6 +1,9 @@
-import { describe, it } from 'bun:test'
 import assert from 'node:assert'
-import { UploadNotSupportedError } from '../../src/errors.js'
+import { describe, it } from 'node:test'
+// Import from src/index.js first: starting module evaluation at spec.js
+// trips the logger → constants → spec import cycle (see
+// filecoin-status.test.ts, which relies on the same ordering).
+import { UploadNotSupportedError } from '../../src/index.js'
 import { specPin } from '../../src/providers/ipfs/spec.js'
 
 describe('spec provider', () => {

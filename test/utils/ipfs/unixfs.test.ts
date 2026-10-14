@@ -1,5 +1,5 @@
-import { describe, it } from 'bun:test'
 import * as assert from 'node:assert'
+import { describe, it } from 'node:test'
 import { MemoryBlockstore } from '../../../src/utils/ipfs/blockstore.js'
 import { importer } from '../../../src/utils/ipfs/unixfs.js'
 import { cases } from '../../fixtures/unixfs-cases.js'
