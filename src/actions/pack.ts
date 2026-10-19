@@ -5,7 +5,7 @@ import { MissingDirectoryError } from '../errors.js'
 import { exists, fileSize, walk } from '../utils/fs.js'
 import { packCAR } from '../utils/ipfs.js'
 import { logger } from '../utils/logger.js'
-import { packTAR } from '../utils/tar.js'
+import { packTAR, tarOutputPath } from '../utils/tar.js'
 
 export type PackActionArgs = Partial<{
   name: string
@@ -51,13 +51,23 @@ export const packAction = async ({
   }
 
   if (tar) {
-    const { bytes, output } = await packTAR(files, name, dist)
+    // The archive is written to the output directory, which can be the very
+    // directory being deployed — a leftover archive from a previous run would
+    // then be picked up as site content. Exclude it from the pack.
+    const output = tarOutputPath(name, dist)
+    const packed = files.filter(
+      (file) =>
+        path.resolve(normalizedPath, file.path) !== path.resolve(output),
+    )
+    const packedSize = packed.reduce((total, file) => total + file.size, 0)
+
+    const { bytes } = await packTAR(packed, name, dist)
 
     if (!onlyHash && output) {
       logger.info(`TAR: ${isTTY ? styleText('white', output) : output}`)
     }
 
-    return { name, bytes, files, size, path: output }
+    return { name, bytes, files: packed, size: packedSize, path: output }
   }
 
   const { rootCID, bytes } = await packCAR(files, name, dist)

@@ -63,12 +63,12 @@ Then run the deployment command:
 omnipin deploy
 ```
 
-Omnipin reads the batch depth *and* its mutability from the chain, and checks that the signer key derives to the batch owner (a mismatched key makes bee reject every stamp). Set `OMNIPIN_HOVERFLY_DEPTH` to pin the depth and skip the lookup, and `OMNIPIN_HOVERFLY_NO_OWNER_CHECK=1` to skip the owner check when you are authorised to stamp for a batch you don't own.
+Omnipin reads the batch depth *and* its mutability from the chain, and checks that the signer key derives to the batch owner (a mismatched key makes bee reject every stamp). Set `OMNIPIN_HOVERFLY_DEPTH` to pin the depth — that skips the chain read, and with it the owner check. Set `OMNIPIN_HOVERFLY_NO_OWNER_CHECK=1` to skip the owner check on its own, when you are authorised to stamp for a batch you don't own.
 
 Other optional knobs:
 
 - `OMNIPIN_HOVERFLY_RPC_URL` — Gnosis RPC used for the on-chain lookup (defaults to `https://rpc.gnosischain.com`).
-- `OMNIPIN_HOVERFLY_IMMUTABLE` — `true`/`false` to force fill-only (immutable) stamping. Only used when the depth is pinned.
+- `OMNIPIN_HOVERFLY_IMMUTABLE` — `1`/`true` to force fill-only (immutable) stamping, `0`/`false` for mutable. Only used when the depth is pinned.
 - `OMNIPIN_HOVERFLY_REDUNDANCY` — Reed–Solomon redundancy level: `none`, `medium`, `strong`, `insane` or `paranoid` (defaults to the daemon's `medium`).
 - `OMNIPIN_HOVERFLY_CONCURRENCY` — parallel peer sessions (defaults to 8, same as `hoverfly upload`).
 - `OMNIPIN_HOVERFLY_RETRIES` — peers to try per chunk (defaults to 10, same as `hoverfly upload`).

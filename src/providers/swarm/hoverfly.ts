@@ -1,7 +1,6 @@
-import * as Address from 'ox/Address'
-import * as Secp256k1 from 'ox/Secp256k1'
 import { DeployError, PinningNotSupportedError } from '../../errors.js'
 import type { UploadFunction } from '../../types.js'
+import { addressFromPrivateKey } from '../../utils/address.js'
 import {
   callDaemon,
   DEFAULT_HOVERFLY_SOCKET,
@@ -15,16 +14,8 @@ const providerName = 'Hoverfly'
 const DEFAULT_MAX_RETRIES = 10
 /** Parallel peer sessions, mirroring the `hoverfly upload` default. */
 const DEFAULT_CONCURRENCY = 8
-
-/** Derive the Ethereum address of a private key (the batch owner's). */
-const addressFromKey = (key: string): string | undefined => {
-  const privateKey = `0x${key.replace(/^0x/i, '')}` as `0x${string}`
-  try {
-    return Address.fromPublicKey(Secp256k1.getPublicKey({ privateKey }))
-  } catch {
-    return undefined
-  }
-}
+/** How often to report that the upload is still running. */
+const HEARTBEAT_INTERVAL = 15_000
 
 export const uploadOnHoverfly: UploadFunction<{
   key?: string
@@ -64,10 +55,10 @@ export const uploadOnHoverfly: UploadFunction<{
   const signer = key.replace(/^0x/i, '')
 
   try {
-    const pong = await callDaemon(socketPath, { op: 'ping' }).catch(() => {
+    const pong = await callDaemon(socketPath, { op: 'ping' }).catch((e) => {
       throw new DeployError(
         providerName,
-        `no hoverfly daemon at ${socketPath} — start one with \`hoverfly daemon --socket ${socketPath}\``,
+        `no hoverfly daemon at ${socketPath} (${(e as Error).message}) — start one with \`hoverfly daemon --socket ${socketPath}\``,
       )
     })
     if (pong.status !== 'pong') {
@@ -90,7 +81,7 @@ export const uploadOnHoverfly: UploadFunction<{
       // A key that doesn't own the batch produces stamps bee rejects
       // ("could not push chunk") — fail fast instead of retrying forever.
       if (!skipOwnerCheck) {
-        const owner = addressFromKey(key)
+        const owner = addressFromPrivateKey(key)
         if (owner && owner.toLowerCase() !== info.owner.toLowerCase()) {
           throw new DeployError(
             providerName,
@@ -105,40 +96,61 @@ export const uploadOnHoverfly: UploadFunction<{
     if (verbose) logger.info(`${providerName}: uploading via ${socketPath}…`)
     const startedAt = Date.now()
     let lastReported = 0
-    const resp = await callDaemon(
-      socketPath,
-      {
-        op: 'upload',
-        file: path,
-        batch,
-        depth: batchDepth,
-        immutable: batchImmutable,
-        key: signer,
-        max_retries: retries ?? DEFAULT_MAX_RETRIES,
-        concurrency: concurrency ?? DEFAULT_CONCURRENCY,
-        raw: false,
-        collection: true,
-        // Ask the daemon to stream chunk progress; it is the only way to
-        // tell a slow upload from a stuck one.
-        progress: true,
-        manifest_path: null,
-        content_type: null,
-        index_document: 'index.html',
-        error_document: 'index.html',
-        redundancy: redundancy ?? null,
-      },
-      (done, total) => {
-        if (!verbose) return
-        // Throttle: the daemon reports per chunk, uploads have thousands.
-        if (done - lastReported < 10 && done !== total) return
-        lastReported = done
-        const pct = total > 0 ? Math.round((done / total) * 100) : 0
-        const secs = Math.round((Date.now() - startedAt) / 1000)
-        logger.info(
-          `${providerName}: ${done}/${total} chunks (${pct}%) — ${secs}s`,
-        )
-      },
-    )
+    // The daemon only streams progress once the upload actually starts — the
+    // pool fill before that can take minutes — so keep a heartbeat going
+    // until the first progress frame arrives.
+    let heartbeat: NodeJS.Timeout | undefined = verbose
+      ? setInterval(() => {
+          const secs = Math.round((Date.now() - startedAt) / 1000)
+          logger.info(`${providerName}: still uploading (${secs}s)…`)
+        }, HEARTBEAT_INTERVAL)
+      : undefined
+    let resp: Awaited<ReturnType<typeof callDaemon>>
+    try {
+      resp = await callDaemon(
+        socketPath,
+        {
+          op: 'upload',
+          file: path,
+          batch,
+          depth: batchDepth,
+          immutable: batchImmutable,
+          key: signer,
+          max_retries: retries ?? DEFAULT_MAX_RETRIES,
+          concurrency: concurrency ?? DEFAULT_CONCURRENCY,
+          raw: false,
+          collection: true,
+          // Ask the daemon to stream chunk progress; it is the only way to
+          // tell a slow upload from a stuck one.
+          progress: true,
+          manifest_path: null,
+          content_type: null,
+          index_document: 'index.html',
+          // Left unset, like `hoverfly upload` does: a missing path should
+          // 404 rather than serve the index document.
+          error_document: null,
+          redundancy: redundancy ?? null,
+        },
+        (done, total) => {
+          // Progress frames arrived — the heartbeat has done its job.
+          if (heartbeat) {
+            clearInterval(heartbeat)
+            heartbeat = undefined
+          }
+          if (!verbose) return
+          // Throttle: the daemon reports per chunk, uploads have thousands.
+          if (done - lastReported < 10 && done !== total) return
+          lastReported = done
+          const pct = total > 0 ? Math.round((done / total) * 100) : 0
+          const secs = Math.round((Date.now() - startedAt) / 1000)
+          logger.info(
+            `${providerName}: ${done}/${total} chunks (${pct}%) — ${secs}s`,
+          )
+        },
+      )
+    } finally {
+      if (heartbeat) clearInterval(heartbeat)
+    }
 
     if (resp.status === 'err') {
       throw new DeployError(providerName, resp.message)

@@ -3,6 +3,8 @@ import { afterEach, describe, it } from 'node:test'
 import { MissingKeyError } from '../../src/errors.js'
 import {
   findEnvVarProviderName,
+  parseBoolean,
+  parseNumber,
   parseTokensFromEnv,
   resolveSignerKey,
   tokensToProviderNames,
@@ -46,6 +48,39 @@ describe('env utils', () => {
       assert.strictEqual(tokens.get('PINATA_TOKEN'), 'pinata-key')
       assert.strictEqual(tokens.has('PATH'), false)
       assert.strictEqual(tokens.has('HOME'), false)
+    })
+  })
+
+  describe('parseNumber', () => {
+    it('parses numeric values', () => {
+      assert.strictEqual(parseNumber('8'), 8)
+      assert.strictEqual(parseNumber('0'), 0)
+      assert.strictEqual(parseNumber('20.5'), 20.5)
+    })
+
+    it('returns undefined for missing or non-numeric values', () => {
+      assert.strictEqual(parseNumber(undefined), undefined)
+      assert.strictEqual(parseNumber(''), undefined)
+      assert.strictEqual(parseNumber('many'), undefined)
+      assert.strictEqual(parseNumber('Infinity'), undefined)
+    })
+  })
+
+  describe('parseBoolean', () => {
+    it('parses truthy values', () => {
+      for (const value of ['1', 'true', 'TRUE', 'yes', 'on'])
+        assert.strictEqual(parseBoolean(value), true, value)
+    })
+
+    it('parses falsy values', () => {
+      for (const value of ['0', 'false', 'FALSE', 'no', 'off'])
+        assert.strictEqual(parseBoolean(value), false, value)
+    })
+
+    it('returns undefined for missing or unrecognized values', () => {
+      assert.strictEqual(parseBoolean(undefined), undefined)
+      assert.strictEqual(parseBoolean(''), undefined)
+      assert.strictEqual(parseBoolean('maybe'), undefined)
     })
   })
 

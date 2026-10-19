@@ -34,6 +34,7 @@ describe('AIOZ', () => {
     })
 
     it('should pin a CID on AIOZ successfully', {
+      skip: !process.env.OMNIPIN_AIOZ_TOKEN,
       timeout: 30_000,
     }, async () => {
       const token = process.env.OMNIPIN_AIOZ_TOKEN!

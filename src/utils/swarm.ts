@@ -6,12 +6,10 @@ import { type Hex, toBytes } from 'ox/Hex'
 import * as Provider from 'ox/Provider'
 import { fromHttp } from 'ox/RpcTransport'
 import varint from 'varint'
+import { ZERO_ADDRESS } from './address.js'
 
 const KECCAK_256_CODEC = 0x1b
 const SWARM_MANIFEST_CODEC = 0xfa
-
-/** The zero address — `ox` ships no constant for it. */
-export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 const POSTAGE_STAMP_ADDRESS = '0x45a1502382541Cd610CC9068e88727426b696293'
 const DEFAULT_GNOSIS_RPC = 'https://rpc.gnosischain.com'

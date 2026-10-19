@@ -109,6 +109,8 @@ describe('Hoverfly', () => {
       assert.equal(upload.progress, true)
       assert.equal(upload.depth, 20)
       assert.equal(upload.index_document, 'index.html')
+      // Left unset, like `hoverfly upload` does — a missing path should 404.
+      assert.equal(upload.error_document, null)
     } finally {
       await daemon.close()
     }

@@ -39,7 +39,6 @@ export type HoverflyResponse =
   | { status: 'pong' }
   | { status: 'progress'; done: number; total: number }
   | { status: 'uploaded'; root: string; bytes: number }
-  | { status: 'fetched'; bytes_written: number; content_type: string | null }
   | { status: 'ok' }
   | { status: 'err'; message: string }
 
@@ -106,7 +105,12 @@ export const callDaemon = (
 
         // `progress` frames are streamed before the terminal frame.
         if (response.status === 'progress') {
-          onProgress?.(response.done, response.total)
+          try {
+            onProgress?.(response.done, response.total)
+          } catch (e) {
+            fail(e as Error)
+            return
+          }
           continue
         }
 

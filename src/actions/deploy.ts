@@ -3,6 +3,8 @@ import { AsciiBar, styleText } from '../deps.js'
 import { AllProvidersFailedError, NoProvidersError } from '../errors.js'
 import {
   findEnvVarProviderName,
+  parseBoolean,
+  parseNumber,
   parseTokensFromEnv,
   tokensToProviderNames,
 } from '../utils/env.js'
@@ -167,9 +169,6 @@ export const deployAction = async ({
       bar?.update(total++, deployMessage(provider.name, provider.supported))
       const envVar = findEnvVarProviderName(provider.name)
       try {
-        const hoverflyDepth = apiTokens.get('HOVERFLY_DEPTH')
-        const hoverflyConcurrency = apiTokens.get('HOVERFLY_CONCURRENCY')
-        const hoverflyRetries = apiTokens.get('HOVERFLY_RETRIES')
         const result = await provider.upload({
           bytes,
           token: apiTokens.get(envVar)!,
@@ -178,22 +177,24 @@ export const deployAction = async ({
           first: true,
           beeURL: apiTokens.get('BEE_URL'),
           // Hoverfly talks to a local `hoverfly daemon` over its UNIX socket.
-          key: apiTokens.get('HOVERFLY_KEY'),
-          path: tarPath,
-          socket: apiTokens.get('HOVERFLY_SOCKET'),
-          rpcUrl: apiTokens.get('HOVERFLY_RPC_URL'),
-          depth: hoverflyDepth ? Number(hoverflyDepth) : undefined,
-          immutable: apiTokens.get('HOVERFLY_IMMUTABLE')
-            ? apiTokens.get('HOVERFLY_IMMUTABLE') !== 'false'
-            : undefined,
-          redundancy: apiTokens.get('HOVERFLY_REDUNDANCY'),
-          concurrency: hoverflyConcurrency
-            ? Number(hoverflyConcurrency)
-            : undefined,
-          retries: hoverflyRetries ? Number(hoverflyRetries) : undefined,
-          skipOwnerCheck:
-            apiTokens.get('HOVERFLY_NO_OWNER_CHECK') === 'true' ||
-            apiTokens.get('HOVERFLY_NO_OWNER_CHECK') === '1',
+          // Its options (including the signer key) are only handed to the
+          // Hoverfly provider itself.
+          ...(envVar === 'HOVERFLY_TOKEN'
+            ? {
+                key: apiTokens.get('HOVERFLY_KEY'),
+                path: tarPath,
+                socket: apiTokens.get('HOVERFLY_SOCKET'),
+                rpcUrl: apiTokens.get('HOVERFLY_RPC_URL'),
+                depth: parseNumber(apiTokens.get('HOVERFLY_DEPTH')),
+                immutable: parseBoolean(apiTokens.get('HOVERFLY_IMMUTABLE')),
+                redundancy: apiTokens.get('HOVERFLY_REDUNDANCY'),
+                concurrency: parseNumber(apiTokens.get('HOVERFLY_CONCURRENCY')),
+                retries: parseNumber(apiTokens.get('HOVERFLY_RETRIES')),
+                skipOwnerCheck: parseBoolean(
+                  apiTokens.get('HOVERFLY_NO_OWNER_CHECK'),
+                ),
+              }
+            : {}),
         })
         swarmCid = result.cid
         cid = result.rID!

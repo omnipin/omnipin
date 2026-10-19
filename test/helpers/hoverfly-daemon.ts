@@ -1,3 +1,4 @@
+import { rmSync } from 'node:fs'
 import net from 'node:net'
 import { join } from 'node:path'
 
@@ -29,8 +30,11 @@ export const startFakeDaemon = async (
     `omnipin-hf-${process.pid}-${Math.random().toString(36).slice(2, 8)}.sock`,
   )
   const requests: DaemonFrame[] = []
+  const sockets = new Set<net.Socket>()
 
   const server = net.createServer((socket) => {
+    sockets.add(socket)
+    socket.on('close', () => sockets.delete(socket))
     let buffer = Buffer.alloc(0)
     socket.on('data', (chunk: Buffer) => {
       buffer = Buffer.concat([buffer, chunk])
@@ -58,7 +62,13 @@ export const startFakeDaemon = async (
     requests,
     close: () =>
       new Promise<void>((resolve) => {
-        server.close(() => resolve())
+        // `server.close()` only stops accepting new connections — lingering
+        // ones would keep the callback pending forever.
+        for (const socket of sockets) socket.destroy()
+        server.close(() => {
+          rmSync(path, { force: true })
+          resolve()
+        })
       }),
   }
 }
