@@ -3,6 +3,8 @@ import { AsciiBar, styleText } from '../deps.js'
 import { AllProvidersFailedError, NoProvidersError } from '../errors.js'
 import {
   findEnvVarProviderName,
+  parseBoolean,
+  parseNumber,
   parseTokensFromEnv,
   tokensToProviderNames,
 } from '../utils/env.js'
@@ -87,6 +89,7 @@ export const deployAction = async ({
     cid: ipfsCid,
     bytes,
     size,
+    path: tarPath,
   } = await packAction({
     dir,
     options: {
@@ -173,6 +176,25 @@ export const deployAction = async ({
           name: '',
           first: true,
           beeURL: apiTokens.get('BEE_URL'),
+          // Hoverfly talks to a local `hoverfly daemon` over its UNIX socket.
+          // Its options (including the signer key) are only handed to the
+          // Hoverfly provider itself.
+          ...(envVar === 'HOVERFLY_TOKEN'
+            ? {
+                key: apiTokens.get('HOVERFLY_KEY'),
+                path: tarPath,
+                socket: apiTokens.get('HOVERFLY_SOCKET'),
+                rpcUrl: apiTokens.get('HOVERFLY_RPC_URL'),
+                depth: parseNumber(apiTokens.get('HOVERFLY_DEPTH')),
+                immutable: parseBoolean(apiTokens.get('HOVERFLY_IMMUTABLE')),
+                redundancy: apiTokens.get('HOVERFLY_REDUNDANCY'),
+                concurrency: parseNumber(apiTokens.get('HOVERFLY_CONCURRENCY')),
+                retries: parseNumber(apiTokens.get('HOVERFLY_RETRIES')),
+                skipOwnerCheck: parseBoolean(
+                  apiTokens.get('HOVERFLY_NO_OWNER_CHECK'),
+                ),
+              }
+            : {}),
         })
         swarmCid = result.cid
         cid = result.rID!

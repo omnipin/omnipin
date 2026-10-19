@@ -1,6 +1,77 @@
 # Swarm
 
-Omnipin supports uploading on the [Swarm](https://ethswarm.org) decentralized network via [Swarmy](https://swarmy.cloud) and a Bee node.
+Omnipin supports uploading on the [Swarm](https://ethswarm.org) decentralized network via the [Hoverfly](https://github.com/omnipin/hoverfly) light client, [Swarmy](https://swarmy.cloud), or a Bee node.
+
+## Hoverfly
+
+- API token env variables: `OMNIPIN_HOVERFLY_TOKEN`, `OMNIPIN_HOVERFLY_KEY`
+- Supported methods: Upload
+
+[Hoverfly](https://github.com/omnipin/hoverfly) is a Swarm light client that requires no Bee node and no remote server — it runs entirely on your machine and works in CI.
+
+Requires a Hoverfly daemon (`v0.2.0` or newer) — Omnipin talks to it over its UNIX socket.
+
+### Setup
+
+Install Hoverfly:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/omnipin/hoverfly/main/install.sh | sh
+```
+
+Generate a signer key, fund it with xDAI + BZZ on Gnosis (see the [Hoverfly README](https://github.com/omnipin/hoverfly#setup)), then buy a postage batch and generate an overlay nonce:
+
+```sh
+hoverfly batch create --key 0xYOUR_KEY --size 200MB --duration 30d
+hoverfly vanity-overlay --key 0xYOUR_KEY --peerlist peers.json --output overlay-nonce
+```
+
+### Running the daemon
+
+Start the daemon and leave it running:
+
+```sh
+hoverfly daemon \
+  --socket /tmp/hoverfly.sock \
+  --pool-size 256 \
+  --identity 0xYOUR_KEY \
+  --nonce-file overlay-nonce \
+  --peerlist peers.json
+```
+
+Always fetch a fresh peerlist from the GitHub CDN — the release-bundled `peers.seed.json` goes stale:
+
+```sh
+curl -fsSL -o peers.json https://raw.githubusercontent.com/omnipin/hoverfly/main/peers.seed.json
+```
+
+On a cold peerlist, add `--discover-rounds 3`.
+
+### Running the deployment
+
+Set the postage batch ID and signer key in the environment:
+
+```sh
+OMNIPIN_HOVERFLY_TOKEN=0xf078...1afc # postage batch ID
+OMNIPIN_HOVERFLY_KEY=da25...0a44
+# OMNIPIN_HOVERFLY_SOCKET=/tmp/hoverfly.sock   # optional, this is the default
+```
+
+Then run the deployment command:
+
+```sh
+omnipin deploy
+```
+
+Omnipin reads the batch depth *and* its mutability from the chain, and checks that the signer key derives to the batch owner (a mismatched key makes bee reject every stamp). Set `OMNIPIN_HOVERFLY_DEPTH` to pin the depth — that skips the chain read, and with it the owner check. Set `OMNIPIN_HOVERFLY_NO_OWNER_CHECK=1` to skip the owner check on its own, when you are authorised to stamp for a batch you don't own.
+
+Other optional knobs:
+
+- `OMNIPIN_HOVERFLY_RPC_URL` — Gnosis RPC used for the on-chain lookup (defaults to `https://rpc.gnosischain.com`).
+- `OMNIPIN_HOVERFLY_IMMUTABLE` — `1`/`true` to force fill-only (immutable) stamping, `0`/`false` for mutable. Only used when the depth is pinned.
+- `OMNIPIN_HOVERFLY_REDUNDANCY` — Reed–Solomon redundancy level: `none`, `medium`, `strong`, `insane` or `paranoid` (defaults to the daemon's `medium`).
+- `OMNIPIN_HOVERFLY_CONCURRENCY` — parallel peer sessions (defaults to 8, same as `hoverfly upload`).
+- `OMNIPIN_HOVERFLY_RETRIES` — peers to try per chunk (defaults to 10, same as `hoverfly upload`).
 
 ## Swarmy
 

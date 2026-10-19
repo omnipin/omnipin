@@ -11,6 +11,33 @@ export const parseTokensFromEnv = (): Map<string, string> => {
   return tokens
 }
 
+/**
+ * Parse an env var as a number.
+ *
+ * @returns The number, or `undefined` when unset or not a finite number.
+ */
+export const parseNumber = (value: string | undefined): number | undefined => {
+  if (!value) return undefined
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
+/**
+ * Parse an env var as a boolean.
+ *
+ * @returns `true` for `1`/`true`/`yes`/`on`, `false` for `0`/`false`/`no`/`off`,
+ *   `undefined` when unset or not a recognised value.
+ */
+export const parseBoolean = (
+  value: string | undefined,
+): boolean | undefined => {
+  if (!value) return undefined
+  const normalized = value.trim().toLowerCase()
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) return true
+  if (['0', 'false', 'no', 'off'].includes(normalized)) return false
+  return undefined
+}
+
 // ESTUARY_TOKEN => Estuary
 export const tokensToProviderNames = (
   keys: IterableIterator<string> | string[],

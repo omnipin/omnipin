@@ -8,6 +8,7 @@ import { sign } from 'ox/Secp256k1'
 import type { Signature } from 'ox/Signature'
 import { getSignPayload } from 'ox/TypedData'
 import type { ChainName } from '../types.js'
+import { ZERO_ADDRESS } from './address.js'
 import { getTransactionHash } from './safe/constants.js'
 import { type EIP3770Address, getEip3770Address } from './safe/eip3770.js'
 import type { SafeTransactionData } from './safe/types.js'
@@ -26,8 +27,6 @@ const chainNameToSafeShortName: Record<ChainName, string> = {
 // Targeting the gateway directly avoids the redirect entirely.
 export const chainToSafeApiUrl = (chainName: ChainName) =>
   `https://api.safe.global/tx-service/${chainNameToSafeShortName[chainName]}`
-
-const zeroAddress = '0x0000000000000000000000000000000000000000'
 
 export const prepareSafeTransactionData = async ({
   txData,
@@ -59,8 +58,8 @@ export const prepareSafeTransactionData = async ({
           txData.safeTxGas ?? 0n,
           txData.baseGas ?? 0n,
           txData.gasPrice ?? 0n,
-          zeroAddress,
-          zeroAddress,
+          ZERO_ADDRESS,
+          ZERO_ADDRESS,
           txData.nonce,
         ]),
         gas: SIMULATION_GAS_LIMIT,
@@ -121,8 +120,8 @@ export const generateSafeTransactionSignature = async ({
       safeTxGas: txData.safeTxGas ?? 0n,
       baseGas: txData.baseGas ?? 0n,
       gasPrice: txData.gasPrice ?? 0n,
-      gasToken: zeroAddress,
-      refundReceiver: zeroAddress,
+      gasToken: ZERO_ADDRESS,
+      refundReceiver: ZERO_ADDRESS,
       nonce: txData.nonce ?? 0n,
     },
   })

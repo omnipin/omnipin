@@ -5,6 +5,10 @@ import type { FileEntry } from '../types.js'
 
 const tmp = tmpdir()
 
+/** Path of the archive `packTAR` writes for `name`. */
+export const tarOutputPath = (name: string, dir: string = tmp): string =>
+  `${dir}/${name}.tar`
+
 export const packTAR = async (
   files: Omit<FileEntry, 'size'>[],
   name?: string,
@@ -35,7 +39,7 @@ export const packTAR = async (
 
   if (!name) return { bytes, output: null }
 
-  const output = `${dir}/${name}.tar`
+  const output = tarOutputPath(name, dir)
   await writeFile(output, bytes)
   return { bytes, output }
 }
