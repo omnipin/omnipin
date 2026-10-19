@@ -183,10 +183,17 @@ export const deployAction = async ({
           socket: apiTokens.get('HOVERFLY_SOCKET'),
           rpcUrl: apiTokens.get('HOVERFLY_RPC_URL'),
           depth: hoverflyDepth ? Number(hoverflyDepth) : undefined,
+          immutable: apiTokens.get('HOVERFLY_IMMUTABLE')
+            ? apiTokens.get('HOVERFLY_IMMUTABLE') !== 'false'
+            : undefined,
+          redundancy: apiTokens.get('HOVERFLY_REDUNDANCY'),
           concurrency: hoverflyConcurrency
             ? Number(hoverflyConcurrency)
             : undefined,
           retries: hoverflyRetries ? Number(hoverflyRetries) : undefined,
+          skipOwnerCheck:
+            apiTokens.get('HOVERFLY_NO_OWNER_CHECK') === 'true' ||
+            apiTokens.get('HOVERFLY_NO_OWNER_CHECK') === '1',
         })
         swarmCid = result.cid
         cid = result.rID!

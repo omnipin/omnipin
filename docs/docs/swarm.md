@@ -9,6 +9,8 @@ Omnipin supports uploading on the [Swarm](https://ethswarm.org) decentralized ne
 
 [Hoverfly](https://github.com/omnipin/hoverfly) is a Swarm light client that requires no Bee node and no remote server — it runs entirely on your machine and works in CI.
 
+Requires a Hoverfly daemon (`v0.2.0` or newer) — Omnipin talks to it over its UNIX socket.
+
 ### Setup
 
 Install Hoverfly:
@@ -61,7 +63,15 @@ Then run the deployment command:
 omnipin deploy
 ```
 
-Omnipin reads the batch depth on-chain automatically; override it with `OMNIPIN_HOVERFLY_DEPTH` to skip the lookup. Other optional knobs: `OMNIPIN_HOVERFLY_RPC_URL`, `OMNIPIN_HOVERFLY_CONCURRENCY` (session fan-out, defaults to 256), and `OMNIPIN_HOVERFLY_RETRIES`.
+Omnipin reads the batch depth *and* its mutability from the chain, and checks that the signer key derives to the batch owner (a mismatched key makes bee reject every stamp). Set `OMNIPIN_HOVERFLY_DEPTH` to pin the depth and skip the lookup, and `OMNIPIN_HOVERFLY_NO_OWNER_CHECK=1` to skip the owner check when you are authorised to stamp for a batch you don't own.
+
+Other optional knobs:
+
+- `OMNIPIN_HOVERFLY_RPC_URL` — Gnosis RPC used for the on-chain lookup (defaults to `https://rpc.gnosischain.com`).
+- `OMNIPIN_HOVERFLY_IMMUTABLE` — `true`/`false` to force fill-only (immutable) stamping. Only used when the depth is pinned.
+- `OMNIPIN_HOVERFLY_REDUNDANCY` — Reed–Solomon redundancy level: `none`, `medium`, `strong`, `insane` or `paranoid` (defaults to the daemon's `medium`).
+- `OMNIPIN_HOVERFLY_CONCURRENCY` — parallel peer sessions (defaults to 8, same as `hoverfly upload`).
+- `OMNIPIN_HOVERFLY_RETRIES` — peers to try per chunk (defaults to 10, same as `hoverfly upload`).
 
 ## Swarmy
 

@@ -1,6 +1,7 @@
 import { base32 } from 'multiformats/bases/base32'
 import { create } from 'multiformats/hashes/digest'
 import { decodeResult, encodeData } from 'ox/AbiFunction'
+import { isEqual } from 'ox/Address'
 import { type Hex, toBytes } from 'ox/Hex'
 import * as Provider from 'ox/Provider'
 import { fromHttp } from 'ox/RpcTransport'
@@ -8,6 +9,9 @@ import varint from 'varint'
 
 const KECCAK_256_CODEC = 0x1b
 const SWARM_MANIFEST_CODEC = 0xfa
+
+/** The zero address — `ox` ships no constant for it. */
+export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 const POSTAGE_STAMP_ADDRESS = '0x45a1502382541Cd610CC9068e88727426b696293'
 const DEFAULT_GNOSIS_RPC = 'https://rpc.gnosischain.com'
@@ -27,11 +31,26 @@ const batchesAbi = {
   type: 'function',
 } as const
 
-/** Read a postage batch's depth from the on-chain `PostageStamp` contract. */
-export const resolveBatchDepth = async (
+export type BatchInfo = {
+  /** Batch depth (`2^depth` total stamps). */
+  depth: number
+  /** Immutable batches use fill-only stamping, mutable ones ring stamping. */
+  immutable: boolean
+  /** Address that owns the batch on-chain (the stamper's address). */
+  owner: string
+}
+
+/**
+ * Read a postage batch's metadata from the on-chain `PostageStamp` contract.
+ *
+ * The depth and the mutability both come from chain — a wrong depth breaks
+ * the per-bucket index math, and a wrong mutability makes bee reject every
+ * stamp.
+ */
+export const resolveBatch = async (
   batchIdHex: string,
   rpcUrl: string = DEFAULT_GNOSIS_RPC,
-): Promise<number> => {
+): Promise<BatchInfo> => {
   const id = `0x${batchIdHex.replace(/^0x/i, '')}` as Hex
   const provider = Provider.from(fromHttp(rpcUrl))
 
@@ -43,11 +62,11 @@ export const resolveBatchDepth = async (
     ],
   })
 
-  const [owner, depth] = decodeResult(batchesAbi, result)
-  if (owner === '0x0000000000000000000000000000000000000000' && depth === 0) {
+  const [owner, depth, , immutable] = decodeResult(batchesAbi, result)
+  if (isEqual(owner, ZERO_ADDRESS) && depth === 0) {
     throw new Error(`Postage batch ${id} not found on-chain`)
   }
-  return Number(depth)
+  return { depth: Number(depth), immutable: Boolean(immutable), owner }
 }
 
 function encodeCID(
