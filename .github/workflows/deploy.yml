@@ -13,9 +13,10 @@ name: Deploy docs to Swarm (hoverfly)
 #                    is signed with it, so it must be the batch owner — the
 #                    provider verifies that against the chain before uploading.
 #   SWARM_BATCH      Postage batch ID (hex, 32 bytes) the chunks are stamped with.
-#   SWARM_NONCE      Overlay nonce (hex, 32 bytes). The daemon derives the
-#                    upload overlay per upload, so this only feeds the
-#                    daemon's own identity — which this job doesn't enable.
+#   SWARM_NONCE      Overlay nonce (hex, 32 bytes). The upload overlay is
+#                    `keccak256(eth_addr || network_id || nonce)`, so passing
+#                    the same nonce on every run keeps this node's overlay
+#                    stable — the bee-citizenship lever.
 #   OMNIPIN_PK       Proposer key (a Safe owner) that signs the ENS content-hash
 #                    update proposed to safe.omnipin.eth.
 
@@ -107,6 +108,7 @@ jobs:
         env:
           OMNIPIN_HOVERFLY_TOKEN: ${{ secrets.SWARM_BATCH }}
           OMNIPIN_HOVERFLY_KEY: ${{ secrets.SWARM_KEY }}
+          OMNIPIN_HOVERFLY_NONCE: ${{ secrets.SWARM_NONCE }}
           OMNIPIN_HOVERFLY_SOCKET: ${{ runner.temp }}/hoverfly.sock
         run: |
           set -euo pipefail
@@ -114,7 +116,8 @@ jobs:
           # archive to the daemon over the socket and prints the Swarm
           # reference. The batch depth and mutability are read from the
           # PostageStamp contract, and the signer is checked against the
-          # batch owner.
+          # batch owner. The overlay nonce pins the upload overlay, so every
+          # run presents the same overlay to the network.
           omnipin deploy docs/.vitepress/dist --providers Hoverfly \
             | tee /tmp/deploy.log
           root="$(grep -oiE 'Swarm Reference ID: [0-9a-f]{64}' /tmp/deploy.log \

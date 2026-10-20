@@ -17,6 +17,7 @@ const DEFAULT_CONCURRENCY = 8
 
 export const uploadOnHoverfly: UploadFunction<{
   key?: string
+  nonce?: string
   path?: string | null
   socket?: string
   rpcUrl?: string
@@ -31,6 +32,7 @@ export const uploadOnHoverfly: UploadFunction<{
   verbose,
   first,
   key,
+  nonce,
   path,
   socket,
   rpcUrl,
@@ -51,6 +53,9 @@ export const uploadOnHoverfly: UploadFunction<{
   const socketPath = socket ?? DEFAULT_HOVERFLY_SOCKET
   const batch = token.replace(/^0x/i, '')
   const signer = key.replace(/^0x/i, '')
+  // The overlay nonce pins the upload overlay across uploads. The daemon
+  // falls back to a random one per upload when it's missing.
+  const overlay = nonce?.replace(/^0x/i, '') || undefined
 
   try {
     const pong = await callDaemon(socketPath, { op: 'ping' }).catch((e) => {
@@ -103,6 +108,7 @@ export const uploadOnHoverfly: UploadFunction<{
         depth: batchDepth,
         immutable: batchImmutable,
         key: signer,
+        nonce: overlay ?? null,
         max_retries: retries ?? DEFAULT_MAX_RETRIES,
         concurrency: concurrency ?? DEFAULT_CONCURRENCY,
         raw: false,

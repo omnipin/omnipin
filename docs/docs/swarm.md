@@ -68,6 +68,7 @@ Omnipin reads the batch depth *and* its mutability from the chain, and checks th
 Other optional knobs:
 
 - `OMNIPIN_HOVERFLY_RPC_URL` — Gnosis RPC used for the on-chain lookup (defaults to `https://rpc.gnosischain.com`).
+- `OMNIPIN_HOVERFLY_NONCE` — overlay nonce (hex, 32 bytes) that pins the upload overlay across uploads. Generate one with `hoverfly vanity-overlay --key 0xYOUR_KEY --output overlay-nonce`. Without it the daemon derives a fresh random overlay per upload.
 - `OMNIPIN_HOVERFLY_IMMUTABLE` — `1`/`true` to force fill-only (immutable) stamping, `0`/`false` for mutable. Only used when the depth is pinned.
 - `OMNIPIN_HOVERFLY_REDUNDANCY` — Reed–Solomon redundancy level: `none`, `medium`, `strong`, `insane` or `paranoid` (defaults to the daemon's `medium`).
 - `OMNIPIN_HOVERFLY_CONCURRENCY` — parallel peer sessions (defaults to 8, same as `hoverfly upload`).
