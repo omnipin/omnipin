@@ -16,7 +16,8 @@ name: Deploy docs to Swarm (hoverfly)
 #   SWARM_NONCE      Overlay nonce (hex, 32 bytes). The upload overlay is
 #                    `keccak256(eth_addr || network_id || nonce)`, so passing
 #                    the same nonce on every run keeps this node's overlay
-#                    stable — the bee-citizenship lever.
+#                    stable — the bee-citizenship lever. It goes to the daemon
+#                    with the upload request (hoverfly v0.2.1+).
 #   OMNIPIN_PK       Proposer key (a Safe owner) that signs the ENS content-hash
 #                    update proposed to safe.omnipin.eth.
 
@@ -53,7 +54,10 @@ jobs:
           # Latest release's Linux x86_64 tarball bundles the binary,
           # peers.seed.json, README and LICENSE.
           gh release download -R omnipin/hoverfly \
-            -p 'hoverfly-*-x86_64-unknown-linux-gnu.tar.gz'
+            -p 'hoverfly-*-x86_64-unknown-linux-gnu.tar.gz' \
+            -p 'hoverfly-*-x86_64-unknown-linux-gnu.tar.gz.sha256'
+          # Verify the download against the published checksum.
+          sha256sum -c hoverfly-*-x86_64-unknown-linux-gnu.tar.gz.sha256
           tar -xzf hoverfly-*-x86_64-unknown-linux-gnu.tar.gz --strip-components=1
           # The peers.seed.json bundled in the release tarball is frozen at
           # release-build time and goes stale (dead peers → tiny live pool →
@@ -70,7 +74,6 @@ jobs:
             echo "WARNING: fresh peerlist fetch failed; falling back to release-bundled seed"
             mv peers.seed.json peers.json
           fi
-          printf "%s" "${{ secrets.SWARM_NONCE }}" > overlay-nonce
 
       - name: Start the hoverfly daemon
         run: |
