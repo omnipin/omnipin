@@ -89,6 +89,7 @@ describe('Hoverfly', () => {
       const result = await uploadOnHoverfly({
         token: '0xcd',
         key: '0xef',
+        nonce: '0x11',
         path: await tinyTarPath(),
         socket: daemon.path,
         // Pin the depth so the test doesn't hit the chain.
@@ -111,6 +112,8 @@ describe('Hoverfly', () => {
       assert.equal(upload.index_document, 'index.html')
       // Left unset, like `hoverfly upload` does — a missing path should 404.
       assert.equal(upload.error_document, null)
+      // The overlay nonce pins the upload overlay across uploads.
+      assert.equal(upload.nonce, '11')
     } finally {
       await daemon.close()
     }

@@ -17,6 +17,9 @@ export type HoverflyRequest =
        * stamping (mutable batches). Defaults to `false` server-side. */
       immutable?: boolean
       key: string
+      /** Overlay nonce (hex, 32 bytes). The same nonce on every upload keeps
+       * the overlay stable across uploads. */
+      nonce?: string | null
       max_retries: number
       concurrency: number
       raw: boolean

@@ -182,6 +182,7 @@ export const deployAction = async ({
           ...(envVar === 'HOVERFLY_TOKEN'
             ? {
                 key: apiTokens.get('HOVERFLY_KEY'),
+                nonce: apiTokens.get('HOVERFLY_NONCE'),
                 path: tarPath,
                 socket: apiTokens.get('HOVERFLY_SOCKET'),
                 rpcUrl: apiTokens.get('HOVERFLY_RPC_URL'),

@@ -1,16 +1,23 @@
 name: Deploy docs to Swarm (hoverfly)
 
-# Build the docs, pack them with omnipin, upload to Swarm directly via the
-# hoverfly micro-client (no bee node, no remote server — fully in CI), then
-# propose the ENS content-hash update to the Safe with `omnipin ens`.
+# Build the docs, pack them with omnipin, upload them to Swarm through the
+# hoverfly daemon's UNIX socket — the IPC the `omnipin deploy` provider
+# speaks (no bee node, no remote server — fully in CI) — then propose the
+# ENS content-hash update to the Safe with `omnipin ens`.
+#
+# The daemon runs in the background of this job: it owns the warm session
+# pool and is the only hoverfly mode that exposes the socket.
 #
 # Required repo secrets:
-#   SWARM_KEY        Postage batch owner's signer (hex, 32 bytes). hoverfly uses
-#                    it as --identity (daemon) and --key (upload).
+#   SWARM_KEY        Postage batch owner's signer (hex, 32 bytes). The upload
+#                    is signed with it, so it must be the batch owner — the
+#                    provider verifies that against the chain before uploading.
 #   SWARM_BATCH      Postage batch ID (hex, 32 bytes) the chunks are stamped with.
-#   SWARM_NONCE      Overlay nonce (hex, 32 bytes). Generate once with
-#                    `hoverfly vanity-overlay --key $SWARM_KEY` — treat like an
-#                    identity secret (see the hoverfly README).
+#   SWARM_NONCE      Overlay nonce (hex, 32 bytes). The upload overlay is
+#                    `keccak256(eth_addr || network_id || nonce)`, so passing
+#                    the same nonce on every run keeps this node's overlay
+#                    stable — the bee-citizenship lever. It goes to the daemon
+#                    with the upload request (hoverfly v0.2.1+).
 #   OMNIPIN_PK       Proposer key (a Safe owner) that signs the ENS content-hash
 #                    update proposed to safe.omnipin.eth.
 
@@ -33,15 +40,12 @@ jobs:
           working-directory: docs
 
       - name: Install Omnipin
-        run: pnpm add -g omnipin@3.1.1
-
-      - name: Build website
-        working-directory: docs
-        run: pnpm docs:build
-
-      - name: Pack dist as a tar collection
-        working-directory: docs/.vitepress
-        run: omnipin pack --tar --name dist --dist .
+        run: |
+          # Install the CLI from this checkout rather than a published
+          # version: the Hoverfly provider is new and not in a release yet.
+          pnpm install --frozen-lockfile
+          pnpm build
+          pnpm add -g .
 
       - name: Fetch hoverfly
         env:
@@ -50,47 +54,84 @@ jobs:
           # Latest release's Linux x86_64 tarball bundles the binary,
           # peers.seed.json, README and LICENSE.
           gh release download -R omnipin/hoverfly \
-            -p 'hoverfly-*-x86_64-unknown-linux-gnu.tar.gz'
+            -p 'hoverfly-*-x86_64-unknown-linux-gnu.tar.gz' \
+            -p 'hoverfly-*-x86_64-unknown-linux-gnu.tar.gz.sha256'
+          # Verify the download against the published checksum.
+          sha256sum -c hoverfly-*-x86_64-unknown-linux-gnu.tar.gz.sha256
           tar -xzf hoverfly-*-x86_64-unknown-linux-gnu.tar.gz --strip-components=1
           # The peers.seed.json bundled in the release tarball is frozen at
           # release-build time and goes stale (dead peers → tiny live pool →
-          # flaky/under-replicated one-shot uploads). hoverfly's main branch has
-          # an hourly cron that refreshes peers.seed.json, so pull that fresh
-          # copy and fall back to the bundled seed only if the fetch fails.
+          # flaky/under-replicated uploads). The peerlists live in their own
+          # repo, omnipin/hoverfly-peers, where an hourly workflow refreshes
+          # them — so pull that fresh copy and fall back to the bundled seed
+          # only if the fetch fails.
           if curl -fsSL -o peers.fresh.json \
-            https://raw.githubusercontent.com/omnipin/hoverfly/main/peers.seed.json \
+            https://raw.githubusercontent.com/omnipin/hoverfly-peers/main/peers.seed.json \
             && [ -s peers.fresh.json ]; then
-            echo "Using fresh peers.seed.json from hoverfly@main"
+            echo "Using fresh peers.seed.json from omnipin/hoverfly-peers"
             mv peers.fresh.json peers.json
           else
             echo "WARNING: fresh peerlist fetch failed; falling back to release-bundled seed"
             mv peers.seed.json peers.json
           fi
-          printf "%s" "${{ secrets.SWARM_NONCE }}" > overlay-nonce
 
-      - name: Upload to Swarm via hoverfly
-        id: upload
-        env:
-          SWARM_KEY: ${{ secrets.SWARM_KEY }}
-          SWARM_BATCH: ${{ secrets.SWARM_BATCH }}
+      - name: Start the hoverfly daemon
         run: |
           set -euo pipefail
-          # One-shot upload — no daemon. A single deploy is one upload, so the
-          # daemon's long warm-pool fill (~80s for 256 sessions) isn't worth it;
-          # a one-shot fills a small pool in a few seconds. peers.json (the
-          # curated seed) and overlay-nonce (the vanity nonce) are picked up
-          # from the cwd by default. `.tar` is auto-treated as a collection
-          # (index.html as the index document), so the root resolves to the site.
-          ./hoverfly upload \
-            --batch "$SWARM_BATCH" \
-            --key "$SWARM_KEY" \
-            docs/.vitepress/dist.tar | tee /tmp/upload.log
-          root="$(grep -oiE 'manifest root: [0-9a-f]{64}' /tmp/upload.log | head -1 | grep -oiE '[0-9a-f]{64}' || true)"
-          if [ -z "$root" ]; then
-            echo "::error::could not parse the Swarm manifest root from hoverfly output"
+          # The daemon owns a warm session pool and is the only mode that
+          # exposes the socket IPC `omnipin deploy` talks to. It binds the
+          # socket before the pool fill starts, so the socket appearing means
+          # the daemon is up; the first upload then waits for the pool.
+          #
+          # A small pool is enough here: the docs are a single upload, so the
+          # pool only has to cover the upload's concurrency (8 sessions).
+          # It is started before the docs build so the pool fill overlaps it.
+          ./hoverfly daemon \
+            --socket "$RUNNER_TEMP/hoverfly.sock" \
+            --peerlist peers.json \
+            --pool-size 32 \
+            > /tmp/hoverfly-daemon.log 2>&1 &
+          echo "$!" > /tmp/hoverfly-daemon.pid
+          for _ in $(seq 1 60); do
+            [ -S "$RUNNER_TEMP/hoverfly.sock" ] && break
+            sleep 1
+          done
+          if [ ! -S "$RUNNER_TEMP/hoverfly.sock" ]; then
+            echo "::error::the hoverfly daemon did not come up"
+            cat /tmp/hoverfly-daemon.log
             exit 1
           fi
-          echo "Swarm manifest root: $root"
+          echo "hoverfly daemon is up"
+
+      - name: Build website
+        working-directory: docs
+        run: pnpm docs:build
+
+      - name: Upload to Swarm via the daemon
+        id: upload
+        env:
+          OMNIPIN_HOVERFLY_TOKEN: ${{ secrets.SWARM_BATCH }}
+          OMNIPIN_HOVERFLY_KEY: ${{ secrets.SWARM_KEY }}
+          OMNIPIN_HOVERFLY_NONCE: ${{ secrets.SWARM_NONCE }}
+          OMNIPIN_HOVERFLY_SOCKET: ${{ runner.temp }}/hoverfly.sock
+        run: |
+          set -euo pipefail
+          # `omnipin deploy` packs the directory as a tar collection, hands the
+          # archive to the daemon over the socket and prints the Swarm
+          # reference. The batch depth and mutability are read from the
+          # PostageStamp contract, and the signer is checked against the
+          # batch owner. The overlay nonce pins the upload overlay, so every
+          # run presents the same overlay to the network.
+          omnipin deploy docs/.vitepress/dist --providers Hoverfly \
+            | tee /tmp/deploy.log
+          root="$(grep -oiE 'Swarm Reference ID: [0-9a-f]{64}' /tmp/deploy.log \
+            | head -1 | grep -oiE '[0-9a-f]{64}' || true)"
+          if [ -z "$root" ]; then
+            echo "::error::could not parse the Swarm reference from the deploy output"
+            cat /tmp/deploy.log
+            exit 1
+          fi
+          echo "Swarm reference: $root"
           echo "root=$root" >> "$GITHUB_OUTPUT"
 
       - name: Propose ENS content-hash update on the Safe
@@ -99,3 +140,16 @@ jobs:
         run: |
           omnipin ens "${{ steps.upload.outputs.root }}" omnipin.eth \
             --safe safe.omnipin.eth
+
+      - name: Stop the hoverfly daemon
+        if: always()
+        run: |
+          if [ -f /tmp/hoverfly-daemon.pid ]; then
+            # SIGINT → the daemon's own handler asks itself to shut down
+            # gracefully, which saves the peerlist and removes the socket.
+            kill -INT "$(cat /tmp/hoverfly-daemon.pid)" 2>/dev/null || true
+          fi
+
+      - name: Show the hoverfly daemon log
+        if: failure()
+        run: cat /tmp/hoverfly-daemon.log || true
