@@ -57,13 +57,14 @@ jobs:
           tar -xzf hoverfly-*-x86_64-unknown-linux-gnu.tar.gz --strip-components=1
           # The peers.seed.json bundled in the release tarball is frozen at
           # release-build time and goes stale (dead peers → tiny live pool →
-          # flaky/under-replicated uploads). hoverfly's main branch has an
-          # hourly cron that refreshes peers.seed.json, so pull that fresh
-          # copy and fall back to the bundled seed only if the fetch fails.
+          # flaky/under-replicated uploads). The peerlists live in their own
+          # repo, omnipin/hoverfly-peers, where an hourly workflow refreshes
+          # them — so pull that fresh copy and fall back to the bundled seed
+          # only if the fetch fails.
           if curl -fsSL -o peers.fresh.json \
-            https://raw.githubusercontent.com/omnipin/hoverfly/main/peers.seed.json \
+            https://raw.githubusercontent.com/omnipin/hoverfly-peers/main/peers.seed.json \
             && [ -s peers.fresh.json ]; then
-            echo "Using fresh peers.seed.json from hoverfly@main"
+            echo "Using fresh peers.seed.json from omnipin/hoverfly-peers"
             mv peers.fresh.json peers.json
           else
             echo "WARNING: fresh peerlist fetch failed; falling back to release-bundled seed"
