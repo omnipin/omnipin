@@ -53,8 +53,8 @@ export const uploadOnHoverfly: UploadFunction<{
   const socketPath = socket ?? DEFAULT_HOVERFLY_SOCKET
   const batch = token.replace(/^0x/i, '')
   const signer = key.replace(/^0x/i, '')
-  // The overlay nonce pins the upload overlay across uploads. The daemon
-  // falls back to a random one per upload when it's missing.
+  // The overlay nonce pins the upload overlay across uploads; without it the
+  // daemon derives a random one per upload.
   const overlay = nonce?.replace(/^0x/i, '') || undefined
 
   try {

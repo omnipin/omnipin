@@ -17,11 +17,8 @@ export type HoverflyRequest =
        * stamping (mutable batches). Defaults to `false` server-side. */
       immutable?: boolean
       key: string
-      /** Overlay nonce (hex, 32 bytes) for the upload signer. The overlay is
-       * `keccak256(eth_addr || network_id || nonce)`, so the same nonce on
-       * every upload keeps the overlay stable — what bee's kademlia memory
-       * needs to route back to us later. Omitted means the daemon derives a
-       * fresh random overlay per upload. */
+      /** Overlay nonce (hex, 32 bytes). The same nonce on every upload keeps
+       * the overlay stable across uploads. */
       nonce?: string | null
       max_retries: number
       concurrency: number
