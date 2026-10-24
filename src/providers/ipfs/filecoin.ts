@@ -43,7 +43,7 @@ import {
 
 const providerName = 'Filecoin'
 
-async function findPiece(
+export async function findPiece(
   providerURL: string,
   pieceCid: string,
   options: {
