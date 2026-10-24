@@ -1,4 +1,6 @@
 import * as assert from 'node:assert'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { describe, it } from 'node:test'
 import { exists, fileSize, walk } from '../../src/utils/fs.js'
@@ -51,6 +53,27 @@ describe('fs utils', () => {
           { path: 'posts/page.html', size: 6 },
         ],
       )
+    })
+    it('includes dotfiles and dot-directories, but not .git', async () => {
+      // Sites ship load-bearing dot-paths such as `.well-known/` (atproto
+      // handles, security.txt, webfinger). They used to be dropped silently.
+      const dir = await mkdtemp(path.join(tmpdir(), 'omnipin-walk-'))
+      try {
+        await mkdir(path.join(dir, '.well-known'))
+        await mkdir(path.join(dir, '.git'))
+        await writeFile(path.join(dir, 'index.html'), 'hi')
+        await writeFile(path.join(dir, '.nojekyll'), '')
+        await writeFile(path.join(dir, '.well-known/atproto-did'), 'did:plc:x')
+        await writeFile(path.join(dir, '.git/HEAD'), 'ref')
+        const [, files] = await walk(dir)
+        assert.deepStrictEqual(files.map(({ path }) => path).sort(), [
+          '.nojekyll',
+          '.well-known/atproto-did',
+          'index.html',
+        ])
+      } finally {
+        await rm(dir, { recursive: true, force: true })
+      }
     })
   })
   describe('exists', () => {
