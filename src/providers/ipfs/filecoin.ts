@@ -72,15 +72,20 @@ export async function findPiece(
 
   const deadline = Date.now() + timeoutMs
   let attempt = 0
+  let lastError: string | undefined
 
   while (Date.now() < deadline) {
-    const res = await fetch(
-      new URL(`/pdp/piece?pieceCid=${pieceCid}`, providerURL),
-    )
-    if (verbose) logger.request('GET', res.url, res.status)
-
-    if (res.ok) {
-      return
+    // A flapping SP drops single connections (connect timeouts, resets).
+    // Treat those like "not yet": only the deadline should end the wait.
+    try {
+      const res = await fetch(
+        new URL(`/pdp/piece?pieceCid=${pieceCid}`, providerURL),
+      )
+      if (verbose) logger.request('GET', res.url, res.status)
+      if (res.ok) return
+    } catch (e) {
+      lastError = (e as Error).cause ? `${e}: ${(e as Error).cause}` : String(e)
+      if (verbose) logger.warn(`Polling the SP failed: ${lastError}`)
     }
 
     attempt++
@@ -100,7 +105,9 @@ export async function findPiece(
     providerName,
     `Piece not found on provider after ~${Math.round(
       timeoutMs / 1000,
-    )}s. The piece was uploaded but the SP did not confirm it in time; it may still settle. Retry the deploy, or raise OMNIPIN_FILECOIN_FINDPIECE_TIMEOUT_MS.`,
+    )}s. The piece was uploaded but the SP did not confirm it in time; it may still settle. Retry the deploy, or raise OMNIPIN_FILECOIN_FINDPIECE_TIMEOUT_MS.${
+      lastError ? ` Last network error: ${lastError}` : ''
+    }`,
   )
 }
 
