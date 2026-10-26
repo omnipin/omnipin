@@ -47,6 +47,7 @@ jobs:
           OMNIPIN_HOVERFLY_KEY: ${{ secrets.SWARM_KEY }}
           OMNIPIN_HOVERFLY_NONCE: ${{ secrets.SWARM_NONCE }}
           OMNIPIN_PK: ${{ secrets.OMNIPIN_PK }}
+        # pnpm skips versions younger than a day by default; always take the latest omnipin.
         run: |
-          pnpm dlx omnipin deploy docs/.vitepress/dist --providers Hoverfly \
+          pnpm --config.minimum-release-age=0 dlx omnipin deploy docs/.vitepress/dist --providers Hoverfly \
             --ens omnipin.eth --safe safe.omnipin.eth
