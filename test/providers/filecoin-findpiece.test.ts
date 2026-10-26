@@ -69,9 +69,13 @@ describe('Filecoin findPiece', () => {
   it('aborts a stalled request at the deadline', async () => {
     globalThis.fetch = ((_url: URL, init?: RequestInit) =>
       new Promise((_, reject) => {
-        init?.signal?.addEventListener('abort', () =>
-          reject(init.signal?.reason),
-        )
+        // AbortSignal.timeout's timer is unref'd. A real stalled socket keeps
+        // the event loop alive; without a stand-in, Node 22 exits mid-test.
+        const socket = setInterval(() => {}, 1000)
+        init?.signal?.addEventListener('abort', () => {
+          clearInterval(socket)
+          reject(init.signal?.reason)
+        })
       })) as typeof fetch
 
     await assert.rejects(
