@@ -70,6 +70,9 @@ export async function findPiece(
     verbose = false,
   } = options
 
+  // Built outside the loop so a malformed provider URL fails fast instead of
+  // being retried as if it were a network error.
+  const url = new URL(`/pdp/piece?pieceCid=${pieceCid}`, providerURL)
   const deadline = Date.now() + timeoutMs
   let attempt = 0
   let lastError: string | undefined
@@ -78,11 +81,19 @@ export async function findPiece(
     // A flapping SP drops single connections (connect timeouts, resets).
     // Treat those like "not yet": only the deadline should end the wait.
     try {
-      const res = await fetch(
-        new URL(`/pdp/piece?pieceCid=${pieceCid}`, providerURL),
-      )
+      // Cap each request so a stalled SP can't hold one attempt past the
+      // deadline (undici waits up to 300s for headers by default).
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(
+          Math.max(1, Math.min(deadline - Date.now(), 30_000)),
+        ),
+      })
       if (verbose) logger.request('GET', res.url, res.status)
+      // Only the status matters; release the body so the connection is freed.
+      await res.body?.cancel()
       if (res.ok) return
+      // The SP answered, so an earlier network error no longer explains the wait.
+      lastError = undefined
     } catch (e) {
       lastError = (e as Error).cause ? `${e}: ${(e as Error).cause}` : String(e)
       if (verbose) logger.warn(`Polling the SP failed: ${lastError}`)

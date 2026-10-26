@@ -49,4 +49,48 @@ describe('Filecoin findPiece', () => {
         err instanceof DeployError && /Connect Timeout Error/.test(err.message),
     )
   })
+
+  it('drops a stale network error once the SP answers again', async () => {
+    let calls = 0
+    globalThis.fetch = (async () => {
+      calls++
+      if (calls === 1) throw connectTimeout()
+      return new Response(null, { status: 404 })
+    }) as typeof fetch
+
+    await assert.rejects(
+      findPiece(SP_URL, PIECE_CID, { timeoutMs: 50, pollInterval: 1 }),
+      (err: Error) =>
+        err instanceof DeployError && !/network error/.test(err.message),
+    )
+    assert.ok(calls > 1)
+  })
+
+  it('aborts a stalled request at the deadline', async () => {
+    globalThis.fetch = ((_url: URL, init?: RequestInit) =>
+      new Promise((_, reject) => {
+        init?.signal?.addEventListener('abort', () =>
+          reject(init.signal?.reason),
+        )
+      })) as typeof fetch
+
+    await assert.rejects(
+      findPiece(SP_URL, PIECE_CID, { timeoutMs: 50, pollInterval: 1 }),
+      DeployError,
+    )
+  })
+
+  it('fails fast on a malformed provider URL', async () => {
+    let calls = 0
+    globalThis.fetch = (async () => {
+      calls++
+      return new Response(null, { status: 404 })
+    }) as typeof fetch
+
+    await assert.rejects(
+      findPiece('not a url', PIECE_CID, { timeoutMs: 60_000, pollInterval: 1 }),
+      TypeError,
+    )
+    assert.strictEqual(calls, 0)
+  })
 })
