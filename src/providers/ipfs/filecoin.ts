@@ -43,7 +43,7 @@ import {
 
 const providerName = 'Filecoin'
 
-async function findPiece(
+export async function findPiece(
   providerURL: string,
   pieceCid: string,
   options: {
@@ -70,17 +70,33 @@ async function findPiece(
     verbose = false,
   } = options
 
+  // Built outside the loop so a malformed provider URL fails fast instead of
+  // being retried as if it were a network error.
+  const url = new URL(`/pdp/piece?pieceCid=${pieceCid}`, providerURL)
   const deadline = Date.now() + timeoutMs
   let attempt = 0
+  let lastError: string | undefined
 
   while (Date.now() < deadline) {
-    const res = await fetch(
-      new URL(`/pdp/piece?pieceCid=${pieceCid}`, providerURL),
-    )
-    if (verbose) logger.request('GET', res.url, res.status)
-
-    if (res.ok) {
-      return
+    // A flapping SP drops single connections (connect timeouts, resets).
+    // Treat those like "not yet": only the deadline should end the wait.
+    try {
+      // Cap each request so a stalled SP can't hold one attempt past the
+      // deadline (undici waits up to 300s for headers by default).
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(
+          Math.max(1, Math.min(deadline - Date.now(), 30_000)),
+        ),
+      })
+      if (verbose) logger.request('GET', res.url, res.status)
+      // Only the status matters; release the body so the connection is freed.
+      await res.body?.cancel()
+      if (res.ok) return
+      // The SP answered, so an earlier network error no longer explains the wait.
+      lastError = undefined
+    } catch (e) {
+      lastError = (e as Error).cause ? `${e}: ${(e as Error).cause}` : String(e)
+      if (verbose) logger.warn(`Polling the SP failed: ${lastError}`)
     }
 
     attempt++
@@ -100,7 +116,9 @@ async function findPiece(
     providerName,
     `Piece not found on provider after ~${Math.round(
       timeoutMs / 1000,
-    )}s. The piece was uploaded but the SP did not confirm it in time; it may still settle. Retry the deploy, or raise OMNIPIN_FILECOIN_FINDPIECE_TIMEOUT_MS.`,
+    )}s. The piece was uploaded but the SP did not confirm it in time; it may still settle. Retry the deploy, or raise OMNIPIN_FILECOIN_FINDPIECE_TIMEOUT_MS.${
+      lastError ? ` Last network error: ${lastError}` : ''
+    }`,
   )
 }
 
