@@ -92,6 +92,17 @@ const getSubregistryAbi = {
   outputs: [{ name: '', type: 'address' }],
 } as const
 
+const getStatusAbi = {
+  type: 'function',
+  name: 'getStatus',
+  stateMutability: 'view',
+  inputs: [{ name: 'anyId', type: 'uint256' }],
+  outputs: [{ name: '', type: 'uint8' }],
+} as const
+
+/** `IPermissionedRegistry.Status.REGISTERED` */
+const STATUS_REGISTERED = 2
+
 const predictProxyAddressAbi = {
   type: 'function',
   name: 'predictProxyAddress',
@@ -425,15 +436,23 @@ export const prepareSetResolverTx = async ({
           throw new Error(`No ENSv2 subregistry for ${label}`)
       }
 
-      return {
+      const labelId = BigInt(labelhashLabel(labels[0]))
+      const statusResult = await ethCall({
+        provider,
         to: registry,
-        data: encodeData(registrySetResolverAbi, [
-          BigInt(labelhashLabel(labels[0])),
-          resolver,
-        ]),
-      }
+        data: encodeData(getStatusAbi, [labelId]),
+      })
+
+      // ENSv2 is live while most names still live in ENSv1: those are RESERVED
+      // in the ENSv2 registry and resolve through the ENSv1 mirror resolver.
+      // Only names registered in ENSv2 take `setResolver` there.
+      if (decodeResult(getStatusAbi, statusResult as Hex) === STATUS_REGISTERED)
+        return {
+          to: registry,
+          data: encodeData(registrySetResolverAbi, [labelId, resolver]),
+        }
     } catch {
-      // A reserved-but-unmigrated name still lives in the ENSv1 registry.
+      // No ENSv2 registry for the name: it still lives in the ENSv1 registry.
     }
   }
 
