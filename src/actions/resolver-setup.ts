@@ -95,15 +95,11 @@ export const resolverSetupAction = async ({
   if (!admin) throw new MissingKeyError('PK')
 
   // In `--safe` mode the Safe is the resolver admin and already holds the role,
-  // so the proposer/delegate needs none. A dedicated CI role key is only
-  // granted when `--role-address` is given explicitly.
+  // so the proposer/delegate needs none. `--role-address` grants the role to
+  // another account, e.g. a CI key or a separate Safe that does not own the
+  // name.
   const roleAddress = roleOption ? checksum(roleOption) : (safe ?? signer)
   if (!roleAddress) throw new MissingKeyError('PK')
-
-  if (!safe && signer && roleAddress.toLowerCase() !== signer.toLowerCase())
-    throw new Error(
-      '`--role-address` must match the OMNIPIN_PK address when no --safe is used',
-    )
 
   // The portal picks a fresh random salt per deployment. The factory binds it
   // to the deployer (`keccak256(abi.encode(msg.sender, salt))`), so the

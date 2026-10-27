@@ -43,8 +43,8 @@ this command does not need any role. `OMNIPIN_PK` is optional here.
 omnipin resolver-setup omnipin.eth --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262
 ```
 
-To enable unattended updates, grant the role to a dedicated CI key instead of
-leaving it on the Safe:
+To enable unattended updates, also grant the role to a dedicated CI key (the
+Safe keeps its own roles):
 
 ```sh
 omnipin resolver-setup omnipin.eth \
@@ -55,9 +55,24 @@ omnipin resolver-setup omnipin.eth \
 ### `role-address`
 
 Address to grant `ROLE_SET_CONTENTHASH` to. Defaults to the Safe when `--safe`
-is used, and to the `OMNIPIN_PK` address otherwise. Without `--safe` it must
-match `OMNIPIN_PK`. Passing a dedicated CI key is what makes unattended updates
-possible.
+is used, and to the `OMNIPIN_PK` address otherwise. Pass a dedicated CI key for
+unattended updates, or a separate Safe that should update the content hash
+without owning the name.
+
+## Separate deploy Safe
+
+The account that owns the name and the account that updates the content hash
+can be different. For example, the name owner grants the role to a deploy Safe,
+and a proposer queues updates on that Safe. The deploy Safe can only set the
+content hash, and the proposer has no access to the name or the resolver at all.
+
+```sh
+# Run once, as the name owner (EOA shown; use --safe <owner safe> for a Safe owner)
+OMNIPIN_PK=<owner key> omnipin resolver-setup omnipin.eth --role-address <deploy safe>
+
+# Every deploy: the proposer queues setContenthash on the deploy Safe
+OMNIPIN_PK=<proposer key> omnipin deploy --ens omnipin.eth --safe <deploy safe>
+```
 
 ### `resolver`
 
