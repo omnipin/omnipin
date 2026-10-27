@@ -11,7 +11,7 @@ The skill knows:
 - which environment variables each [IPFS](/docs/ipfs) and [Swarm](/docs/swarm) provider requires
 - the constraint that Swarm and IPFS providers cannot be combined in a single deploy
 - how to ask whether to update an [ENS](/docs/how-it-works#ens-updates) contenthash
-- how to ask whether to sign with an EOA, a [Safe](/docs/how-it-works#delegate) delegate, or an [ENSv2 permissioned resolver](/docs/how-it-works#permissioned-resolver) role
+- how to ask whether to sign with a restricted [deploy Safe](/docs/how-it-works#deploy-safe), a [Safe](/docs/how-it-works#delegate) delegate, an [ENSv2 permissioned resolver](/docs/how-it-works#permissioned-resolver) role key, or an EOA
 - how to optionally update [DNSLink](/docs/dnslink) via Cloudflare
 
 When invoked, the agent walks the user through provider selection, collects the required `OMNIPIN_*` variables into `.env`, and composes the right `omnipin deploy` command.
@@ -60,9 +60,10 @@ The agent will:
 2. Prompt for the env vars required by each provider and write them to `.env`.
 3. Ask whether to update an ENS contenthash.
 4. If yes, ask whether to sign with:
+   - **Deploy Safe (recommended)** — `OMNIPIN_PK` set to a delegate's private key; proposes to a Safe that only holds `ROLE_SET_CONTENTHASH` and cannot otherwise manage the name. The name owner grants the role once with [`omnipin resolver-setup`](/cli/resolver-setup)
+   - **Safe with a delegate** — `OMNIPIN_PK` set to a delegate's private key (configured in Safe settings); proposes a transaction to the Safe that owns the name for its owners to confirm
+   - **ENSv2 role key** — submits onchain with a restricted `ROLE_SET_CONTENTHASH` key, without Safe confirmations
    - **EOA** — `OMNIPIN_PK` set to the ENS name manager's private key
-   - **Safe with a delegate** — `OMNIPIN_PK` set to a delegate's private key (configured in Safe settings); proposes a transaction to the Safe Transaction Service for owners to confirm
-   - **Safe with an ENSv2 permissioned resolver** — submits onchain with a restricted `ROLE_SET_CONTENTHASH` key
 5. Ask whether to update DNSLink via Cloudflare.
 6. Run the composed `omnipin deploy` command.
 

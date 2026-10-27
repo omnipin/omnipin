@@ -21,7 +21,7 @@
     "Provider tokens are read from OMNIPIN_<PROVIDER>_TOKEN environment variables; see docs/docs/ipfs.md for the authoritative list.",
     "A deploy needs at least one upload-capable provider. Pin-only providers (Spec, 4EVERLAND, QuickNode, Blockfrost, Aleph, AIOZ) can only re-pin an existing CID.",
     "Swarm and IPFS providers cannot be combined in one deploy; Swarm providers take precedence and IPFS ones are ignored.",
-    "Prefer the Safe delegate flow (--safe) over a raw EOA key for ENS updates. The Safe holds the ENSv2 ROLE_SET_CONTENTHASH role, so a proposer needs no role. For unattended CI deploys, run `omnipin resolver-setup <name.eth> --safe <safe> --role-address <ci-address>` to grant a dedicated role key, then run `omnipin ens` without --safe using that key.",
+    "Recommend a restricted deploy Safe for ENS updates: the name owner runs `omnipin resolver-setup <name.eth> --role-address <deploy safe>` once (add `--safe <owner safe>` if a Safe owns the name), then deploys use a delegate key as OMNIPIN_PK with `--safe <deploy safe>`. The deploy Safe only holds ENSv2 ROLE_SET_CONTENTHASH and the delegate has no access to the name. For unattended CI deploys, grant the role to a CI key with `--role-address` instead and run `omnipin ens` without --safe. Never ask for or store the name owner's key.",
     "Fund a Filecoin wallet with `omnipin bridge --provider=Filecoin` and `omnipin deposit --provider=Filecoin` instead of manual DEX or bridge UIs."
   ]
 }
