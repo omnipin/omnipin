@@ -91,34 +91,50 @@ omnipin deploy --providers Pinata,Lighthouse
 
 In order to not have to type a full IPFS hash to open a website, as well as improve SEO, UX and have a transparent on-chain history of website updates, Omnipin integrates with ENS. It is an Ethereum-based alternative to DNS and it is possible to use ENS for serving websites. ENS has a special record type called [`contentHash`](https://docs.ens.domains/ensip/7). It contains an encoded hash which includes such information as the protocol version, codec data and the content hash itself, usually an IPFS CID.
 
-Omnipin has multiple ways of updating ENS, varying in security and UX properties:
+Omnipin's ENS security is made of three independent layers. Each one removes a different risk, and they can be combined:
 
-|  Type | Name theft protection  | Multi Factor Authorization | Restricted access | Complexity
-|---|---|---|---|---|
-| EOA | No 🚨 | No | No | Low
-| Delegate | Yes | Yes | No | High
-| Permissioned Resolver | Yes | No | Yes | Medium
-| [Deploy Safe](#deploy-safe) (recommended) | Yes | Yes | Yes | High
+| Layer | Protects against | How |
+|---|---|---|
+| [Permissioned Resolver](#permissioned-resolver) | The publisher stealing the name or changing other records | The publisher only holds `ROLE_SET_CONTENTHASH` on the name's resolver |
+| [Safe](#safe) | A single leaked key publishing a malicious version | Every update needs confirmations from the Safe owners |
+| [Delegate](#delegate) | A leaked CI key compromising the Safe | The key in CI can only propose transactions; it is not a Safe owner |
 
-### EOA
+Depending on which layers are used, `OMNIPIN_PK` holds a different key:
 
-:::danger
-In case of a key compromise, it is possible to steal all the assets held by the account, steal the ENS name in case it is wrapped, and alter any other records on the name in case it is unwrapped.
-:::
+| Setup | `OMNIPIN_PK` | `--safe` | Permissioned Resolver | Safe | Delegate |
+|---|---|---|---|---|---|
+| [EOA](#eoa) | name manager key | — | ❌ | ❌ | ❌ |
+| Role key | key holding the role | — | ✅ | ❌ | ❌ |
+| Safe that owns the name | delegate key | owner Safe | ❌ | ✅ | ✅ |
+| [Deploy Safe](#deploy-safe) (recommended) | delegate key | deploy Safe | ✅ | ✅ | ✅ |
 
-A transaction is signed by a private key provided via `OMNIPIN_PK` and is immediately pushed onchain. There are no barriers or restrictions put on the account, so it is the least secure option. The only benefit of using an EOA is not requiring any custom setup.
+### Permissioned Resolver
 
-In case EOA is still required and neither Delegate nor Permissioned Resolver options are available, it is recommended to take a list of security measures to minimize the potential risks of using an EOA for managing the ENS name:
+ENS records live in the name's resolver. Normally, whoever can update the content hash can also transfer the name, change its resolver, or change any other record. An ENSv2 [`PermissionedResolver`](https://docs.ens.domains/) splits these permissions into roles. The name owner administers the resolver and grants `ROLE_SET_CONTENTHASH` to the publisher, and the publisher can then set the content hash and nothing else.
 
-* Don't use the account for storing any assets other than a tiny portion of ETH required to pay the transaction fees
-* Save the private key in CI secrets to not be able to retrieve it from elsewhere
-* If an ENS name is wrapped, unwrap it and set an owner to a different Ethereum account. In case the private key gets leaked, it is still possible to revoke access by changing the manager address.
+The publisher can be any address: a plain key, a Safe that owns the name, or a separate [deploy Safe](#deploy-safe). The role key flow has no confirmations; the key sends `setContenthash` directly:
+
+```sh
+# Once, as the name owner (add --safe <owner safe> if a Safe owns the name)
+OMNIPIN_PK=<name owner key> omnipin resolver-setup omnipin.eth --role-address <publisher>
+
+# Every deploy, with a plain role key
+OMNIPIN_PK=<role key> omnipin deploy --ens omnipin.eth
+```
+
+The role is granted on the resolver as a whole, so it covers every name that uses the resolver, including subnames without a resolver of their own. Use a dedicated resolver per project. The name owner can revoke the role or point the name at another resolver at any time.
+
+The [Scoped Resolver guide](/docs/scoped-resolver) walks through the setup, including saving the existing records and rotating keys.
+
+### Safe
+
+A [Safe](https://safe.global) is a multi-signature wallet: a transaction executes only after enough of its owners confirm it. Using a Safe as the publisher means a single leaked key cannot publish a new version on its own.
+
+Omnipin does not hold a Safe owner key. It proposes transactions with a [delegate](#delegate), and the owners confirm them in the Safe app.
 
 ### Delegate
 
-An account derived from the private key provided via `OMNIPIN_PK` is not used to update ENS directly. It is only able to submit transaction proposals to a Safe wallet through Safe Transaction Service. It is a centralized API run by Safe which allows enqueuing transactions while not being one of the owners. Delegates have zero access to the ENS name and therefore are not able to perform ENS name theft or other malicious actions. Each transaction proposed by Safe requires manual review and approval from owners.
-
-While the Delegate flow is the most secure option, it is also the most complex in management and requires manual approval every time a new transaction proposal is pushed.
+The key provided via `OMNIPIN_PK` is not used to update ENS directly. It can only submit transaction proposals to a Safe through the Safe Transaction Service, a centralized API run by Safe which allows enqueuing transactions without being one of the owners. A delegate is not a Safe owner and has no access to the ENS name, so leaking it from CI cannot compromise the Safe or the name. Each proposed transaction requires review and approval from the owners.
 
 #### Setup
 
@@ -128,89 +144,27 @@ While the Delegate flow is the most secure option, it is also the most complex i
 
 ![Delegate UI](/proposer.png)
 
-### Permissioned Resolver
-
-A transaction is signed by a private key provided via `OMNIPIN_PK` and is immediately pushed onchain. Unlike pure EOA, the account is restricted to only be able to update an ENS name's `contentHash` record and does not manage the name. The name and its resolver are instead managed by a Safe wallet.
-
-This uses the ENSv2 [`PermissionedResolver`](https://docs.ens.domains/). The Safe deploys the resolver and is its admin. On a new resolver the Safe receives all roles, including `ROLE_SET_CONTENTHASH`; on an existing resolver the role is granted to the Safe by default. A Safe proposer/delegate needs no role, because the Safe executes the call. Optionally, the role can be granted to a dedicated CI key, which can then call `setContenthash` directly without creating a Safe proposal for every deploy.
-
-#### Setup
-
-1. Head over to the [Safe app](https://app.safe.global) and create a new wallet, if you don't have one yet.
-
-2. Set your ENS name manager address to the Safe.
-
-3. Generate a Safe Transaction Builder batch with `omnipin resolver-setup`.
-   By default the role is granted to the Safe. To allow unattended updates,
-   pass a dedicated role key with `--role-address`:
-
-```sh
-# Safe executes updates (the proposer needs no role)
-omnipin resolver-setup omnipin.eth --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262
-
-# Grant the role to a dedicated CI key for unattended updates
-omnipin resolver-setup omnipin.eth \
-  --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 \
-  --role-address 0xYourCiKey
-
-# omnipin resolver-setup omnipin.eth --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 --verbose
-# 🟢 Resolver will be deployed at 0x...
-# ✔ Created resolver-setup.json in the current directory
-# Open in a browser: https://app.safe.global/apps/open?safe=eth:0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262&appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder
-# Upload resolver-setup.json in the UI
-```
-
-The batch deploys an ENSv2 `PermissionedResolver`, grants all roles to the Safe,
-grants `ROLE_SET_CONTENTHASH` to `--role-address` when provided (otherwise to the
-Safe), and points the name at the new resolver. If the name already uses a
-permissioned resolver, only the role grant is generated.
-
-4. Head over to the Safe [transaction builder](https://app.safe.global/apps/open?appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder) page.
-
-5. Drag and drop `resolver-setup.json` and confirm transaction execution.
-
 #### Usage
 
-Updating ENS is now possible to do within a single command, while maintaining security properties of a Safe.
-
 ```sh
-# Safe holds the role; the proposer needs no role
-OMNIPIN_PK=<proposer key> omnipin deploy --ens omnipin.eth --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262
-
-# Dedicated CI key granted with --role-address
-OMNIPIN_PK=<role key> omnipin deploy --ens omnipin.eth
+OMNIPIN_PK=<delegate key> omnipin deploy --ens omnipin.eth --safe <safe>
 ```
-
-With a dedicated role key, omit `--safe`: the key sends `setContenthash`
-directly to the resolver. The role is scoped to the resolver's root resource, so
-use a dedicated resolver per project. The key cannot change other records or
-transfer the name.
 
 ### Deploy Safe
 
-Combines the Delegate flow and the Permissioned Resolver. The account that owns
-the ENS name and the Safe that publishes deploys are kept separate:
+The recommended setup uses all three layers. The name owner and the Safe that publishes deploys are separate accounts:
 
-- **Name owner** — an EOA or a Safe that owns the name and administers the
-  resolver. It is used once during setup and can stay offline afterwards.
-- **Deploy Safe** — holds only `ROLE_SET_CONTENTHASH` on the resolver. It does
-  not own the name, so its owners can update the content hash but cannot
-  transfer the name, change other records, or change the resolver.
-- **Delegate** — `OMNIPIN_PK`. It can only propose transactions to the deploy
-  Safe and has no access to the name or the resolver.
+- **Name owner**: an EOA or a Safe that owns the name and administers the resolver. It is only used during setup.
+- **Deploy Safe**: holds only `ROLE_SET_CONTENTHASH`. Its owners can update the content hash but cannot transfer the name, change other records, or change the resolver.
+- **Delegate**: `OMNIPIN_PK`. It can only propose transactions to the deploy Safe and has no access to the name or the resolver.
 
-A leaked delegate key can only queue proposals that the deploy Safe owners have
-to confirm. Even a compromised deploy Safe is limited to the content hash, and
-the name owner can revoke its role or point the name at another resolver.
+A leaked delegate key can only queue proposals that the deploy Safe owners have to confirm. Even a compromised deploy Safe is limited to the content hash, and the name owner can revoke its role.
 
 #### Setup
 
-1. Create a deploy Safe in the [Safe app](https://app.safe.global), separate from
-   the account that owns the name.
-2. Add a delegate to the deploy Safe (Settings > Setup > Delegates) and save its
-   private key to `OMNIPIN_PK`, as in the [Delegate](#delegate) setup.
-3. As the name owner, deploy a permissioned resolver and grant the role to the
-   deploy Safe:
+1. Create a deploy Safe in the [Safe app](https://app.safe.global), separate from the account that owns the name.
+2. Add a [delegate](#delegate) to the deploy Safe and save its private key to `OMNIPIN_PK`.
+3. As the name owner, grant the deploy Safe the role by following the [Scoped Resolver guide](/docs/scoped-resolver):
 
 ```sh
 # Name owned by an EOA: sends the transactions directly
@@ -220,13 +174,24 @@ OMNIPIN_PK=<owner key> omnipin resolver-setup omnipin.eth --role-address <deploy
 omnipin resolver-setup omnipin.eth --safe <owner safe> --role-address <deploy safe>
 ```
 
-Run this step locally. The owner key should never be stored in CI.
-
 #### Usage
 
 ```sh
 OMNIPIN_PK=<delegate key> omnipin deploy --ens omnipin.eth --safe <deploy safe>
 ```
 
-The delegate proposes `setContenthash` to the deploy Safe, and the deploy Safe
-owners confirm and execute it in the Safe UI.
+The delegate proposes `setContenthash` to the deploy Safe, and the deploy Safe owners confirm and execute it in the Safe UI.
+
+### EOA
+
+:::danger
+In case of a key compromise, it is possible to steal all the assets held by the account, steal the ENS name in case it is wrapped, and alter any other records on the name in case it is unwrapped.
+:::
+
+A transaction is signed by the name manager's private key provided via `OMNIPIN_PK` and is immediately pushed onchain. None of the layers above apply, so it is the least secure option. Its only benefit is not requiring any setup.
+
+Even without a Safe, a [Permissioned Resolver](#permissioned-resolver) removes most of the risk: the key in CI can then only set the content hash. See the [Scoped Resolver guide](/docs/scoped-resolver). If the name manager key must still be used, minimize the risks:
+
+* Don't use the account for storing any assets other than a tiny portion of ETH required to pay the transaction fees
+* Save the private key in CI secrets to not be able to retrieve it from elsewhere
+* If an ENS name is wrapped, unwrap it and set an owner to a different Ethereum account. In case the private key gets leaked, it is still possible to revoke access by changing the manager address.

@@ -1,8 +1,9 @@
 # `omnipin resolver-setup`
 
-Prepares an [ENSv2 `PermissionedResolver`](https://docs.ens.domains/) so a
-restricted key can update a name's content hash without going through the Safe
-on every deploy.
+Prepares an [ENSv2 `PermissionedResolver`](https://docs.ens.domains/) so an
+account (a key or a Safe) can update a name's content hash without being able
+to transfer the name or change its other records. Run it as the name owner. For
+a step-by-step walkthrough, see the [Scoped Resolver guide](/docs/scoped-resolver).
 
 ```sh
 omnipin resolver-setup <domain.eth>

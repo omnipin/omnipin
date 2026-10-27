@@ -49,6 +49,6 @@ Such status quo should not apply to dApps, especially financially sensitive ones
 
 With a multi-sig wallet sitting on top of an ENS name it is possible to add a multi-factor authorization layer for website updates. It is also not required to be one of the wallet owners to propose ENS updates, which significantly minimizes potential damage from an owner account getting compromised.
 
-However, such high security requirements do not apply to everybody. For that reason, Omnipin alternatively integrates with the ENSv2 [`PermissionedResolver`](https://docs.ens.domains/). The resolver grants accounts access-control roles, so a key can be restricted to updating the content hash of the names that use that resolver.
+Independently of the Safe, Omnipin integrates with the ENSv2 [`PermissionedResolver`](https://docs.ens.domains/). The resolver grants accounts access-control roles, so whoever publishes can be restricted to updating the content hash, without being able to manage the name or change other records.
 
-Omnipin uses the `ROLE_SET_CONTENTHASH` role for this. The role key can update the ENS website reference without being able to manage the name or change other records. Such integration provides moderate security benefits to users who do not wish to have a multi-factor authorization flow.
+Omnipin uses the `ROLE_SET_CONTENTHASH` role for this. The role can be held by a plain key, for users who do not wish to have a multi-factor authorization flow, or by a Safe. Combining both, a [deploy Safe](/docs/how-it-works#deploy-safe) with only the content hash role, gives the strongest guarantees: a leaked delegate key can only propose, and even the Safe cannot touch the name itself.

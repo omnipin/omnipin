@@ -67,6 +67,11 @@ If ENS was selected, ask: "How do you want to sign the ENS update?"
 
 Default to a **deploy Safe** unless the user has a clear reason to pick something else.
 
+The options combine three independent security layers; explain them if the user is unsure:
+- **Permissioned resolver role**: the publisher can only set the content hash, so it cannot steal the name or change other records.
+- **Safe**: every update needs owner confirmations, so a single leaked key cannot publish.
+- **Delegate**: the key in `.env` / CI only proposes to the Safe and is not an owner, so leaking it cannot compromise the Safe.
+
 Options:
 
 1. **Deploy Safe (recommended)** — three separate accounts:
@@ -87,6 +92,7 @@ Options:
      **Never write the name owner's key to `.env`** and never ask the user to paste it into the chat. For an EOA owner, give the user the command to run themselves. For a Safe owner, the agent can run the command (no key needed) and tell the user to upload `resolver-setup.json` in the owner Safe's Transaction Builder. Run it with `--dry-run` first.
    - Warn that if the name currently uses another resolver, `resolver-setup` deploys a new one and the name's other records (addresses, text records) stop resolving until re-created there. If the name already uses a permissioned resolver, only the role grant is generated.
    - Deploys then use `OMNIPIN_PK` = delegate key and `--safe <deploy safe>`.
+   - Point the user to the [Scoped Resolver guide](https://omnipin.eth.limo/docs/scoped-resolver) for the full walkthrough (saving existing records, re-creating them, rotating keys).
 
 2. **Safe with a delegate** — the same as option 1, but the Safe that owns the ENS name also receives the proposals, and `resolver-setup` is skipped. Simpler, but the Safe that confirms deploys can change anything about the name. Requires:
    - `OMNIPIN_PK` set to the **delegate's** private key. The delegate must be added in the Safe settings (Settings → Delegates) for the Safe that owns the ENS name. It is *not* the ENS name manager's key.
@@ -103,8 +109,8 @@ Options:
    3. If neither is installed, ask the user to install Foundry (`curl -L https://foundry.paradigm.xyz | bash && foundryup`) rather than using anything else.
 
    After generation, write the private key to `.env` as `OMNIPIN_PK`, show the *address* (not the key) to the user, and tell them to add that address as a delegate in the Safe UI.
-3. **ENSv2 role key (unattended)** — advanced. Use only when the user explicitly asks for it, e.g. high-frequency automated deploys where requiring a Safe confirmation on every push is excessive. The setup is the same as option 1, but `--role-address` is a dedicated CI key instead of a deploy Safe (generate it the same way as a delegate key). Deploys set `OMNIPIN_PK` to that **role key** and run **without** `--safe`, e.g. `omnipin deploy --ens myapp.eth`. A leaked role key can set the content hash with no confirmation, but cannot transfer the name or change other records. See the [resolver-setup docs](https://omnipin.eth.limo/cli/resolver-setup).
-4. **EOA (private key)** — fastest, least secure. Use only for testing or low-stakes deploys. Requires `OMNIPIN_PK` set to the ENS name manager's private key. Warn the user that a compromised key means total ENS takeover.
+3. **ENSv2 role key (no Safe)** — for users who don't want a Safe, or need unattended high-frequency deploys where a confirmation on every push is excessive. Always prefer this over option 4. The setup is the same as option 1, but `--role-address` is a dedicated CI key instead of a deploy Safe (generate it the same way as a delegate key). Deploys set `OMNIPIN_PK` to that **role key** and run **without** `--safe`, e.g. `omnipin deploy --ens myapp.eth`. A leaked role key can set the content hash with no confirmation, but cannot transfer the name or change other records. See the [resolver-setup docs](https://omnipin.eth.limo/cli/resolver-setup).
+4. **EOA (private key)** — fastest, least secure, kept for simplicity. Use only for testing or low-stakes deploys; otherwise suggest option 3. Requires `OMNIPIN_PK` set to the ENS name manager's private key. Warn the user that a compromised key means total ENS takeover.
 
 Always warn that storing `OMNIPIN_PK` in `.env` carries risk; recommend the deploy Safe for any production or CI deployment.
 
@@ -131,7 +137,7 @@ omnipin deploy --providers Filecoin,Pinata --ens myapp.eth
 # IPFS + ENS via a deploy Safe (recommended; OMNIPIN_PK = delegate key)
 omnipin deploy --providers Filecoin,Pinata --ens myapp.eth --safe eth:0xDeploySafe
 
-# Advanced: IPFS + ENS via an ENSv2 role key (only when explicitly requested; OMNIPIN_PK = role key)
+# IPFS + ENS via an ENSv2 role key, no Safe (OMNIPIN_PK = role key)
 omnipin deploy \
   --providers Filecoin,Pinata \
   --ens myapp.eth
@@ -345,6 +351,6 @@ For testing only, fund from the [FIL faucet](https://forest-explorer.chainsafe.d
 
 - Never commit `.env`. Add it to `.gitignore` if missing.
 - Never print secret values back to the user after collection.
-- Strongly prefer a deploy Safe over a raw `OMNIPIN_PK` (EOA name manager) for any production deployment, especially in CI. The delegate key still lives in `.env` / CI secrets, but it can only propose transactions to a Safe that itself can only set the content hash. Only suggest a role key without a Safe when the user specifically needs unattended high-frequency deploys. `ROLE_SET_CONTENTHASH` is scoped to the resolver's root resource, so use a dedicated resolver per project.
+- Strongly prefer a deploy Safe over a raw `OMNIPIN_PK` (EOA name manager) for any production deployment, especially in CI. The delegate key still lives in `.env` / CI secrets, but it can only propose transactions to a Safe that itself can only set the content hash. If the user does not want a Safe, suggest a role key without a Safe rather than the name manager key. `ROLE_SET_CONTENTHASH` is scoped to the resolver's root resource, so use a dedicated resolver per project.
 - Never store or request the name owner's private key. When the name owner is an EOA, it is only needed once for `resolver-setup`, which the user runs themselves.
 - For CI, suggest mapping each env var to a CI secret rather than hard-coding it (see Omnipin's CI/CD docs for a GitHub Actions example).

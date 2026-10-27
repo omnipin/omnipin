@@ -92,7 +92,7 @@ graph LR
 Automatic ENS updates are as easy as supplying an extra CLI argument during deploy, and adding a name manager's private key to `.env`:
 
 :::danger
-Using a private key of the ENS name manager account has immediate security risks. Consider [Safe integration](#safe-integration) instead.
+Using a private key of the ENS name manager account has immediate security risks: a leaked key can steal the name. Consider [securing ENS updates](#securing-ens-updates) instead. Even a [scoped resolver](/docs/scoped-resolver) alone limits a leaked key to the content hash.
 :::
 ```sh [.env]
 OMNIPIN_PK=<0xensmanagerprivatekeygoeshere>
@@ -104,13 +104,17 @@ omnipin deploy --ens omnipin.eth
 
 Updating ENS Content-Hash record requires paying a network fee. The fee varies depending on network load.
 
-## Safe integration
+## Securing ENS updates
 
-Using a private key of the ENS name manager account imposes significant security risks. In case of environment compromise, an attacker is able to update the ENS name to a malicious version.
+Using a private key of the ENS name manager account imposes significant security risks. In case of environment compromise, an attacker is able to steal the name or update it to a malicious version.
 
-One of the unique features that Omnipin offers is [Safe](https://safe.global) integration. Instead of EOA managing the ENS name, a multi-signature wallet is put in the front. Such an approach allows for advanced security for ENS update pipelines, such as multi-factor authorisation with the [Delegate Flow](/docs/how-it-works#delegate) or role-based permissions with an [ENSv2 permissioned resolver](/docs/how-it-works#permissioned-resolver).
+Omnipin offers three independent [security layers](/docs/how-it-works#ens-updates), which can be combined:
 
-The recommended setup is a **[Deploy Safe](/docs/how-it-works#deploy-safe)**. It is a Safe that can only update the content hash of your name, and a dedicated EOA (the *delegate*) proposes the updates to it:
+- an [ENSv2 permissioned resolver](/docs/how-it-works#permissioned-resolver) restricts the publisher to the content hash, so it cannot steal the name or change other records
+- a [Safe](https://safe.global) multi-sig requires owner confirmations for every update, so a single leaked key cannot publish
+- a [delegate](/docs/how-it-works#delegate) proposes to the Safe without being an owner, so a leaked CI key cannot compromise the Safe
+
+The recommended setup uses all three: a **[Deploy Safe](/docs/how-it-works#deploy-safe)**. It is a Safe that can only update the content hash of your name, and a dedicated EOA (the *delegate*) proposes the updates to it:
 
 - the **name owner** (your wallet or another Safe) keeps full control of the name and is only needed once, during setup
 - the **deploy Safe** holds only the `ROLE_SET_CONTENTHASH` role on an [ENSv2 permissioned resolver](/docs/how-it-works#permissioned-resolver), so it cannot transfer the name or change other records
@@ -131,7 +135,7 @@ omnipin resolver-setup omnipin.eth --safe eth:0xyourOwnerSafe --role-address eth
 ```
 
 :::warning
-Switching to a new resolver resets the name's other records (addresses, text records). Re-create them in the new resolver if you need them.
+Switching to a new resolver resets the name's other records (addresses, text records). The [Scoped Resolver guide](/docs/scoped-resolver) covers previewing the setup, saving the records and re-creating them.
 :::
 
 4. Run the deploy with `--safe` pointing at the deploy Safe:
@@ -143,7 +147,7 @@ omnipin deploy --ens omnipin.eth --safe eth:0xyourDeploySafe
 This will propose a transaction to the Safe Transaction Service. Other Safe owners will then see the pending transaction in the Safe UI and confirm/execute it. Once executed and indexed, the ENS Content-Hash record points to the new deployment, and the site is reachable through [any ENS gateway](https://docs.ens.domains/dweb/intro/#browser-support--gateways) such as eth.limo.
 
 ::: tip Other setups
-The deploy Safe can also be the Safe that owns the name. Skip step 3 and use the [Delegate Flow](/docs/how-it-works#delegate), at the cost of the Safe being able to change anything about the name. For high-frequency deploys where requiring a confirmation on every push is excessive, [`omnipin resolver-setup`](/cli/resolver-setup) can grant the role to a dedicated CI key with `--role-address` instead, which then updates the content hash without `--safe`.
+The layers can be used separately. Without a Safe, grant the role to a plain CI key ([Scoped Resolver guide](/docs/scoped-resolver)) and deploy without `--safe`: there are no confirmations, but a leaked key can only change the content hash. Without a permissioned resolver, use the Safe that owns the name with a [delegate](/docs/how-it-works#delegate) and skip step 3, at the cost of the Safe being able to change anything about the name.
 :::
 
 ## Automation with CI/CD
