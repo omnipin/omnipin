@@ -2,7 +2,9 @@ import * as assert from 'node:assert'
 import { describe, it } from 'node:test'
 import { decodeData, encodeData } from 'ox/AbiFunction'
 import { type Address, checksum } from 'ox/Address'
+import { namehash } from 'ox/Ens'
 import type { Provider } from 'ox/Provider'
+import { getEnsResolver } from '../../../src/utils/ens/get-resolver.js'
 import {
   computeResolverAddress,
   deployProxyData,
@@ -196,13 +198,11 @@ describe('permissioned resolver utils', () => {
   })
 
   describe('prepareSetResolverTx', () => {
-    it('uses the ENSv2 registry when available', async () => {
-      const rootRegistry = checksum(
-        '0x4444444444444444444444444444444444444444',
-      )
-      const ethRegistry = checksum('0x5555555555555555555555555555555555555555')
+    const rootRegistry = checksum('0x4444444444444444444444444444444444444444')
+    const ethRegistry = checksum('0x5555555555555555555555555555555555555555')
 
-      const provider = {
+    const ensV2Provider = (status: number) =>
+      ({
         request: async ({
           params,
         }: {
@@ -214,10 +214,32 @@ describe('permissioned resolver utils', () => {
           if (data.startsWith('0xc92cc49a')) return abiWordAddress(rootRegistry)
           if (to === rootRegistry && data.startsWith('0x35af6216'))
             return abiWordAddress(ethRegistry)
+          if (to === ethRegistry && data.startsWith('0x5c622a0e'))
+            return `0x${status.toString(16).padStart(64, '0')}`
+          // ENSv1 registry `owner(bytes32)`
+          if (data.startsWith('0x02571be3')) return abiWordAddress(ADMIN)
 
           throw new Error(`unexpected call ${to} ${data}`)
         },
-      } as unknown as Provider
+      }) as unknown as Provider
+
+    it('uses the ENSv1 registry for names reserved in ENSv2', async () => {
+      const tx = await prepareSetResolverTx({
+        provider: ensV2Provider(1),
+        chainName: 'mainnet',
+        name: 'omnipin.eth',
+        resolver: RESOLVER,
+      })
+
+      assert.equal(
+        tx.to,
+        checksum('0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e'),
+      )
+      assert.ok(tx.data.startsWith('0x1896f70a'))
+    })
+
+    it('uses the ENSv2 registry for names registered there', async () => {
+      const provider = ensV2Provider(2)
 
       const tx = await prepareSetResolverTx({
         provider,
@@ -295,6 +317,74 @@ describe('permissioned resolver utils', () => {
         checksum('0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401'),
       )
       assert.ok(tx.data.startsWith('0x1896f70a'))
+    })
+  })
+
+  describe('getEnsResolver', () => {
+    const MIRROR = checksum('0x394D8EB4a4fDF599384DeAb25F31d111d755c398')
+    const REGISTRY_V1 = checksum('0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e')
+    const UNIVERSAL_RESOLVER = '0xeEeEEEeE14D718C2B47D9923Deab1335E144EeEe'
+
+    const findResolverResult = (resolver: Address) =>
+      `${abiWordAddress(resolver)}${'0'.repeat(128)}`
+
+    it('returns the Universal Resolver result for ENSv2 resolvers', async () => {
+      const provider = {
+        request: async ({
+          params,
+        }: {
+          params: [{ data: string; to: string }, string]
+        }) => {
+          const [{ data, to }] = params
+          if (to === UNIVERSAL_RESOLVER) return findResolverResult(RESOLVER)
+          // `REGISTRY_V1()` is only implemented by the ENSv1 mirror
+          if (data.startsWith('0xe370ecbe'))
+            throw new Error('execution reverted')
+          throw new Error(`unexpected call ${to} ${data}`)
+        },
+      } as unknown as Provider
+
+      assert.equal(
+        await getEnsResolver({ provider, name: 'omnipin.eth' }),
+        RESOLVER,
+      )
+    })
+
+    it('looks through the ENSv1 mirror to the ENSv1 registry', async () => {
+      const calls: string[] = []
+      const provider = {
+        request: async ({
+          params,
+        }: {
+          params: [{ data: string; to: string }, string]
+        }) => {
+          const [{ data }] = params
+          const to = checksum(params[0].to)
+          if (to === checksum(UNIVERSAL_RESOLVER))
+            return findResolverResult(MIRROR)
+          if (to === MIRROR && data.startsWith('0xe370ecbe'))
+            return abiWordAddress(REGISTRY_V1)
+          if (to === REGISTRY_V1 && data.startsWith('0x0178b8bf')) {
+            calls.push(data.slice(10))
+            // `sub.omnipin.eth` has no resolver, `omnipin.eth` has one
+            return abiWordAddress(
+              calls.length === 1
+                ? checksum('0x0000000000000000000000000000000000000000')
+                : RESOLVER,
+            )
+          }
+          throw new Error(`unexpected call ${to} ${data}`)
+        },
+      } as unknown as Provider
+
+      assert.equal(
+        await getEnsResolver({ provider, name: 'sub.omnipin.eth' }),
+        RESOLVER,
+      )
+      assert.deepEqual(calls, [
+        namehash('sub.omnipin.eth').slice(2),
+        namehash('omnipin.eth').slice(2),
+      ])
     })
   })
 })
