@@ -17,8 +17,11 @@ export const walk = async (
   // or `?`, because tinyglobby then interprets them as pattern syntax.
   for (const absPath of await glob('**/*', {
     cwd: dir,
-    ignore: ['**/node_modules'],
+    // `dot` keeps load-bearing paths like `.well-known/`. `.git` is never
+    // site content and must not be published.
+    ignore: ['**/node_modules', '**/.git'],
     onlyFiles: true,
+    dot: true,
     absolute: true,
   })) {
     const size = (await stat(absPath)).size
