@@ -98,7 +98,11 @@ export const resolverSetupAction = async ({
   // so the proposer/delegate needs none. `--role-address` grants the role to
   // another account, e.g. a CI key or a separate Safe that does not own the
   // name.
-  const roleAddress = roleOption ? checksum(roleOption) : (safe ?? signer)
+  const roleAddress = roleOption
+    ? checksum(
+        await getExactAddress({ chain, addressOrEns: roleOption, provider }),
+      )
+    : (safe ?? signer)
   if (!roleAddress) throw new MissingKeyError('PK')
 
   // The portal picks a fresh random salt per deployment. The factory binds it

@@ -110,22 +110,40 @@ Using a private key of the ENS name manager account imposes significant security
 
 One of the unique features that Omnipin offers is [Safe](https://safe.global) integration. Instead of EOA managing the ENS name, a multi-signature wallet is put in the front. Such an approach allows for advanced security for ENS update pipelines, such as multi-factor authorisation with the [Delegate Flow](/docs/how-it-works#delegate) or role-based permissions with an [ENSv2 permissioned resolver](/docs/how-it-works#permissioned-resolver).
 
-The recommended setup is the **Delegate Flow**: a dedicated EOA (the *delegate*) signs and proposes a transaction to the Safe Transaction Service, and other Safe owners then confirm and execute it from the Safe UI. The delegate key still needs to be present as `OMNIPIN_PK` — but unlike the EOA-only setup, this key cannot update ENS on its own; it can only suggest transactions for the Safe to approve.
+The recommended setup is a **[Deploy Safe](/docs/how-it-works#deploy-safe)**. It is a Safe that can only update the content hash of your name, and a dedicated EOA (the *delegate*) proposes the updates to it:
 
-1. Head over to the [Safe app](https://app.safe.global) and create a new Safe (or use an existing one) that owns the ENS name.
+- the **name owner** (your wallet or another Safe) keeps full control of the name and is only needed once, during setup
+- the **deploy Safe** holds only the `ROLE_SET_CONTENTHASH` role on an [ENSv2 permissioned resolver](/docs/how-it-works#permissioned-resolver), so it cannot transfer the name or change other records
+- the **delegate** key is stored as `OMNIPIN_PK`. It can only propose transactions for the deploy Safe owners to confirm, and has no access to the name
 
-2. In the Safe settings, add a **delegate** — typically a fresh EOA created just for deployments. Save its private key as `OMNIPIN_PK`.
+1. Head over to the [Safe app](https://app.safe.global) and create a new Safe for deployments. It does not need to own the ENS name.
 
-3. Run the deploy with `--safe`:
+2. In the Safe settings, add a **delegate**, typically a fresh EOA created just for deployments. Save its private key as `OMNIPIN_PK`.
+
+3. As the name owner, grant the deploy Safe the content hash role. This deploys a permissioned resolver for the name and points the name at it:
 
 ```sh
-omnipin deploy --ens omnipin.eth --safe eth:0xyoursafeAddress
+# Name owned by your wallet
+OMNIPIN_PK=<name owner key> omnipin resolver-setup omnipin.eth --role-address eth:0xyourDeploySafe
+
+# Name owned by a Safe: upload the generated resolver-setup.json in that Safe's Transaction Builder
+omnipin resolver-setup omnipin.eth --safe eth:0xyourOwnerSafe --role-address eth:0xyourDeploySafe
+```
+
+:::warning
+Switching to a new resolver resets the name's other records (addresses, text records). Re-create them in the new resolver if you need them.
+:::
+
+4. Run the deploy with `--safe` pointing at the deploy Safe:
+
+```sh
+omnipin deploy --ens omnipin.eth --safe eth:0xyourDeploySafe
 ```
 
 This will propose a transaction to the Safe Transaction Service. Other Safe owners will then see the pending transaction in the Safe UI and confirm/execute it. Once executed and indexed, the ENS Content-Hash record points to the new deployment, and the site is reachable through [any ENS gateway](https://docs.ens.domains/dweb/intro/#browser-support--gateways) such as eth.limo.
 
-::: tip Permissioned Resolver
-For high-frequency deploys where requiring a confirmation on every push is excessive, Omnipin also supports submitting transactions directly onchain through an [ENSv2 permissioned resolver](/docs/how-it-works#permissioned-resolver) with a restricted `ROLE_SET_CONTENTHASH` role. The Safe holds the role by default; [`omnipin resolver-setup`](/cli/resolver-setup) can grant it to a dedicated CI key with `--role-address`.
+::: tip Other setups
+The deploy Safe can also be the Safe that owns the name. Skip step 3 and use the [Delegate Flow](/docs/how-it-works#delegate), at the cost of the Safe being able to change anything about the name. For high-frequency deploys where requiring a confirmation on every push is excessive, [`omnipin resolver-setup`](/cli/resolver-setup) can grant the role to a dedicated CI key with `--role-address` instead, which then updates the content hash without `--safe`.
 :::
 
 ## Automation with CI/CD

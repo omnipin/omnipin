@@ -55,7 +55,8 @@ omnipin resolver-setup omnipin.eth \
 ### `role-address`
 
 Address to grant `ROLE_SET_CONTENTHASH` to. Defaults to the Safe when `--safe`
-is used, and to the `OMNIPIN_PK` address otherwise. Pass a dedicated CI key for
+is used, and to the `OMNIPIN_PK` address otherwise. Accepts an address, an
+[EIP-3770](https://eips.ethereum.org/EIPS/eip-3770) address, or an ENS name. Pass a dedicated CI key for
 unattended updates, or a separate Safe that should update the content hash
 without owning the name.
 
@@ -65,6 +66,7 @@ The account that owns the name and the account that updates the content hash
 can be different. For example, the name owner grants the role to a deploy Safe,
 and a proposer queues updates on that Safe. The deploy Safe can only set the
 content hash, and the proposer has no access to the name or the resolver at all.
+This is the [recommended setup](/docs/how-it-works#deploy-safe).
 
 ```sh
 # Run once, as the name owner (EOA shown; use --safe <owner safe> for a Safe owner)

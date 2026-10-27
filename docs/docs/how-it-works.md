@@ -98,6 +98,7 @@ Omnipin has multiple ways of updating ENS, varying in security and UX properties
 | EOA | No 🚨 | No | No | Low
 | Delegate | Yes | Yes | No | High
 | Permissioned Resolver | Yes | No | Yes | Medium
+| [Deploy Safe](#deploy-safe) (recommended) | Yes | Yes | Yes | High
 
 ### EOA
 
@@ -184,3 +185,48 @@ With a dedicated role key, omit `--safe`: the key sends `setContenthash`
 directly to the resolver. The role is scoped to the resolver's root resource, so
 use a dedicated resolver per project. The key cannot change other records or
 transfer the name.
+
+### Deploy Safe
+
+Combines the Delegate flow and the Permissioned Resolver. The account that owns
+the ENS name and the Safe that publishes deploys are kept separate:
+
+- **Name owner** — an EOA or a Safe that owns the name and administers the
+  resolver. It is used once during setup and can stay offline afterwards.
+- **Deploy Safe** — holds only `ROLE_SET_CONTENTHASH` on the resolver. It does
+  not own the name, so its owners can update the content hash but cannot
+  transfer the name, change other records, or change the resolver.
+- **Delegate** — `OMNIPIN_PK`. It can only propose transactions to the deploy
+  Safe and has no access to the name or the resolver.
+
+A leaked delegate key can only queue proposals that the deploy Safe owners have
+to confirm. Even a compromised deploy Safe is limited to the content hash, and
+the name owner can revoke its role or point the name at another resolver.
+
+#### Setup
+
+1. Create a deploy Safe in the [Safe app](https://app.safe.global), separate from
+   the account that owns the name.
+2. Add a delegate to the deploy Safe (Settings > Setup > Delegates) and save its
+   private key to `OMNIPIN_PK`, as in the [Delegate](#delegate) setup.
+3. As the name owner, deploy a permissioned resolver and grant the role to the
+   deploy Safe:
+
+```sh
+# Name owned by an EOA: sends the transactions directly
+OMNIPIN_PK=<owner key> omnipin resolver-setup omnipin.eth --role-address <deploy safe>
+
+# Name owned by a Safe: writes resolver-setup.json for the owner Safe's Transaction Builder
+omnipin resolver-setup omnipin.eth --safe <owner safe> --role-address <deploy safe>
+```
+
+Run this step locally. The owner key should never be stored in CI.
+
+#### Usage
+
+```sh
+OMNIPIN_PK=<delegate key> omnipin deploy --ens omnipin.eth --safe <deploy safe>
+```
+
+The delegate proposes `setContenthash` to the deploy Safe, and the deploy Safe
+owners confirm and execute it in the Safe UI.
