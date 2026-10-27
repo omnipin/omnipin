@@ -89,50 +89,79 @@ graph LR
     IPFS --> CH
 ```
 
-Automatic ENS updates are as easy as supplying an extra CLI argument during deploy, and adding a name manager's private key to `.env`:
+Automatic ENS updates are as easy as supplying an extra CLI argument during deploy:
 
-:::danger
-Using a private key of the ENS name manager account has immediate security risks. Consider [Safe integration](#safe-integration) instead.
-:::
-```sh [.env]
-OMNIPIN_PK=<0xensmanagerprivatekeygoeshere>
-```
-
-```bash [Terminal]
+```bash
 omnipin deploy --ens omnipin.eth
 ```
 
-Updating ENS Content-Hash record requires paying a network fee. The fee varies depending on network load.
+Omnipin needs a private key in `OMNIPIN_PK` to sign the update. Instead of the key of the wallet that owns your name, give it a throwaway account that is only allowed to update the website. If that key leaks, the attacker can change what the name points to, but cannot steal the name or change any of its other records.
 
-## Safe integration
-
-Using a private key of the ENS name manager account imposes significant security risks. In case of environment compromise, an attacker is able to update the ENS name to a malicious version.
-
-One of the unique features that Omnipin offers is [Safe](https://safe.global) integration. Instead of EOA managing the ENS name, a multi-signature wallet is put in the front. Such an approach allows for advanced security for ENS update pipelines, such as multi-factor authorisation with the [Delegate Flow](/docs/how-it-works#delegate) or role-based permissions with [Zodiac Roles](/docs/how-it-works#zodiac-roles).
-
-The recommended setup is the **Delegate Flow**: a dedicated EOA (the *delegate*) signs and proposes a transaction to the Safe Transaction Service, and other Safe owners then confirm and execute it from the Safe UI. The delegate key still needs to be present as `OMNIPIN_PK` — but unlike the EOA-only setup, this key cannot update ENS on its own; it can only suggest transactions for the Safe to approve.
-
-1. Head over to the [Safe app](https://app.safe.global) and create a new Safe (or use an existing one) that owns the ENS name.
-
-2. In the Safe settings, add a **delegate** — typically a fresh EOA created just for deployments. Save its private key as `OMNIPIN_PK`.
-
-3. Run the deploy with `--safe`:
+### 1. Create a throwaway account
 
 ```sh
-omnipin deploy --ens omnipin.eth --safe eth:0xyoursafeAddress
+cast wallet new
 ```
 
-This will propose a transaction to the Safe Transaction Service. Other Safe owners will then see the pending transaction in the Safe UI and confirm/execute it. Once executed and indexed, the ENS Content-Hash record points to the new deployment, and the site is reachable through [any ENS gateway](https://docs.ens.domains/dweb/intro/#browser-support--gateways) such as eth.limo.
+This uses [Foundry](https://getfoundry.sh); any wallet works. Save the private key to `.env` and send the account a small amount of ETH to pay for transactions:
 
-::: tip Zodiac Roles
-For high-frequency deploys where requiring a confirmation on every push is excessive, Omnipin also supports submitting transactions directly onchain through a [Zodiac Roles](/docs/how-it-works#zodiac-roles) module with a restricted role. See [`omnipin zodiac`](/cli/zodiac) and the `--roles-mod-address` flag for setup.
+```sh [.env]
+OMNIPIN_PK=<0xthrowawayprivatekey>
+```
+
+### 2. Allow it to update your name
+
+From the wallet that owns the name, allow the throwaway account to update the website. Run this once, on your own machine, and pass the owner key inline instead of saving it anywhere:
+
+```sh
+# Preview first: simulates everything and sends nothing
+OMNIPIN_PK=<name owner key> omnipin resolver-setup omnipin.eth --role-address <throwaway address> --dry-run
+
+OMNIPIN_PK=<name owner key> omnipin resolver-setup omnipin.eth --role-address <throwaway address>
+```
+
+Under the hood, this gives the account the `ROLE_SET_CONTENTHASH` role on an [ENSv2 permissioned resolver](/docs/how-it-works#permissioned-resolver). If the name doesn't use one yet, the command deploys one and points the name at it.
+
+:::warning
+A new resolver starts empty, so the name's other records (ETH address, avatar, text records) stop resolving. Write them down before running the command and [re-create them](/cli/resolver-setup#re-creating-records) afterwards.
 :::
+
+If the name is owned by a Safe, add `--safe <owner safe>`: the command writes `resolver-setup.json` instead, which you upload in the Safe [Transaction Builder](https://app.safe.global/apps/open?appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder).
+
+### 3. Deploy
+
+```sh
+omnipin deploy --ens omnipin.eth
+```
+
+Updating the ENS Content-Hash record requires paying a network fee. The fee varies depending on network load.
+
+To replace or revoke the throwaway account later, see [Rotating or revoking access](/cli/resolver-setup#rotating-or-revoking-access).
+
+:::tip Without the setup
+Skipping step 2 and putting the name owner's key into `OMNIPIN_PK` also works, but a leaked key can then steal the name. Only do this for testing.
+:::
+
+### Adding a Safe
+
+For more security, the role can be held by a [Safe](https://safe.global) instead of a throwaway account. Every update then needs confirmations from the Safe owners, so a leaked key cannot publish anything on its own. The key in `OMNIPIN_PK` belongs to a [proposer](/docs/how-it-works#delegate), which can only queue transactions for the owners to confirm. Proposers require a Safe Pro plan.
+
+1. Create a Safe for deployments in the [Safe app](https://app.safe.global). It does not need to own the name.
+2. Add the throwaway account as a proposer in the Safe settings.
+3. In step 2 above, pass the Safe as `--role-address`.
+4. Deploy with `--safe`:
+
+```sh
+omnipin deploy --ens omnipin.eth --safe eth:0xyourDeploySafe
+```
+
+The update is proposed to the Safe Transaction Service, and the Safe owners confirm and execute it in the Safe UI. See [Deploy Safe](/docs/how-it-works#deploy-safe) for the details.
 
 ## Automation with CI/CD
 
 Omnipin seamlessly integrates with CI/CD pipelines.
 
-All the previous steps can be automated in one GitHub Actions workflow. The workflow deploys a new version on IPFS every time a commit is pushed to the `main` branch and automatically proposes a transaction to Safe.
+All the previous steps can be automated in one GitHub Actions workflow. The workflow deploys a new version on IPFS every time a commit is pushed to the `main` branch and updates the ENS name with the throwaway account. Store its private key as the `OMNIPIN_PK` secret. With a [Safe](#adding-a-safe), add `--safe` with the Safe address to propose the update instead.
 
 ```yaml
 name: Deploy with Omnipin
@@ -150,7 +179,7 @@ jobs:
       - name: Build website
         run: bun i && bun run build
       - name: Deploy the site
-        run: omnipin deploy .vitepress/dist --strict --ens ${{ vars.OMNIPIN_ENS }} --safe ${{ vars.OMNIPIN_SAFE }}
+        run: omnipin deploy .vitepress/dist --strict --ens ${{ vars.OMNIPIN_ENS }}
         env:
           OMNIPIN_PINATA_TOKEN: ${{ secrets.OMNIPIN_PINATA_TOKEN }}
           OMNIPIN_LIGHTHOUSE_TOKEN: ${{ secrets.OMNIPIN_LIGHTHOUSE_TOKEN }}

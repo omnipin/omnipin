@@ -113,7 +113,9 @@ describe('ens utils', () => {
           name: 'omnipin.eth',
         })
 
-        assert.equal(addr, '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63')
+        // omnipin.eth was migrated to ENSv2, so the Universal Resolver now
+        // returns its v2 resolver; the v1 registry still holds the old one.
+        assert.equal(addr, '0x394D8EB4a4fDF599384DeAb25F31d111d755c398')
       })
     })
   })

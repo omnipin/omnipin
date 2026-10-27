@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import type { Address } from 'ox/Address'
 import { CLI } from 'spektr'
 import { colorPlugin } from 'spektr/plugins/color.js'
 import { type BridgeActionArgs, bridgeAction } from './actions/bridge.js'
@@ -10,9 +9,12 @@ import { dnsLinkAction } from './actions/dnslink.js'
 import { type EnsActionArgs, ensAction } from './actions/ens.js'
 import { packAction } from './actions/pack.js'
 import { pinAction } from './actions/pin.js'
+import {
+  type ResolverSetupActionArgs,
+  resolverSetupAction,
+} from './actions/resolver-setup.js'
 import { statusAction } from './actions/status.js'
 import { unpinAction } from './actions/unpin.js'
-import { zodiacAction } from './actions/zodiac.js'
 import { isTTY } from './constants.js'
 import { AllProvidersFailedError } from './errors.js'
 import { logger } from './utils/logger.js'
@@ -49,11 +51,6 @@ const ensOptions = [
     name: 'dry-run',
     description: 'Do not send a transaction',
     type: 'boolean',
-  },
-  {
-    name: 'roles-mod-address',
-    description: 'Zodiac Roles Module address',
-    type: 'string',
   },
 ] as const
 
@@ -156,6 +153,43 @@ cli.command<[string, string]>(
   {
     description: 'Update ENS domain Content-Hash with an IFPS CID',
     options: ensOptions,
+  },
+)
+
+cli.command<[string]>(
+  'resolver-setup',
+  ([domain], options) =>
+    resolverSetupAction({
+      domain,
+      options: options as ResolverSetupActionArgs,
+    }),
+  {
+    description:
+      'Deploy an ENSv2 permissioned resolver or grant ROLE_SET_CONTENTHASH on an existing one',
+    options: [
+      ...onchainOptions,
+      {
+        name: 'dry-run',
+        description: 'Simulate the setup transactions without sending them',
+        type: 'boolean',
+      },
+      {
+        name: 'resolver',
+        description: 'Existing ENSv2 permissioned resolver to use',
+        type: 'string',
+      },
+      {
+        name: 'role-address',
+        description:
+          'Address to grant ROLE_SET_CONTENTHASH to (defaults to the Safe, or the OMNIPIN_PK address without --safe)',
+        type: 'string',
+      },
+      {
+        name: 'salt',
+        description: 'CREATE2 salt for a new resolver deployment',
+        type: 'string',
+      },
+    ] as const,
   },
 )
 
@@ -371,15 +405,6 @@ cli.command<[string]>(
         short: 'v',
       },
     ] as const,
-  },
-)
-
-cli.command<[Address, Address]>(
-  'zodiac',
-  ([rolesModAddress, resolverAddress], options) =>
-    zodiacAction({ rolesModAddress, resolverAddress, options }),
-  {
-    options: [...onchainOptions] as const,
   },
 )
 
