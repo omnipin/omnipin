@@ -1,7 +1,6 @@
 import { decodeResult, encodeData } from 'ox/AbiFunction'
 import { type Address, checksum } from 'ox/Address'
 import { toHex } from 'ox/Bytes'
-import { namehash, normalize } from 'ox/Ens'
 import type { Hex } from 'ox/Hex'
 import type { Provider } from 'ox/Provider'
 import { ZERO_ADDRESS } from '../address.js'
@@ -37,20 +36,25 @@ export const abi = {
   ],
   stateMutability: 'view',
 } as const
+/** `ICompositeResolver` ERC-165 interface id. */
+const COMPOSITE_RESOLVER_INTERFACE = '0xeea330f9' as const
 
-const registryV1Abi = {
+const supportsInterfaceAbi = {
   type: 'function',
-  name: 'REGISTRY_V1',
-  inputs: [],
-  outputs: [{ name: '', type: 'address' }],
+  name: 'supportsInterface',
+  inputs: [{ name: 'interfaceId', type: 'bytes4' }],
+  outputs: [{ name: '', type: 'bool' }],
   stateMutability: 'view',
 } as const
 
-const registryResolverAbi = {
+const getResolverAbi = {
   type: 'function',
-  name: 'resolver',
-  inputs: [{ name: 'node', type: 'bytes32' }],
-  outputs: [{ name: '', type: 'address' }],
+  name: 'getResolver',
+  inputs: [{ name: 'name', type: 'bytes' }],
+  outputs: [
+    { name: 'resolver', type: 'address' },
+    { name: 'offchain', type: 'bool' },
+  ],
   stateMutability: 'view',
 } as const
 
@@ -68,34 +72,37 @@ const ethCall = ({
     params: [{ to, data, gas: SIMULATION_GAS_LIMIT }, 'latest'],
   })
 
-/**
- * Returns the ENSv1 registry when `resolver` is the ENSv2 `ENSV1Resolver`
- * mirror, which the Universal Resolver returns for names that have not migrated
- * to ENSv2. The mirror only forwards reads, so writes have to go to the
- * resolver set in the ENSv1 registry.
- */
-const getMirroredRegistryV1 = async ({
+const isCompositeResolver = async ({
   provider,
   resolver,
 }: {
   provider: Provider
   resolver: Address
-}): Promise<Address | undefined> => {
+}): Promise<boolean> => {
   try {
     const result = await ethCall({
       provider,
       to: resolver,
-      data: encodeData(registryV1Abi),
+      data: encodeData(supportsInterfaceAbi, [COMPOSITE_RESOLVER_INTERFACE]),
     })
-    return decodeResult(registryV1Abi, result)
+    return decodeResult(supportsInterfaceAbi, result)
   } catch {
-    return undefined
+    // Legacy resolvers without ERC-165 revert on the call.
+    return false
   }
 }
+
+// Bounds the unwrapping in case composite resolvers point at each other.
+const MAX_COMPOSITE_DEPTH = 4
 
 /**
  * Finds the resolver that holds the records of `name`, i.e. the contract
  * record updates have to be sent to.
+ *
+ * With ENSv2 live, the Universal Resolver returns a composite resolver for
+ * names that are not in ENSv2 (e.g. the `ENSV1Resolver` mirror for ENSv1
+ * names). Composite resolvers only forward reads, so they are unwrapped with
+ * `ICompositeResolver.getResolver` to the resolver that stores the records.
  */
 export const getEnsResolver = async ({
   provider,
@@ -104,36 +111,34 @@ export const getEnsResolver = async ({
   provider: Provider
   name: string
 }): Promise<Address> => {
+  const dnsName = toHex(packetToBytes(name))
+
   const result = await ethCall({
     provider,
     to: '0xeEeEEEeE14D718C2B47D9923Deab1335E144EeEe',
-    data: encodeData(abi, [toHex(packetToBytes(name))]),
+    data: encodeData(abi, [dnsName]),
   })
 
-  const [resolverAddress] = decodeResult(abi, result)
+  let [resolver] = decodeResult(abi, result)
 
-  const registryV1 = await getMirroredRegistryV1({
-    provider,
-    resolver: resolverAddress,
-  })
-  if (!registryV1) return checksum(resolverAddress)
+  for (let depth = 0; depth < MAX_COMPOSITE_DEPTH; depth++) {
+    if (resolver === ZERO_ADDRESS) break
+    if (!(await isCompositeResolver({ provider, resolver }))) break
 
-  // Walk up the ENSv1 registry like the ENSv1 Universal Resolver did, so a name
-  // without its own resolver falls back to its parent's.
-  const labels = normalize(name).split('.')
-  for (let i = 0; i < labels.length; i++) {
-    const resolver = decodeResult(
-      registryResolverAbi,
+    const [underlying, offchain] = decodeResult(
+      getResolverAbi,
       await ethCall({
         provider,
-        to: registryV1,
-        data: encodeData(registryResolverAbi, [
-          namehash(labels.slice(i).join('.')),
-        ]),
+        to: resolver,
+        data: encodeData(getResolverAbi, [dnsName]),
       }),
     )
-    if (resolver !== ZERO_ADDRESS) return checksum(resolver)
+    if (offchain)
+      throw new Error(
+        `${name} resolves offchain through ${checksum(resolver)}; its records cannot be updated onchain`,
+      )
+    resolver = underlying
   }
 
-  return ZERO_ADDRESS
+  return checksum(resolver)
 }
