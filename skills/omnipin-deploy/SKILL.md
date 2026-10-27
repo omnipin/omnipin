@@ -1,6 +1,6 @@
 ---
 name: omnipin-deploy
-description: Deploy a static site to decentralized storage with Omnipin. Use this skill when the user wants to deploy, pin, or publish a site/dapp to IPFS, Filecoin, Swarm, or to update an ENS contenthash / DNSLink. The skill prompts the user to choose providers, gathers the required env vars, and asks whether to update ENS (via EOA private key, Safe with a delegate, or Zodiac Roles).
+description: Deploy a static site to decentralized storage with Omnipin. Use this skill when the user wants to deploy, pin, or publish a site/dapp to IPFS, Filecoin, Swarm, or to update an ENS contenthash / DNSLink. The skill prompts the user to choose providers, gathers the required env vars, and asks whether to update ENS (via EOA private key, Safe with a delegate, or an ENSv2 permissioned resolver role).
 ---
 
 # Deploy with Omnipin
@@ -85,11 +85,10 @@ Options:
 
    After generation, write the private key to `.env` as `OMNIPIN_PK`, show the *address* (not the key) to the user, and tell them to add that address as a delegate in the Safe UI.
 2. **EOA (private key)** — fastest, least secure. Use only for testing or low-stakes deploys. Requires `OMNIPIN_PK` set to the ENS name manager's private key. Warn the user that a compromised key means total ENS takeover.
-3. **Safe with Zodiac Roles** — advanced. Use only when the user explicitly asks for it, e.g. high-frequency automated deploys where requiring a Safe confirmation on every push is excessive. Submits the tx onchain through a Zodiac Roles Module using a restricted role key, bypassing the Safe Transaction Service. Requires:
-   - `OMNIPIN_PK` set to the role member's private key
-   - `--safe <address-or-ens>` flag
-   - `--roles-mod-address <0x...>` flag (the deployed Roles Module address)
-   - First-time setup: run `omnipin zodiac --safe <safe> <roles-mod-address> <ens-resolver-address>` to generate `zodiac.json`, then upload it via the Safe Transaction Builder. Both positional addresses are required; the generated role (`ENS_DEPLOYER`) may only call `setContentHash` on that resolver. If `OMNIPIN_PK` is unset, the command generates a keypair and prints the private key once — save it. See [Safe integration guide](https://omnipin.eth.limo/docs/#safe-integration).
+3. **Safe with an ENSv2 permissioned resolver role** — advanced. Use only when the user explicitly asks for it, e.g. high-frequency automated deploys where requiring a Safe confirmation on every push is excessive. The Safe deploys an ENSv2 `PermissionedResolver` (or reuses one already attached to the name) and holds `ROLE_SET_CONTENTHASH`; a Safe proposer/delegate needs no role because the Safe executes the call. For unattended deploys, grant the role to a dedicated CI key:
+   - First-time setup: run `omnipin resolver-setup <name.eth> --safe <safe> --role-address <ci-address>` to generate `resolver-setup.json`, then upload it via the Safe Transaction Builder. The batch deploys the resolver, grants the role, and points the name at the resolver.
+   - Set `OMNIPIN_PK` to the **CI role key** and run subsequent deploys **without** `--safe`, e.g. `omnipin deploy --ens myapp.eth`.
+   - If no dedicated key is wanted, keep using the Safe delegate flow with `--safe`; the Safe already holds the role. See the [resolver-setup docs](https://omnipin.eth.limo/cli/resolver-setup).
 
 Always warn that storing `OMNIPIN_PK` in `.env` carries risk; recommend the Safe delegate flow for any production or CI deployment.
 
@@ -116,12 +115,10 @@ omnipin deploy --providers Filecoin,Pinata --ens myapp.eth
 # IPFS + ENS via Safe delegate (recommended)
 omnipin deploy --providers Filecoin,Pinata --ens myapp.eth --safe eth:0xYourSafe
 
-# Advanced: IPFS + ENS via Safe + Zodiac Roles (only when explicitly requested)
+# Advanced: IPFS + ENS via an ENSv2 permissioned resolver role (only when explicitly requested)
 omnipin deploy \
   --providers Filecoin,Pinata \
-  --ens myapp.eth \
-  --safe eth:0xYourSafe \
-  --roles-mod-address 0xYourRolesMod
+  --ens myapp.eth
 
 # Swarm via a self-hosted Bee node + ENS (recommended Swarm flow)
 omnipin deploy --providers Bee --ens myapp.eth --safe eth:0xYourSafe
@@ -159,7 +156,7 @@ Only bring these up when relevant — `deploy` is the main entry point.
 | `omnipin dnslink <cid> <name>` | Update a DNSLink record separately from a deploy. |
 | `omnipin bridge <amount>` | Bridge funds into a provider chain (`--provider=AIOZ` or `--provider=Filecoin`). |
 | `omnipin deposit <amount>` | Move already-held tokens into a provider's payment contract (`--provider=Filecoin` → Filecoin Pay, `--provider=Fula` → Fula vault). |
-| `omnipin zodiac <roles-mod> <resolver>` | Generate `zodiac.json` for the Safe Transaction Builder. |
+| `omnipin resolver-setup <name.eth>` | Deploy an ENSv2 permissioned resolver or grant `ROLE_SET_CONTENTHASH` on the existing one; with `--safe` writes `resolver-setup.json` for the Safe Transaction Builder. |
 
 ### 7. Run it
 
@@ -200,7 +197,8 @@ Use these env var names exactly. Do not invent variants.
 |---------|------------|
 | EOA signer | `OMNIPIN_PK` (private key of ENS manager) |
 | Safe delegate | `OMNIPIN_PK` (delegate's key, configured in Safe settings) + `--safe <addr|ens>` |
-| Safe + Zodiac Roles | `OMNIPIN_PK` (role member) + `--safe <addr|ens>` + `--roles-mod-address <0x...>` |
+| Safe (permissioned resolver) | `OMNIPIN_PK` (proposer key) + `--safe <addr|ens>` — proposer needs no role; the Safe holds it |
+| ENSv2 role key (unattended) | `OMNIPIN_PK` (role key) — no `--safe`; grant via `omnipin resolver-setup <name.eth> --safe <addr|ens> --role-address <ci-address>` |
 | Custom RPC | `--rpc-url <url>` |
 | Chain | `--chain mainnet|sepolia` (default `mainnet`) |
 
@@ -331,5 +329,5 @@ For testing only, fund from the [FIL faucet](https://forest-explorer.chainsafe.d
 
 - Never commit `.env`. Add it to `.gitignore` if missing.
 - Never print secret values back to the user after collection.
-- Strongly prefer the Safe delegate flow over a raw `OMNIPIN_PK` (EOA name manager) for any production deployment, especially in CI. The delegate key still lives in `.env` / CI secrets, but it can only propose transactions — not execute them. Only suggest Zodiac Roles when the user specifically needs unattended high-frequency deploys.
+- Strongly prefer the Safe delegate flow over a raw `OMNIPIN_PK` (EOA name manager) for any production deployment, especially in CI. The delegate key still lives in `.env` / CI secrets, but it can only propose transactions — not execute them. Only suggest an ENSv2 permissioned resolver role when the user specifically needs unattended high-frequency deploys. That role is scoped to the resolver's root resource, so use a dedicated resolver per project.
 - For CI, suggest mapping each env var to a CI secret rather than hard-coding it (see Omnipin's CI/CD docs for a GitHub Actions example).

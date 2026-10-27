@@ -90,16 +90,16 @@ omnipin deploy --verbose --providers=Pinata
 
 Deploy using a [Safe](https://safe.global) multisig wallet. Requires private key of a Safe owner/delegate to sign a transaction. [EIP-3770](https://eips.ethereum.org/EIPS/eip-3770) addresses and ENS names are supported. Mainnet is used by default.
 
-The update will be sent to the Safe Transaction Service. `OMNIPIN_PK` must be a proposer's private key.
+The update will be sent to the Safe Transaction Service. `OMNIPIN_PK` must be a proposer's private key; the proposer needs no ENSv2 role because the Safe executes the call.
 
-In case the `roles-mod-address` option is specified, a transaction will be submitted via the Zodiac Roles module instead, skipping the Safe Transaction Service and going directly onchain. Just like with EOA, a transaction is simulated locally first.
+If a dedicated CI key was granted `ROLE_SET_CONTENTHASH` (via [`omnipin resolver-setup`](/cli/resolver-setup) `--role-address`), omit `--safe` to send the update directly from that key, skipping the Safe Transaction Service.
 
 ```sh
 # Propose transaction to Safe
 omnipin deploy --ens v1rtl.eth --safe safe.omnipin.eth
 
-# Use a restricted role via Zodiac
-omnipin deploy --ens v1rtl.eth --roles-mod-address 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --safe safe.omnipin.eth
+# Send directly with the ENSv2 role key
+omnipin deploy --ens v1rtl.eth
 ```
 
 ### `dnslink`
@@ -110,14 +110,6 @@ Requires `OMNIPIN_CF_KEY` and `OMNIPIN_CF_ZONE_ID` environment variables.
 
 ```sh
 omnipin deploy --dnslink _dnslink.example.com
-```
-
-### `roles-mod-address`
-
-Zodiac Roles Module address. Requires `safe` option to be provided.
-
-```sh
-omnipin deploy --roles-mod-address 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --safe 0x1234567890000000000000000000000000000000 omnipin.eth
 ```
 
 ### `progress-bar`

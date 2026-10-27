@@ -66,9 +66,9 @@ describe('safe/eip3770', () => {
     })
   })
 
-  // `zodiac` builds its Safe app deeplink from this: a bare `0x…` parses to an
-  // empty prefix, which produced `safe=:0x…` until the prefix was derived from
-  // the chain instead.
+  // `resolver-setup` builds its Safe app deeplink from this: a bare `0x…`
+  // parses to an empty prefix, which produced `safe=:0x…` until the prefix was
+  // derived from the chain instead.
   describe('getEip3770NetworkPrefixFromChainId', () => {
     it('maps supported chain ids to their short names', () => {
       assert.strictEqual(getEip3770NetworkPrefixFromChainId(1), 'eth')

@@ -18,7 +18,7 @@ flowchart TD
   I --> J{ENS Update Method}
   J --> J1["EOA Transaction"]
   J --> J2["Safe Delegate Flow"]
-  J --> J3["Safe Zodiac Role Flow"]
+  J --> J3["Safe Permissioned Resolver Role"]
 
   %% Subgraphs for grouping
   subgraph PACKAGING
@@ -97,7 +97,7 @@ Omnipin has multiple ways of updating ENS, varying in security and UX properties
 |---|---|---|---|---|
 | EOA | No 🚨 | No | No | Low
 | Delegate | Yes | Yes | No | High
-| Zodiac Roles | Yes | No | Yes | Medium
+| Permissioned Resolver | Yes | No | Yes | Medium
 
 ### EOA
 
@@ -107,7 +107,7 @@ In case of a key compromise, it is possible to steal all the assets held by the 
 
 A transaction is signed by a private key provided via `OMNIPIN_PK` and is immediately pushed onchain. There are no barriers or restrictions put on the account, so it is the least secure option. The only benefit of using an EOA is not requiring any custom setup.
 
-In case EOA is still required and neither Delegate nor Zodiac Roles options are available, it is recommended to take a list of security measures to minimize the potential risks of using an EOA for managing the ENS name:
+In case EOA is still required and neither Delegate nor Permissioned Resolver options are available, it is recommended to take a list of security measures to minimize the potential risks of using an EOA for managing the ENS name:
 
 * Don't use the account for storing any assets other than a tiny portion of ETH required to pay the transaction fees
 * Save the private key in CI secrets to not be able to retrieve it from elsewhere
@@ -127,45 +127,60 @@ While the Delegate flow is the most secure option, it is also the most complex i
 
 ![Delegate UI](/proposer.png)
 
-### Zodiac Roles
+### Permissioned Resolver
 
-A transaction is signed by a private key provided via `OMNIPIN_PK` and is immediately pushed onchain. Unlike pure EOA, the account is restricted to only be able to update ENS name's `contentHash` record and does not manage the name. The name instead is managed by a Safe wallet.
+A transaction is signed by a private key provided via `OMNIPIN_PK` and is immediately pushed onchain. Unlike pure EOA, the account is restricted to only be able to update an ENS name's `contentHash` record and does not manage the name. The name and its resolver are instead managed by a Safe wallet.
+
+This uses the ENSv2 [`PermissionedResolver`](https://docs.ens.domains/). The Safe deploys the resolver and is its admin. On a new resolver the Safe receives all roles, including `ROLE_SET_CONTENTHASH`; on an existing resolver the role is granted to the Safe by default. A Safe proposer/delegate needs no role, because the Safe executes the call. Optionally, the role can be granted to a dedicated CI key, which can then call `setContenthash` directly without creating a Safe proposal for every deploy.
 
 #### Setup
 
 1. Head over to the [Safe app](https://app.safe.global) and create a new wallet, if you don't have one yet.
 
-2. Set your ENS name manager address to a Safe.
+2. Set your ENS name manager address to the Safe.
 
-3. Install Safe Zodiac Roles Module through the [Zodiac app](https://app.safe.global/share/safe-app?appUrl=https%3A%2F%2Fzodiac.gnosisguild.org%2F)
-
-4. Generate a JSON for a batch transaction setup via `omnipin zodiac`:
+3. Generate a Safe Transaction Builder batch with `omnipin resolver-setup`.
+   By default the role is granted to the Safe. To allow unattended updates,
+   pass a dedicated role key with `--role-address`:
 
 ```sh
-omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63
+# Safe executes updates (the proposer needs no role)
+omnipin resolver-setup omnipin.eth --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262
 
-# omnipin zodiac --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63 --verbose
-# ⚠️ `OMNIPIN_PK` environment variable not set.
-# 🟢 Generating a Secp256k1 keypair
-#    0xeb12099469558be35d53d606e1d5e69d0854c57ef6658e909325c5a0e6493415
-# 🟢 Save the private key and do not share it to anyone
-# 🟢 Created zodiac.json in current directory
+# Grant the role to a dedicated CI key for unattended updates
+omnipin resolver-setup omnipin.eth \
+  --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 \
+  --role-address 0xYourCiKey
+
+# omnipin resolver-setup omnipin.eth --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 --verbose
+# 🟢 Resolver will be deployed at 0x...
+# ✔ Created resolver-setup.json in the current directory
 # Open in a browser: https://app.safe.global/apps/open?safe=eth:0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262&appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder
-# Upload zodiac.json in the UI
+# Upload resolver-setup.json in the UI
 ```
 
-This will create a `zodiac.json` in a current directory. If `OMNIPIN_PK` is not specified, an Ethereum Account will be generated on the spot.
+The batch deploys an ENSv2 `PermissionedResolver`, grants all roles to the Safe,
+grants `ROLE_SET_CONTENTHASH` to `--role-address` when provided (otherwise to the
+Safe), and points the name at the new resolver. If the name already uses a
+permissioned resolver, only the role grant is generated.
 
-5. Head over to the Safe [transaction builder](https://app.safe.global/apps/open?appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder) page.
+4. Head over to the Safe [transaction builder](https://app.safe.global/apps/open?appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder) page.
 
-6. Drag and drop the JSON file and confirm transaction execution.
-
-7. This will create a new role with a key `ENS_DEPLOYER`, which is going to be automatically used in `omnipin ens` and `omnipin deploy` every time the `--roles-mod-address` option is specified.
+5. Drag and drop `resolver-setup.json` and confirm transaction execution.
 
 #### Usage
 
 Updating ENS is now possible to do within a single command, while maintaining security properties of a Safe.
 
 ```sh
-omnipin deploy --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 omnipin.eth --roles-mod-address 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1
+# Safe holds the role; the proposer needs no role
+OMNIPIN_PK=<proposer key> omnipin deploy --ens omnipin.eth --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262
+
+# Dedicated CI key granted with --role-address
+OMNIPIN_PK=<role key> omnipin deploy --ens omnipin.eth
 ```
+
+With a dedicated role key, omit `--safe`: the key sends `setContenthash`
+directly to the resolver. The role is scoped to the resolver's root resource, so
+use a dedicated resolver per project. The key cannot change other records or
+transfer the name.

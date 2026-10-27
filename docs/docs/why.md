@@ -49,6 +49,6 @@ Such status quo should not apply to dApps, especially financially sensitive ones
 
 With a multi-sig wallet sitting on top of an ENS name it is possible to add a multi-factor authorization layer for website updates. It is also not required to be one of the wallet owners to propose ENS updates, which significantly minimizes potential damage from an owner account getting compromised.
 
-However, such high security requirements do not apply to everybody. For that reason, Omnipin alternatively integrates with the [Zodiac Roles](https://docs.roles.gnosisguild.org) module. The module allows creating a restricted role that is only allowed to call a specific function on a specific smart contract.
+However, such high security requirements do not apply to everybody. For that reason, Omnipin alternatively integrates with the ENSv2 [`PermissionedResolver`](https://docs.ens.domains/). The resolver grants accounts access-control roles, so a key can be restricted to updating the content hash of the names that use that resolver.
 
-Omnipin uses Zodiac Roles to create a special role that is narrowed to only ENS website reference on an ENS name's resolver. Such integration provides moderate security benefits to users who do not wish to have a multi-factor authorization flow.
+Omnipin uses the `ROLE_SET_CONTENTHASH` role for this. The role key can update the ENS website reference without being able to manage the name or change other records. Such integration provides moderate security benefits to users who do not wish to have a multi-factor authorization flow.

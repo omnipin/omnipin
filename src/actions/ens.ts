@@ -11,6 +11,11 @@ import { MissingCLIArgsError, MissingKeyError } from '../errors.js'
 import type { ChainName } from '../types.js'
 import { getExactAddress } from '../utils/address/getExactAddress.js'
 import { getEnsResolver } from '../utils/ens/get-resolver.js'
+import {
+  dnsEncodeName,
+  setContentHashV2,
+  supportsV2Contenthash,
+} from '../utils/ens/permissioned-resolver.js'
 import { resolveEnsName } from '../utils/ens/resolve-name.js'
 import {
   chainToRpcUrl,
@@ -37,7 +42,6 @@ import {
   simulateTransaction,
   waitForTransaction,
 } from '../utils/tx.js'
-import { execTransactionWithRole } from '../utils/zodiac-roles/exec.js'
 
 export type EnsActionArgs = Partial<{
   chain: ChainName
@@ -45,7 +49,6 @@ export type EnsActionArgs = Partial<{
   'rpc-url': string
   verbose: boolean
   'dry-run': boolean
-  'roles-mod-address': Address
 }>
 
 export const ensAction = async ({
@@ -61,7 +64,6 @@ export const ensAction = async ({
     chain: chainName = 'mainnet',
     safe: safeAddress,
     'rpc-url': rpcUrl,
-    'roles-mod-address': rolesModAddress,
     'dry-run': dryRun,
   } = options
 
@@ -107,13 +109,20 @@ export const ensAction = async ({
     ? await getExactAddress({ chain, addressOrEns: safeAddress, provider })
     : address
 
-  const data = encodeData(setContentHash, [node, `0x${contentHash}`])
-
-  if (options.verbose) console.log('Transaction encoded data:', data)
-
   if (!domain.endsWith('.eth')) throw new Error('Domain must end with .eth')
 
   const resolverAddress = await getEnsResolver({ provider, name: domain })
+
+  // ENSv2 resolvers (including the permissioned resolver) take a DNS-encoded
+  // name; the ENSv1 public resolver takes the namehash.
+  const data = (await supportsV2Contenthash({
+    provider,
+    address: resolverAddress,
+  }))
+    ? encodeData(setContentHashV2, [dnsEncodeName(domain), `0x${contentHash}`])
+    : encodeData(setContentHash, [node, `0x${contentHash}`])
+
+  if (options.verbose) console.log('Transaction encoded data:', data)
 
   if (safeAddress) {
     logger.info(
@@ -155,64 +164,49 @@ export const ensAction = async ({
       value: 0n,
     }
 
-    if (rolesModAddress && !dryRun) {
-      logger.info(`Using Zodiac Roles module`)
+    const { safeTxHash } = await prepareSafeTransactionData({
+      txData,
+      safeAddress: from,
+      chainId: chain.id,
+      provider,
+    })
 
-      await execTransactionWithRole({
-        provider,
-        data,
-        resolverAddress,
-        rolesModAddress,
-        from: address,
-        privateKey: pk,
-        chainId: chain.id,
-        explorerUrl: chain.blockExplorers.default.url,
-      })
-    } else {
-      const { safeTxHash } = await prepareSafeTransactionData({
-        txData,
-        safeAddress: from,
-        chainId: chain.id,
-        provider,
-      })
+    logger.info(`Signing a Safe transaction with a hash ${safeTxHash}`)
 
-      logger.info(`Signing a Safe transaction with a hash ${safeTxHash}`)
+    const senderSignature = await generateSafeTransactionSignature({
+      safeAddress: checksum(from),
+      txData,
+      chainId: chain.id,
+      privateKey: pk,
+    })
 
-      const senderSignature = await generateSafeTransactionSignature({
-        safeAddress: checksum(from),
-        txData,
-        chainId: chain.id,
-        privateKey: pk,
-      })
+    if (!dryRun) {
+      if (options.verbose) logger.info('Proposing a Safe transaction')
 
-      if (!dryRun) {
-        if (options.verbose) logger.info('Proposing a Safe transaction')
-
-        try {
-          await proposeTransaction({
-            txData,
-            safeAddress: checksum(from),
-            safeTxHash,
-            senderSignature: toHex(senderSignature),
-            chainId: chain.id,
-            chainName: chainName,
-            address,
-          })
-          const safe = safeAddress.endsWith('.eth')
-            ? await resolveEnsName({ name: safeAddress, provider })
-            : safeAddress
-          const safeLink = `https://app.safe.global/transactions/queue?safe=${safe}`
-          logger.success(
-            `Transaction proposed to a Safe wallet.\nOpen in a browser: ${
-              isTTY ? styleText('underline', safeLink) : safeLink
-            }`,
-          )
-        } catch (e) {
-          // Re-throw so the CLI exits with a non-zero status. Swallowing this
-          // here made `omnipin ens` report success even when the Safe proposal
-          // never went through (e.g. in CI), masking real failures.
-          throw new Error('Failed to propose a transaction', { cause: e })
-        }
+      try {
+        await proposeTransaction({
+          txData,
+          safeAddress: checksum(from),
+          safeTxHash,
+          senderSignature: toHex(senderSignature),
+          chainId: chain.id,
+          chainName: chainName,
+          address,
+        })
+        const safe = safeAddress.endsWith('.eth')
+          ? await resolveEnsName({ name: safeAddress, provider })
+          : safeAddress
+        const safeLink = `https://app.safe.global/transactions/queue?safe=${safe}`
+        logger.success(
+          `Transaction proposed to a Safe wallet.\nOpen in a browser: ${
+            isTTY ? styleText('underline', safeLink) : safeLink
+          }`,
+        )
+      } catch (e) {
+        // Re-throw so the CLI exits with a non-zero status. Swallowing this
+        // here made `omnipin ens` report success even when the Safe proposal
+        // never went through (e.g. in CI), masking real failures.
+        throw new Error('Failed to propose a transaction', { cause: e })
       }
     }
   } else {

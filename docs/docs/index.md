@@ -108,7 +108,7 @@ Updating ENS Content-Hash record requires paying a network fee. The fee varies d
 
 Using a private key of the ENS name manager account imposes significant security risks. In case of environment compromise, an attacker is able to update the ENS name to a malicious version.
 
-One of the unique features that Omnipin offers is [Safe](https://safe.global) integration. Instead of EOA managing the ENS name, a multi-signature wallet is put in the front. Such an approach allows for advanced security for ENS update pipelines, such as multi-factor authorisation with the [Delegate Flow](/docs/how-it-works#delegate) or role-based permissions with [Zodiac Roles](/docs/how-it-works#zodiac-roles).
+One of the unique features that Omnipin offers is [Safe](https://safe.global) integration. Instead of EOA managing the ENS name, a multi-signature wallet is put in the front. Such an approach allows for advanced security for ENS update pipelines, such as multi-factor authorisation with the [Delegate Flow](/docs/how-it-works#delegate) or role-based permissions with an [ENSv2 permissioned resolver](/docs/how-it-works#permissioned-resolver).
 
 The recommended setup is the **Delegate Flow**: a dedicated EOA (the *delegate*) signs and proposes a transaction to the Safe Transaction Service, and other Safe owners then confirm and execute it from the Safe UI. The delegate key still needs to be present as `OMNIPIN_PK` — but unlike the EOA-only setup, this key cannot update ENS on its own; it can only suggest transactions for the Safe to approve.
 
@@ -124,8 +124,8 @@ omnipin deploy --ens omnipin.eth --safe eth:0xyoursafeAddress
 
 This will propose a transaction to the Safe Transaction Service. Other Safe owners will then see the pending transaction in the Safe UI and confirm/execute it. Once executed and indexed, the ENS Content-Hash record points to the new deployment, and the site is reachable through [any ENS gateway](https://docs.ens.domains/dweb/intro/#browser-support--gateways) such as eth.limo.
 
-::: tip Zodiac Roles
-For high-frequency deploys where requiring a confirmation on every push is excessive, Omnipin also supports submitting transactions directly onchain through a [Zodiac Roles](/docs/how-it-works#zodiac-roles) module with a restricted role. See [`omnipin zodiac`](/cli/zodiac) and the `--roles-mod-address` flag for setup.
+::: tip Permissioned Resolver
+For high-frequency deploys where requiring a confirmation on every push is excessive, Omnipin also supports submitting transactions directly onchain through an [ENSv2 permissioned resolver](/docs/how-it-works#permissioned-resolver) with a restricted `ROLE_SET_CONTENTHASH` role. The Safe holds the role by default; [`omnipin resolver-setup`](/cli/resolver-setup) can grant it to a dedicated CI key with `--role-address`.
 :::
 
 ## Automation with CI/CD

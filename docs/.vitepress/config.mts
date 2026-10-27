@@ -298,8 +298,8 @@ export default withMermaid({
             link: '/cli/unpin',
           },
           {
-            text: 'Zodiac',
-            link: '/cli/zodiac',
+            text: 'Resolver Setup',
+            link: '/cli/resolver-setup',
           },
           {
             text: 'Bridge',

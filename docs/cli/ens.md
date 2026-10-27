@@ -6,7 +6,11 @@ Updates ENS domain Content-Hash with an IPFS CID.
 omnipin ens <cid> <domain.eth>
 ```
 
-Requires an ENS owner's private key (`OMNIPIN_PK`) to be defined.
+Requires a private key (`OMNIPIN_PK`) to be defined. That key must be either
+the owner of the name, a Safe delegate, or an address with the ENSv2
+`ROLE_SET_CONTENTHASH` role on the name's resolver. A Safe delegate does not
+need the role — the Safe executes the call. See
+[`omnipin resolver-setup`](/cli/resolver-setup) for the role setup.
 
 ::: warning
 
@@ -31,17 +35,14 @@ Deploy using a [Safe](https://safe.global) multisig wallet. Requires private key
 omnipin ens bafybeibp54tslsez36quqptgzwyda3vo66za3rraujksmsb3d5q247uht4 v1rtl.eth --safe safe.omnipin.eth
 ```
 
+Omit `--safe` when `OMNIPIN_PK` holds an ENSv2 `ROLE_SET_CONTENTHASH` role. In
+that case the transaction is sent directly from the role key, without the Safe
+Transaction Service. With `--safe`, the proposer only queues the transaction;
+the Safe executes it and the proposer needs no role.
+
 ### `rpc-url`
 
 Custom Ethereum RPC. By default, [Public nodes](https://ethereum-rpc.publicnode.com) are used.
-
-### `roles-mod-address`
-
-Zodiac Roles Module address. Requires `safe` option to be provided.
-
-```sh
-omnipin ens --roles-mod-address 0x6aBD167a6a29Fd9aDcf4365Ed46C71c913B7c1B1 --safe 0x1234567890000000000000000000000000000000 omnipin.eth bafybeibp54tslsez36quqptgzwyda3vo66za3rraujksmsb3d5q247uht4
-```
 
 ### `verbose`
 
