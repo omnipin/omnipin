@@ -104,15 +104,15 @@ Depending on which layers are used, `OMNIPIN_PK` holds a different key:
 | Setup | `OMNIPIN_PK` | `--safe` | Permissioned Resolver | Safe | Delegate |
 |---|---|---|---|---|---|
 | [EOA](#eoa) | name manager key | — | ❌ | ❌ | ❌ |
-| Role key | key holding the role | — | ✅ | ❌ | ❌ |
+| [Throwaway role key](#permissioned-resolver) (recommended) | key holding the role | — | ✅ | ❌ | ❌ |
 | Safe that owns the name | delegate key | owner Safe | ❌ | ✅ | ✅ |
-| [Deploy Safe](#deploy-safe) (recommended) | delegate key | deploy Safe | ✅ | ✅ | ✅ |
+| [Deploy Safe](#deploy-safe) (most secure) | delegate key | deploy Safe | ✅ | ✅ | ✅ |
 
 ### Permissioned Resolver
 
 ENS records live in the name's resolver. Normally, whoever can update the content hash can also transfer the name, change its resolver, or change any other record. An ENSv2 [`PermissionedResolver`](https://docs.ens.domains/) splits these permissions into roles. The name owner administers the resolver and grants `ROLE_SET_CONTENTHASH` to the publisher, and the publisher can then set the content hash and nothing else.
 
-The publisher can be any address: a plain key, a Safe that owns the name, or a separate [deploy Safe](#deploy-safe). The role key flow has no confirmations; the key sends `setContenthash` directly:
+The publisher can be any address: a throwaway key, a Safe that owns the name, or a separate [deploy Safe](#deploy-safe). With a throwaway key there are no confirmations; the key sends `setContenthash` directly. This is the setup the [Get Started guide](/docs/#ens-updates) walks through:
 
 ```sh
 # Once, as the name owner (add --safe <owner safe> if a Safe owns the name)
@@ -124,7 +124,7 @@ OMNIPIN_PK=<role key> omnipin deploy --ens omnipin.eth
 
 The role is granted on the resolver as a whole, so it covers every name that uses the resolver, including subnames without a resolver of their own. Use a dedicated resolver per project. The name owner can revoke the role or point the name at another resolver at any time.
 
-The [Scoped Resolver guide](/docs/scoped-resolver) walks through the setup, including saving the existing records and rotating keys.
+See [`omnipin resolver-setup`](/cli/resolver-setup) for re-creating the name's other records on a new resolver and for rotating or revoking the role.
 
 ### Safe
 
@@ -135,6 +135,8 @@ Omnipin does not hold a Safe owner key. It proposes transactions with a [delegat
 ### Delegate
 
 The key provided via `OMNIPIN_PK` is not used to update ENS directly. It can only submit transaction proposals to a Safe through the Safe Transaction Service, a centralized API run by Safe which allows enqueuing transactions without being one of the owners. A delegate is not a Safe owner and has no access to the ENS name, so leaking it from CI cannot compromise the Safe or the name. Each proposed transaction requires review and approval from the owners.
+
+Delegates (called *proposers* in the Safe app) require a Safe Pro plan.
 
 #### Setup
 
@@ -152,7 +154,7 @@ OMNIPIN_PK=<delegate key> omnipin deploy --ens omnipin.eth --safe <safe>
 
 ### Deploy Safe
 
-The recommended setup uses all three layers. The name owner and the Safe that publishes deploys are separate accounts:
+The most secure setup uses all three layers. The name owner and the Safe that publishes deploys are separate accounts:
 
 - **Name owner**: an EOA or a Safe that owns the name and administers the resolver. It is only used during setup.
 - **Deploy Safe**: holds only `ROLE_SET_CONTENTHASH`. Its owners can update the content hash but cannot transfer the name, change other records, or change the resolver.
@@ -164,7 +166,7 @@ A leaked delegate key can only queue proposals that the deploy Safe owners have 
 
 1. Create a deploy Safe in the [Safe app](https://app.safe.global), separate from the account that owns the name.
 2. Add a [delegate](#delegate) to the deploy Safe and save its private key to `OMNIPIN_PK`.
-3. As the name owner, grant the deploy Safe the role by following the [Scoped Resolver guide](/docs/scoped-resolver):
+3. As the name owner, grant the deploy Safe the role with [`omnipin resolver-setup`](/cli/resolver-setup):
 
 ```sh
 # Name owned by an EOA: sends the transactions directly
@@ -190,7 +192,7 @@ In case of a key compromise, it is possible to steal all the assets held by the 
 
 A transaction is signed by the name manager's private key provided via `OMNIPIN_PK` and is immediately pushed onchain. None of the layers above apply, so it is the least secure option. Its only benefit is not requiring any setup.
 
-Even without a Safe, a [Permissioned Resolver](#permissioned-resolver) removes most of the risk: the key in CI can then only set the content hash. See the [Scoped Resolver guide](/docs/scoped-resolver). If the name manager key must still be used, minimize the risks:
+Even without a Safe, a [Permissioned Resolver](#permissioned-resolver) removes most of the risk: the key in CI can then only set the content hash. See the [Get Started guide](/docs/#ens-updates). If the name manager key must still be used, minimize the risks:
 
 * Don't use the account for storing any assets other than a tiny portion of ETH required to pay the transaction fees
 * Save the private key in CI secrets to not be able to retrieve it from elsewhere

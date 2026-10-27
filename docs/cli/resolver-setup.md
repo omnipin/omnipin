@@ -1,26 +1,54 @@
 # `omnipin resolver-setup`
 
-Prepares an [ENSv2 `PermissionedResolver`](https://docs.ens.domains/) so an
-account (a key or a Safe) can update a name's content hash without being able
-to transfer the name or change its other records. Run it as the name owner. For
-a step-by-step walkthrough, see the [Scoped Resolver guide](/docs/scoped-resolver).
+Allows another account to update a name's content hash, without being able to
+transfer the name or change its other records. Run it once as the name owner;
+the [Get Started guide](/docs/#_2-allow-it-to-update-your-name) shows the full
+flow with a throwaway account.
 
 ```sh
-omnipin resolver-setup <domain.eth>
+OMNIPIN_PK=<name owner key> omnipin resolver-setup <domain.eth> --role-address <address>
 ```
 
-The command does one of two things:
+The account receives the `ROLE_SET_CONTENTHASH` role on an
+[ENSv2 `PermissionedResolver`](/docs/how-it-works#permissioned-resolver). The
+command does one of two things:
 
-1. **The name already uses an ENSv2 permissioned resolver** — grants
+1. **The name already uses an ENSv2 permissioned resolver**: grants
    `ROLE_SET_CONTENTHASH` to the role address with `grantRootRoles`.
-2. **The name uses another resolver (or none)** — deploys a new
+2. **The name uses another resolver (or none)**: deploys a new
    `PermissionedResolver` through the ENS `VerifiableFactory`, grants
    `ROLE_SET_CONTENTHASH` to the role address during initialization, and points
-   the name at the new resolver.
+   the name at the new resolver. The name owner becomes the resolver admin with
+   every role.
 
-In both cases the transaction is simulated before anything is sent.
+Every transaction is simulated before anything is sent.
+
+::: warning
+A new resolver starts empty, so the name's other records stop resolving until
+they are [re-created](#re-creating-records). Run with `--dry-run` first to see
+whether a new resolver will be deployed.
+:::
 
 ## Options
+
+### `role-address`
+
+Address to grant `ROLE_SET_CONTENTHASH` to: a throwaway key, or a Safe that
+should update the content hash without owning the name. Accepts an address, an
+[EIP-3770](https://eips.ethereum.org/EIPS/eip-3770) address, or an ENS name.
+Defaults to the Safe when `--safe` is used, and to the `OMNIPIN_PK` address
+otherwise.
+
+### `safe`
+
+Use when the name is owned by a [Safe](https://safe.global). Instead of sending
+transactions, the command writes `resolver-setup.json` for the
+[Safe Transaction Builder](https://help.safe.global/en/articles/234052-transaction-builder).
+The Safe becomes the resolver admin, and `OMNIPIN_PK` is not needed.
+
+```sh
+omnipin resolver-setup omnipin.eth --safe eth:0xOwnerSafe --role-address <address>
+```
 
 ### `chain`
 
@@ -28,54 +56,6 @@ In both cases the transaction is simulated before anything is sent.
 - Options: `mainnet`, `sepolia`
 
 EVM Chain to use.
-
-### `safe`
-
-Administer the resolver through a [Safe](https://safe.global) multisig. With
-this option the command writes `resolver-setup.json` for the
-[Safe Transaction Builder](https://help.safe.global/en/articles/234052-transaction-builder)
-instead of sending transactions. The Safe is the resolver admin and the
-deployer of the proxy.
-
-The role is granted to the Safe by default, so the proposer/delegate that runs
-this command does not need any role. `OMNIPIN_PK` is optional here.
-
-```sh
-omnipin resolver-setup omnipin.eth --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262
-```
-
-To enable unattended updates, also grant the role to a dedicated CI key (the
-Safe keeps its own roles):
-
-```sh
-omnipin resolver-setup omnipin.eth \
-  --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262 \
-  --role-address 0xYourCiKey
-```
-
-### `role-address`
-
-Address to grant `ROLE_SET_CONTENTHASH` to. Defaults to the Safe when `--safe`
-is used, and to the `OMNIPIN_PK` address otherwise. Accepts an address, an
-[EIP-3770](https://eips.ethereum.org/EIPS/eip-3770) address, or an ENS name. Pass a dedicated CI key for
-unattended updates, or a separate Safe that should update the content hash
-without owning the name.
-
-## Separate deploy Safe
-
-The account that owns the name and the account that updates the content hash
-can be different. For example, the name owner grants the role to a deploy Safe,
-and a proposer queues updates on that Safe. The deploy Safe can only set the
-content hash, and the proposer has no access to the name or the resolver at all.
-This is the [recommended setup](/docs/how-it-works#deploy-safe).
-
-```sh
-# Run once, as the name owner (EOA shown; use --safe <owner safe> for a Safe owner)
-OMNIPIN_PK=<owner key> omnipin resolver-setup omnipin.eth --role-address <deploy safe>
-
-# Every deploy: the proposer queues setContenthash on the deploy Safe
-OMNIPIN_PK=<proposer key> omnipin deploy --ens omnipin.eth --safe <deploy safe>
-```
 
 ### `resolver`
 
@@ -86,8 +66,7 @@ this resolver if it does not already use it.
 ### `salt`
 
 CREATE2 salt for a new resolver deployment. By default a fresh random salt is
-used (matching the ENS portal), so the resolver address is printed once the
-command predicts it.
+used (matching the ENS portal), and the predicted resolver address is printed.
 
 ### `rpc-url`
 
@@ -104,26 +83,66 @@ More verbose logs.
 
 ## After setup
 
-If you granted the role to a dedicated CI key, run `omnipin ens` with that key
-and **without** `--safe`:
+Deploy with the account that received the role:
 
 ```sh
-OMNIPIN_PK=<role key> omnipin ens <cid> omnipin.eth
+OMNIPIN_PK=<role key> omnipin deploy --ens omnipin.eth
 ```
 
-Without a separate role key, the Safe holds the role and the update goes through
-the usual Safe proposal flow:
+If the role went to a Safe, `OMNIPIN_PK` is a proposer of that Safe and the
+update is proposed for its owners to confirm:
 
 ```sh
-OMNIPIN_PK=<proposer key> omnipin ens <cid> omnipin.eth --safe 0x0Fd2cA6b1a52a1153dA0B31D02fD53854627D262
+OMNIPIN_PK=<proposer key> omnipin deploy --ens omnipin.eth --safe eth:0xDeploySafe
 ```
 
-::: warning
+## Re-creating records
 
-`ROLE_SET_CONTENTHASH` is granted on the resolver's root resource. A dedicated
-role key can update the content hash of **every** name that uses that resolver,
-so give each project its own resolver. The key cannot change other records or
-transfer the name. A Safe proposer needs no role at all — the Safe executes the
-call.
+On a newly deployed resolver, the name owner holds every role and can set any
+record. The setters take the DNS-encoded name rather than the namehash. For
+`myapp.eth` that is `0x056d796170700365746800`: each label prefixed with its
+length (`05` `myapp`, `03` `eth`) and a trailing `00`.
 
-:::
+```sh
+# Text record
+cast send <resolver> 'setText(bytes,string,string)' \
+  0x056d796170700365746800 'url' 'https://myapp.eth.limo' \
+  --private-key <name owner key> --rpc-url https://ethereum-rpc.publicnode.com
+
+# ETH address (coin type 60)
+cast send <resolver> 'setAddress(bytes,uint256,bytes)' \
+  0x056d796170700365746800 60 0xYourAddress \
+  --private-key <name owner key> --rpc-url https://ethereum-rpc.publicnode.com
+```
+
+For a Safe owner, add the same calls to a Transaction Builder batch. The content
+hash itself is set by the first deploy.
+
+## Rotating or revoking access
+
+To grant the role to a new account, run `resolver-setup` again with the new
+`--role-address`. The name already uses the permissioned resolver, so only the
+role is granted.
+
+To revoke the old account, call `revokeRootRoles` on the resolver from the name
+owner. `256` is `ROLE_SET_CONTENTHASH`:
+
+```sh
+cast send <resolver> 'revokeRootRoles(uint256,address)' 256 <old address> \
+  --private-key <name owner key> --rpc-url https://ethereum-rpc.publicnode.com
+```
+
+The name owner can also point the name at a different resolver at any time,
+which cuts off the role entirely.
+
+## What the role can and cannot do
+
+The role is granted on the resolver as a whole, not on a single name. Whoever
+holds it:
+
+- **can** set the content hash of every name that uses this resolver, including
+  subnames that have no resolver of their own and fall back to it
+- **cannot** transfer the name, change its resolver, change any other record,
+  or grant roles
+
+Use a separate resolver for each project, and don't point unrelated names at it.

@@ -249,10 +249,6 @@ export default withMermaid({
             link: '/docs/swarm',
           },
           {
-            text: 'Scoped Resolver',
-            link: '/docs/scoped-resolver',
-          },
-          {
             text: 'DNSLink',
             link: '/docs/dnslink',
           },

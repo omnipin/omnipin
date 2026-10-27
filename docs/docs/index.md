@@ -89,72 +89,79 @@ graph LR
     IPFS --> CH
 ```
 
-Automatic ENS updates are as easy as supplying an extra CLI argument during deploy, and adding a name manager's private key to `.env`:
+Automatic ENS updates are as easy as supplying an extra CLI argument during deploy:
 
-:::danger
-Using a private key of the ENS name manager account has immediate security risks: a leaked key can steal the name. Consider [securing ENS updates](#securing-ens-updates) instead. Even a [scoped resolver](/docs/scoped-resolver) alone limits a leaked key to the content hash.
-:::
-```sh [.env]
-OMNIPIN_PK=<0xensmanagerprivatekeygoeshere>
-```
-
-```bash [Terminal]
+```bash
 omnipin deploy --ens omnipin.eth
 ```
 
-Updating ENS Content-Hash record requires paying a network fee. The fee varies depending on network load.
+Omnipin needs a private key in `OMNIPIN_PK` to sign the update. Instead of the key of the wallet that owns your name, give it a throwaway account that is only allowed to update the website. If that key leaks, the attacker can change what the name points to, but cannot steal the name or change any of its other records.
 
-## Securing ENS updates
-
-Using a private key of the ENS name manager account imposes significant security risks. In case of environment compromise, an attacker is able to steal the name or update it to a malicious version.
-
-Omnipin offers three independent [security layers](/docs/how-it-works#ens-updates), which can be combined:
-
-- an [ENSv2 permissioned resolver](/docs/how-it-works#permissioned-resolver) restricts the publisher to the content hash, so it cannot steal the name or change other records
-- a [Safe](https://safe.global) multi-sig requires owner confirmations for every update, so a single leaked key cannot publish
-- a [delegate](/docs/how-it-works#delegate) proposes to the Safe without being an owner, so a leaked CI key cannot compromise the Safe
-
-The recommended setup uses all three: a **[Deploy Safe](/docs/how-it-works#deploy-safe)**. It is a Safe that can only update the content hash of your name, and a dedicated EOA (the *delegate*) proposes the updates to it:
-
-- the **name owner** (your wallet or another Safe) keeps full control of the name and is only needed once, during setup
-- the **deploy Safe** holds only the `ROLE_SET_CONTENTHASH` role on an [ENSv2 permissioned resolver](/docs/how-it-works#permissioned-resolver), so it cannot transfer the name or change other records
-- the **delegate** key is stored as `OMNIPIN_PK`. It can only propose transactions for the deploy Safe owners to confirm, and has no access to the name
-
-1. Head over to the [Safe app](https://app.safe.global) and create a new Safe for deployments. It does not need to own the ENS name.
-
-2. In the Safe settings, add a **delegate**, typically a fresh EOA created just for deployments. Save its private key as `OMNIPIN_PK`.
-
-3. As the name owner, grant the deploy Safe the content hash role. This deploys a permissioned resolver for the name and points the name at it:
+### 1. Create a throwaway account
 
 ```sh
-# Name owned by your wallet
-OMNIPIN_PK=<name owner key> omnipin resolver-setup omnipin.eth --role-address eth:0xyourDeploySafe
-
-# Name owned by a Safe: upload the generated resolver-setup.json in that Safe's Transaction Builder
-omnipin resolver-setup omnipin.eth --safe eth:0xyourOwnerSafe --role-address eth:0xyourDeploySafe
+cast wallet new
 ```
 
+This uses [Foundry](https://getfoundry.sh); any wallet works. Save the private key to `.env` and send the account a small amount of ETH to pay for transactions:
+
+```sh [.env]
+OMNIPIN_PK=<0xthrowawayprivatekey>
+```
+
+### 2. Allow it to update your name
+
+From the wallet that owns the name, allow the throwaway account to update the website. Run this once, on your own machine, and pass the owner key inline instead of saving it anywhere:
+
+```sh
+# Preview first: simulates everything and sends nothing
+OMNIPIN_PK=<name owner key> omnipin resolver-setup omnipin.eth --role-address <throwaway address> --dry-run
+
+OMNIPIN_PK=<name owner key> omnipin resolver-setup omnipin.eth --role-address <throwaway address>
+```
+
+Under the hood, this gives the account the `ROLE_SET_CONTENTHASH` role on an [ENSv2 permissioned resolver](/docs/how-it-works#permissioned-resolver). If the name doesn't use one yet, the command deploys one and points the name at it.
+
 :::warning
-Switching to a new resolver resets the name's other records (addresses, text records). The [Scoped Resolver guide](/docs/scoped-resolver) covers previewing the setup, saving the records and re-creating them.
+A new resolver starts empty, so the name's other records (ETH address, avatar, text records) stop resolving. Write them down before running the command and [re-create them](/cli/resolver-setup#re-creating-records) afterwards.
 :::
 
-4. Run the deploy with `--safe` pointing at the deploy Safe:
+If the name is owned by a Safe, add `--safe <owner safe>`: the command writes `resolver-setup.json` instead, which you upload in the Safe [Transaction Builder](https://app.safe.global/apps/open?appUrl=https%3A%2F%2Fapps-portal.safe.global%2Ftx-builder).
+
+### 3. Deploy
+
+```sh
+omnipin deploy --ens omnipin.eth
+```
+
+Updating the ENS Content-Hash record requires paying a network fee. The fee varies depending on network load.
+
+To replace or revoke the throwaway account later, see [Rotating or revoking access](/cli/resolver-setup#rotating-or-revoking-access).
+
+:::tip Without the setup
+Skipping step 2 and putting the name owner's key into `OMNIPIN_PK` also works, but a leaked key can then steal the name. Only do this for testing.
+:::
+
+### Adding a Safe
+
+For more security, the role can be held by a [Safe](https://safe.global) instead of a throwaway account. Every update then needs confirmations from the Safe owners, so a leaked key cannot publish anything on its own. The key in `OMNIPIN_PK` belongs to a [proposer](/docs/how-it-works#delegate), which can only queue transactions for the owners to confirm. Proposers require a Safe Pro plan.
+
+1. Create a Safe for deployments in the [Safe app](https://app.safe.global). It does not need to own the name.
+2. Add the throwaway account as a proposer in the Safe settings.
+3. In step 2 above, pass the Safe as `--role-address`.
+4. Deploy with `--safe`:
 
 ```sh
 omnipin deploy --ens omnipin.eth --safe eth:0xyourDeploySafe
 ```
 
-This will propose a transaction to the Safe Transaction Service. Other Safe owners will then see the pending transaction in the Safe UI and confirm/execute it. Once executed and indexed, the ENS Content-Hash record points to the new deployment, and the site is reachable through [any ENS gateway](https://docs.ens.domains/dweb/intro/#browser-support--gateways) such as eth.limo.
-
-::: tip Other setups
-The layers can be used separately. Without a Safe, grant the role to a plain CI key ([Scoped Resolver guide](/docs/scoped-resolver)) and deploy without `--safe`: there are no confirmations, but a leaked key can only change the content hash. Without a permissioned resolver, use the Safe that owns the name with a [delegate](/docs/how-it-works#delegate) and skip step 3, at the cost of the Safe being able to change anything about the name.
-:::
+The update is proposed to the Safe Transaction Service, and the Safe owners confirm and execute it in the Safe UI. See [Deploy Safe](/docs/how-it-works#deploy-safe) for the details.
 
 ## Automation with CI/CD
 
 Omnipin seamlessly integrates with CI/CD pipelines.
 
-All the previous steps can be automated in one GitHub Actions workflow. The workflow deploys a new version on IPFS every time a commit is pushed to the `main` branch and automatically proposes a transaction to Safe.
+All the previous steps can be automated in one GitHub Actions workflow. The workflow deploys a new version on IPFS every time a commit is pushed to the `main` branch and updates the ENS name with the throwaway account. Store its private key as the `OMNIPIN_PK` secret. With a [Safe](#adding-a-safe), add `--safe` with the Safe address to propose the update instead.
 
 ```yaml
 name: Deploy with Omnipin
@@ -172,7 +179,7 @@ jobs:
       - name: Build website
         run: bun i && bun run build
       - name: Deploy the site
-        run: omnipin deploy .vitepress/dist --strict --ens ${{ vars.OMNIPIN_ENS }} --safe ${{ vars.OMNIPIN_SAFE }}
+        run: omnipin deploy .vitepress/dist --strict --ens ${{ vars.OMNIPIN_ENS }}
         env:
           OMNIPIN_PINATA_TOKEN: ${{ secrets.OMNIPIN_PINATA_TOKEN }}
           OMNIPIN_LIGHTHOUSE_TOKEN: ${{ secrets.OMNIPIN_LIGHTHOUSE_TOKEN }}
