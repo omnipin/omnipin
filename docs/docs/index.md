@@ -172,14 +172,15 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - name: Install Omnipin
-        run: bun i -g omnipin
+      - uses: actions/checkout@v7
+      # Installs pnpm and Node.js, then runs `pnpm install`
+      - uses: pnpm/setup@v3
+        with:
+          runtime: node@lts
       - name: Build website
-        run: bun i && bun run build
+        run: pnpm build
       - name: Deploy the site
-        run: omnipin deploy .vitepress/dist --strict --ens ${{ vars.OMNIPIN_ENS }}
+        run: pnpm dlx omnipin deploy .vitepress/dist --strict --ens ${{ vars.OMNIPIN_ENS }}
         env:
           OMNIPIN_PINATA_TOKEN: ${{ secrets.OMNIPIN_PINATA_TOKEN }}
           OMNIPIN_LIGHTHOUSE_TOKEN: ${{ secrets.OMNIPIN_LIGHTHOUSE_TOKEN }}
