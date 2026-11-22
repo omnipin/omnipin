@@ -231,11 +231,7 @@ export const ensAction = async ({
         `Transaction pending: ${chain.blockExplorers.default.url}/tx/${hash}`,
       )
 
-      try {
-        await waitForTransaction(provider, hash)
-      } catch (e) {
-        return logger.error(e)
-      }
+      await waitForTransaction(provider, hash)
 
       logger.success('Transaction succeeded')
       const browserLink = `https://${domain}.limo`
