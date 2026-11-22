@@ -34,7 +34,7 @@ jobs:
           # The bundled peers.seed.json goes stale; use the hourly-refreshed one.
           curl -fsSL -o peers.json https://raw.githubusercontent.com/omnipin/hoverfly-peers/main/peers.seed.json
           # Started before the docs build so the session pool fills meanwhile.
-          ./hoverfly daemon --socket /tmp/hoverfly.sock --peerlist peers.json --pool-size 32 \
+          ./hoverfly daemon --socket /tmp/hoverfly.sock --peerlist peers.json \
             > /tmp/hoverfly.log 2>&1 &
 
       - name: Build website
