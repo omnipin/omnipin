@@ -188,7 +188,10 @@ export const uploadToFilecoin: UploadFunction<{
   })
 
   const providerActiveDataSets = datasets.filter(
-    (ds) => ds.providerId === providerId && ds.pdpEndEpoch === 0n,
+    (ds) =>
+       ds.providerId === providerId &&
+       ds.pdpEndEpoch === 0n &&
+       ds.dataSetId !== 0n,
   )
 
   const isNewDataSet =
