@@ -40,6 +40,7 @@ import {
   simulateTransaction,
   waitForTransaction,
 } from '../../utils/tx.js'
+import { getReusableDataSets } from './filecoin-datasets.js'
 
 const providerName = 'Filecoin'
 
@@ -187,9 +188,7 @@ export const uploadToFilecoin: UploadFunction<{
     address,
   })
 
-  const providerActiveDataSets = datasets.filter(
-    (ds) => ds.providerId === providerId && ds.pdpEndEpoch === 0n,
-  )
+  const providerActiveDataSets = getReusableDataSets(datasets, providerId)
 
   const isNewDataSet =
     providerActiveDataSets.length === 0 || filecoinForceNewDataset
