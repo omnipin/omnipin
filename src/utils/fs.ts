@@ -1,6 +1,6 @@
 import { constants, createReadStream } from 'node:fs'
 import { access, stat } from 'node:fs/promises'
-import { relative } from 'node:path'
+import { isAbsolute, normalize, relative } from 'node:path'
 import { glob } from 'tinyglobby'
 import type { FileEntry } from '../types.js'
 import { logger } from './logger.js'
@@ -18,6 +18,10 @@ export const walk = async (
   // or `?`, because tinyglobby then interprets them as pattern syntax.
   // Dot-paths are skipped unless listed: a blanket include would publish
   // `.env`, `.git` and the like. An entry is a file or a directory.
+  for (const p of dotfiles) {
+    if (isAbsolute(p) || normalize(p).startsWith('..'))
+      throw new Error(`Dot-path "${p}" is outside the directory`)
+  }
   const patterns = ['**/*', ...dotfiles.flatMap((p) => [p, `${p}/**`])]
   for (const absPath of await glob(patterns, {
     cwd: dir,

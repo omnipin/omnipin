@@ -46,6 +46,7 @@ export const deployAction = async ({
     'skip-pinned': skipPinned,
     'filecoin-chain': filecoinChain,
     'filecoin-force-new-dataset': filecoinForceNewDataset,
+    'include-dotfiles': includeDotfiles,
     ...opts
   } = options
 
@@ -97,6 +98,7 @@ export const deployAction = async ({
       dist,
       verbose,
       tar: swarmProviders.length !== 0,
+      'include-dotfiles': includeDotfiles,
     },
   })
 
