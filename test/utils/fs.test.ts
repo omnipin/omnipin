@@ -92,6 +92,12 @@ describe('fs utils', () => {
             'index.html',
           ])
         }))
+
+      it('rejects entries outside the directory', () =>
+        withDotfiles(async (dir) => {
+          for (const entry of ['../secret', '/etc/passwd', '.well-known/../..'])
+            await assert.rejects(walk(dir, false, [entry]), /outside/)
+        }))
     })
   })
   describe('exists', () => {
