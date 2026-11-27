@@ -54,26 +54,44 @@ describe('fs utils', () => {
         ],
       )
     })
-    it('includes dotfiles and dot-directories, but not .git', async () => {
-      // Sites ship load-bearing dot-paths such as `.well-known/` (atproto
-      // handles, security.txt, webfinger). They used to be dropped silently.
-      const dir = await mkdtemp(path.join(tmpdir(), 'omnipin-walk-'))
-      try {
-        await mkdir(path.join(dir, '.well-known'))
-        await mkdir(path.join(dir, '.git'))
-        await writeFile(path.join(dir, 'index.html'), 'hi')
-        await writeFile(path.join(dir, '.nojekyll'), '')
-        await writeFile(path.join(dir, '.well-known/atproto-did'), 'did:plc:x')
-        await writeFile(path.join(dir, '.git/HEAD'), 'ref')
-        const [, files] = await walk(dir)
-        assert.deepStrictEqual(files.map(({ path }) => path).sort(), [
-          '.nojekyll',
-          '.well-known/atproto-did',
-          'index.html',
-        ])
-      } finally {
-        await rm(dir, { recursive: true, force: true })
+    describe('dot-paths', () => {
+      // Dot-paths are skipped unless listed: a blanket include would publish
+      // `.env` and the like. Sites still need some, e.g. `.well-known/`.
+      const withDotfiles = async (
+        fn: (dir: string) => Promise<void>,
+      ): Promise<void> => {
+        const dir = await mkdtemp(path.join(tmpdir(), 'omnipin-walk-'))
+        try {
+          await mkdir(path.join(dir, '.well-known'))
+          await mkdir(path.join(dir, '.git'))
+          await writeFile(path.join(dir, 'index.html'), 'hi')
+          await writeFile(path.join(dir, '.env'), 'SECRET=1')
+          await writeFile(path.join(dir, '.nojekyll'), '')
+          await writeFile(path.join(dir, '.well-known/atproto-did'), 'did')
+          await writeFile(path.join(dir, '.git/HEAD'), 'ref')
+          await fn(dir)
+        } finally {
+          await rm(dir, { recursive: true, force: true })
+        }
       }
+      const paths = (files: { path: string }[]) =>
+        files.map(({ path }) => path).sort()
+
+      it('skips all dot-paths by default', () =>
+        withDotfiles(async (dir) => {
+          const [, files] = await walk(dir)
+          assert.deepStrictEqual(paths(files), ['index.html'])
+        }))
+
+      it('includes only the listed dot files and directories', () =>
+        withDotfiles(async (dir) => {
+          const [, files] = await walk(dir, false, ['.well-known', '.nojekyll'])
+          assert.deepStrictEqual(paths(files), [
+            '.nojekyll',
+            '.well-known/atproto-did',
+            'index.html',
+          ])
+        }))
     })
   })
   describe('exists', () => {
