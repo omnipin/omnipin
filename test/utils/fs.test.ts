@@ -1,4 +1,6 @@
 import * as assert from 'node:assert'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { describe, it } from 'node:test'
 import { exists, fileSize, walk } from '../../src/utils/fs.js'
@@ -51,6 +53,51 @@ describe('fs utils', () => {
           { path: 'posts/page.html', size: 6 },
         ],
       )
+    })
+    describe('dot-paths', () => {
+      // Dot-paths are skipped unless listed: a blanket include would publish
+      // `.env` and the like. Sites still need some, e.g. `.well-known/`.
+      const withDotfiles = async (
+        fn: (dir: string) => Promise<void>,
+      ): Promise<void> => {
+        const dir = await mkdtemp(path.join(tmpdir(), 'omnipin-walk-'))
+        try {
+          await mkdir(path.join(dir, '.well-known'))
+          await mkdir(path.join(dir, '.git'))
+          await writeFile(path.join(dir, 'index.html'), 'hi')
+          await writeFile(path.join(dir, '.env'), 'SECRET=1')
+          await writeFile(path.join(dir, '.nojekyll'), '')
+          await writeFile(path.join(dir, '.well-known/atproto-did'), 'did')
+          await writeFile(path.join(dir, '.git/HEAD'), 'ref')
+          await fn(dir)
+        } finally {
+          await rm(dir, { recursive: true, force: true })
+        }
+      }
+      const paths = (files: { path: string }[]) =>
+        files.map(({ path }) => path).sort()
+
+      it('skips all dot-paths by default', () =>
+        withDotfiles(async (dir) => {
+          const [, files] = await walk(dir)
+          assert.deepStrictEqual(paths(files), ['index.html'])
+        }))
+
+      it('includes only the listed dot files and directories', () =>
+        withDotfiles(async (dir) => {
+          const [, files] = await walk(dir, false, ['.well-known', '.nojekyll'])
+          assert.deepStrictEqual(paths(files), [
+            '.nojekyll',
+            '.well-known/atproto-did',
+            'index.html',
+          ])
+        }))
+
+      it('rejects entries outside the directory', () =>
+        withDotfiles(async (dir) => {
+          for (const entry of ['../secret', '/etc/passwd', '.well-known/../..'])
+            await assert.rejects(walk(dir, false, [entry]), /outside/)
+        }))
     })
   })
   describe('exists', () => {

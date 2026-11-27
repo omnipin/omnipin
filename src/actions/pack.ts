@@ -13,6 +13,7 @@ export type PackActionArgs = Partial<{
   verbose: boolean
   'only-hash': boolean
   tar: boolean
+  'include-dotfiles': string
 }>
 
 export const packAction = async ({
@@ -28,6 +29,7 @@ export const packAction = async ({
     verbose,
     'only-hash': onlyHash,
     tar,
+    'include-dotfiles': includeDotfiles,
   } = options
   if (!dir) {
     if (await exists('dist')) dir = 'dist'
@@ -39,7 +41,11 @@ export const packAction = async ({
   // nonsense like `${cwd}${dir}` (e.g. `/tmp` + `/home/u/site` → `/tmp/home/u/site`).
   const normalizedPath = path.resolve(dir)
   const name = customName || path.basename(normalizedPath)
-  const [size, files] = await walk(normalizedPath, verbose && !onlyHash)
+  const [size, files] = await walk(
+    normalizedPath,
+    verbose && !onlyHash,
+    includeDotfiles?.split(',').filter(Boolean),
+  )
 
   if (size === 0) throw new MissingDirectoryError(dir)
   const distName = ['.', 'dist'].includes(dir) ? name : dir

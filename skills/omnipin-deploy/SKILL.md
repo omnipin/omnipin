@@ -149,6 +149,7 @@ Useful extra flags to offer:
 - `--dnslink <record>` — update a Cloudflare DNSLink record after deploying
 - `--name <name>` / `--dist <dir>` — name of the packed archive and where to write it (defaults: current directory name, OS temp dir)
 - `--progress-bar` — render an upload progress bar (TTY only)
+- `--include-dotfiles .well-known,.nojekyll` — pack these dot-paths, which are skipped by default (e.g. `.well-known/` for atproto handles or `security.txt`)
 - `--skip-pinned` — skip IPFS providers that already pin the computed CID (needs provider status support; no effect on Swarm)
 - `--verbose` — verbose logs
 - `[dir]` — positional arg, defaults to `dist`. Pass e.g. `.vitepress/dist`, `build`, `out` if different.

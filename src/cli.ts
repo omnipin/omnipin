@@ -102,6 +102,12 @@ cli.command(
         type: 'boolean',
       },
       {
+        name: 'include-dotfiles',
+        description:
+          'Comma-separated dot files or directories to include, e.g. .well-known,.nojekyll',
+        type: 'string',
+      },
+      {
         name: 'skip-pinned',
         description: 'Skip providers that already pin the CID',
         type: 'boolean',
@@ -237,6 +243,12 @@ cli.command<[string]>(
         description: 'More verbose logs',
         type: 'boolean',
         short: 'v',
+      },
+      {
+        name: 'include-dotfiles',
+        description:
+          'Comma-separated dot files or directories to include, e.g. .well-known,.nojekyll',
+        type: 'string',
       },
       {
         name: 'tar',

@@ -122,6 +122,16 @@ Render a progress bar during content upload.
 omnipin deploy --progress-bar
 ```
 
+### `include-dotfiles`
+
+Default: none
+
+Files and directories starting with a dot are not packed, so `.env`, `.git` and similar never get published by accident. List the ones your site needs, comma-separated, relative to the deployed directory. A directory includes everything inside it.
+
+```sh
+omnipin deploy --include-dotfiles .well-known,.nojekyll
+```
+
 ### `skip-pinned`
 
 Default: `false`
