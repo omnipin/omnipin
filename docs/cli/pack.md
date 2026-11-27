@@ -29,6 +29,16 @@ omnipin pack --only-hash
 # bafybeialuzuiih2kg4g22crdt2oswzvj4ygirtk52v6kwb6v4muuuumnri
 ```
 
+### `include-dotfiles`
+
+Default: none
+
+Files and directories starting with a dot are not packed, so `.env`, `.git` and similar never get published by accident. List the ones your site needs, comma-separated, relative to the deployed directory. A directory includes everything inside it.
+
+```sh
+omnipin pack --include-dotfiles .well-known,.nojekyll
+```
+
 ### `tar`
 
 Default: `false`
