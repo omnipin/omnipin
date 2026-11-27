@@ -4,7 +4,7 @@ Omnipin can be integrated with CI/CD pipelines to deploy dApps automatically.
 
 ## GitHub Actions
 
-Omnipin uses this GitHub Action to deploy its own website.
+[`pnpm/setup`](https://github.com/pnpm/setup) installs pnpm and a runtime, then runs `pnpm install`. Set `runtime` to `bun@latest` or `deno@2` to build with Bun or Deno instead of Node.js.
 
 ```yaml
 name: Deploy with Omnipin
@@ -15,14 +15,14 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - name: Install Omnipin
-        run: bun i -g omnipin
+      - uses: actions/checkout@v7
+      - uses: pnpm/setup@v3
+        with:
+          runtime: node@lts
       - name: Build website
-        run: bun i && bun run build
+        run: pnpm build
       - name: Deploy the site
-        run: omnipin deploy .vitepress/dist --strict --ens ${{ vars.OMNIPIN_ENS }} --safe ${{ vars.OMNIPIN_SAFE }}
+        run: pnpm dlx omnipin deploy .vitepress/dist --strict --ens ${{ vars.OMNIPIN_ENS }}
         env:
           OMNIPIN_PINATA_TOKEN: ${{ secrets.OMNIPIN_PINATA_TOKEN }}
           OMNIPIN_LIGHTHOUSE_TOKEN: ${{ secrets.OMNIPIN_LIGHTHOUSE_TOKEN }}

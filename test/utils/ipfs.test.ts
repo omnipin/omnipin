@@ -2,9 +2,35 @@ import * as assert from 'node:assert'
 import { describe, it } from 'node:test'
 import { CarReader } from '@ipld/car/reader'
 import * as dagPb from '@ipld/dag-pb'
+import type { CID } from 'multiformats/cid'
 import { assertCID, packCAR } from '../../src/utils/ipfs.js'
+import { cases } from '../fixtures/unixfs-cases.js'
 
 const te = new TextEncoder()
+
+// Depth-first from the root, each node before its children, links in order,
+// each block once -- the order trustless gateways serve a DAG in.
+const dfsOrder = async (reader: CarReader, root: CID) => {
+  const order: string[] = []
+  const seen = new Set<string>()
+
+  const visit = async (cid: CID) => {
+    if (seen.has(cid.toString())) return
+    seen.add(cid.toString())
+    order.push(cid.toString())
+
+    if (cid.code !== dagPb.code) return
+
+    const block = await reader.get(cid)
+    assert.ok(block, `CAR is missing linked block ${cid}`)
+
+    for (const link of dagPb.decode(block.bytes).Links) await visit(link.Hash)
+  }
+
+  await visit(root)
+
+  return order
+}
 
 describe('ipfs utils', () => {
   describe('packCAR', () => {
@@ -88,6 +114,26 @@ describe('ipfs utils', () => {
         'CAR should contain at least one raw block (file leaf chunk)',
       )
     })
+
+    // The importer writes blocks as its concurrent file imports finish, so
+    // emitting them in that order made the CAR bytes -- and the Filecoin
+    // piece CID over them -- change between runs.
+    for (const { name, files } of cases) {
+      it(`writes ${name} in DAG order, byte for byte the same every time`, async () => {
+        // structuredClone: the importer normalises `path` in place
+        const first = await packCAR(structuredClone(files), `order-${name}`)
+        const second = await packCAR(structuredClone(files), `order-${name}`)
+
+        assert.deepStrictEqual(first.bytes, second.bytes)
+
+        const reader = await CarReader.fromBytes(first.bytes)
+        const written: string[] = []
+        for await (const { cid } of reader.blocks())
+          written.push(cid.toString())
+
+        assert.deepStrictEqual(written, await dfsOrder(reader, first.rootCID))
+      })
+    }
   })
 
   describe('assertCID', () => {

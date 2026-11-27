@@ -113,6 +113,9 @@ describe('ens utils', () => {
           name: 'omnipin.eth',
         })
 
+        // omnipin.eth is still an ENSv1 name (RESERVED in the ENSv2 .eth
+        // registry). The Universal Resolver returns the read-only ENSV1Resolver
+        // mirror for it; getEnsResolver looks through it to the real resolver.
         assert.equal(addr, '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63')
       })
     })
